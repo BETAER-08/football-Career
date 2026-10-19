@@ -1,0 +1,34 @@
+IN|뭄바이:Mumbai:20.4,델리:Delhi:16.8,벵갈루루:Bengaluru:12.3,콜카타:Kolkata:14.9,첸나이:Chennai:11.0,하이데라바드:Hyderabad:10.0,푸네:Pune:6.3,아마다바드:Ahmedabad:8.4,자이푸르:Jaipur:4.1,러크나우:Lucknow:3.7,코치:Kochi:2.1,구와하티:Guwahati:1.1
+CN|상하이:Shanghai:24.9,베이징:Beijing:21.9,광저우:Guangzhou:18.7,선전:Shenzhen:17.6,청두:Chengdu:16.3,충칭:Chongqing:32.1,우한:Wuhan:11.1,시안:Xi'an:12.9,항저우:Hangzhou:11.9,난징:Nanjing:9.3,톈진:Tianjin:13.9,칭다오:Qingdao:10.1
+NG|라고스:Lagos:15.4,카노:Kano:4.1,이바단:Ibadan:3.6,아부자:Abuja:3.6,포트하커트:Port Harcourt:3.1,베닌시티:Benin City:1.9,카두나:Kaduna:1.6,에누구:Enugu:0.9,조스:Jos:0.9,오웨리:Owerri:0.6
+PK|카라치:Karachi:16.8,라호르:Lahore:13.5,파이살라바드:Faisalabad:3.7,라왈핀디:Rawalpindi:2.4,페샤와르:Peshawar:2.3,물탄:Multan:2.2,하이데라바드:Hyderabad:2.0,퀘타:Quetta:1.2,이슬라마바드:Islamabad:1.2
+ID|자카르타:Jakarta:10.6,수라바야:Surabaya:3.0,반둥:Bandung:2.5,메단:Medan:2.5,스마랑:Semarang:1.8,팔렘방:Palembang:1.7,마카사르:Makassar:1.5,말랑:Malang:0.9,발리 덴파사르:Denpasar:0.9,수라카르타:Surakarta:0.6
+CD|킨샤사:Kinshasa:15.6,루붐바시:Lubumbashi:2.7,음부지마이:Mbuji-Mayi:2.5,키상가니:Kisangani:1.6,고마:Goma:1.1,부카부:Bukavu:1.1,칸앙가:Kananga:1.1,칼레미:Kalemie:0.4
+ET|아디스아바바:Addis Ababa:5.7,디레다와:Dire Dawa:0.5,하와사:Hawassa:0.4,바히르다르:Bahir Dar:0.4,곤다르:Gondar:0.4,메켈레:Mekelle:0.5,짐마:Jimma:0.2,아다마:Adama:0.4
+US|뉴욕:New York:18.8,로스앤젤레스:Los Angeles:12.8,시카고:Chicago:8.9,댈러스:Dallas:7.7,휴스턴:Houston:7.3,애틀랜타:Atlanta:6.2,마이애미:Miami:6.1,필라델피아:Philadelphia:6.2,시애틀:Seattle:4.0,샬럿:Charlotte:2.8,캔자스시티:Kansas City:2.2,콜럼버스:Columbus:2.1
+BD|다카:Dhaka:22.5,치타공:Chittagong:5.2,쿨나:Khulna:1.0,라지샤히:Rajshahi:0.9,실렛:Sylhet:0.8,바리살:Barishal:0.5,랑푸르:Rangpur:0.7,코밀라:Cumilla:0.5
+BR|상파울루:São Paulo:22.6,리우데자네이루:Rio de Janeiro:13.6,벨루오리존치:Belo Horizonte:6.0,포르투알레그리:Porto Alegre:4.3,살바도르:Salvador:3.9,포르탈레자:Fortaleza:4.1,쿠리치바:Curitiba:3.7,헤시피:Recife:4.1,캄피나스:Campinas:3.3,고이아니아:Goiânia:2.6,벨렝:Belém:2.5,산투스:Santos:1.8
+EG|카이로:Cairo:22.2,알렉산드리아:Alexandria:5.4,기자:Giza:9.2,포트사이드:Port Said:0.8,수에즈:Suez:0.8,룩소르:Luxor:0.5,만수라:Mansoura:0.6,탄타:Tanta:0.6,아스완:Aswan:0.4
+MX|멕시코시티:Mexico City:21.8,과달라하라:Guadalajara:5.3,몬테레이:Monterrey:5.3,푸에블라:Puebla:3.3,티후아나:Tijuana:2.2,레온:León:1.9,시우다드후아레스:Ciudad Juárez:1.5,톨루카:Toluca:2.4,케레타로:Querétaro:1.6,메리다:Mérida:1.3
+PH|마닐라:Manila:13.9,세부:Cebu:3.0,다바오:Davao:1.8,케손:Quezon City:3.0,카가얀데오로:Cagayan de Oro:0.7,일로일로:Iloilo:0.5,바콜로드:Bacolod:0.6,바기오:Baguio:0.4
+KE|나이로비:Nairobi:5.3,몸바사:Mombasa:1.3,키수무:Kisumu:0.6,나쿠루:Nakuru:0.6,엘도레트:Eldoret:0.5,티카:Thika:0.3,카카메가:Kakamega:0.3,말린디:Malindi:0.2
+VN|호찌민:Ho Chi Minh City:9.3,하노이:Hanoi:8.4,하이퐁:Hai Phong:2.1,다낭:Da Nang:1.2,칸토:Can Tho:1.3,빈:Vinh:0.5,탄호아:Thanh Hoa:0.4,남딘:Nam Dinh:0.4,후에:Hue:0.4,나짱:Nha Trang:0.5
+TR|이스탄불:Istanbul:15.5,앙카라:Ankara:5.7,이즈미르:Izmir:4.4,부르사:Bursa:3.1,안탈리아:Antalya:2.6,코니아:Konya:2.3,아다나:Adana:2.3,트라브존:Trabzon:0.8,가지안테프:Gaziantep:2.1,삼순:Samsun:1.4
+IR|테헤란:Tehran:9.4,마슈하드:Mashhad:3.4,이스파한:Isfahan:2.2,카라지:Karaj:1.6,시라즈:Shiraz:1.6,타브리즈:Tabriz:1.6,아흐바즈:Ahvaz:1.2,쿰:Qom:1.3,우르미예:Urmia:0.7,라슈트:Rasht:0.7
+GH|아크라:Accra:2.5,쿠마시:Kumasi:3.3,타말레:Tamale:0.7,타쿼라디:Takoradi:0.6,케이프코스트:Cape Coast:0.2,테마:Tema:0.4,스웨드루:Swedru:0.1,테치만:Techiman:0.1,호호에:Hohoe:0.1
+JP|도쿄:Tokyo:37.3,오사카:Osaka:19.0,요코하마:Yokohama:3.8,나고야:Nagoya:9.5,삿포로:Sapporo:2.0,후쿠오카:Fukuoka:5.5,고베:Kobe:1.5,교토:Kyoto:1.4,센다이:Sendai:1.1,히로시마:Hiroshima:1.2,가와사키:Kawasaki:1.5,시즈오카:Shizuoka:0.7
+CO|보고타:Bogotá:11.3,메데인:Medellín:4.1,칼리:Cali:2.3,바랑키야:Barranquilla:2.3,카르타헤나:Cartagena:1.0,부카라망가:Bucaramanga:1.0,쿠쿠타:Cúcuta:0.8,페레이라:Pereira:0.5,이바게:Ibagué:0.5,마니살레스:Manizales:0.4
+FR|파리:Paris:11.1,마르세유:Marseille:1.8,리옹:Lyon:2.3,툴루즈:Toulouse:1.4,니스:Nice:1.0,낭트:Nantes:1.0,스트라스부르:Strasbourg:0.8,보르도:Bordeaux:1.3,릴:Lille:1.5,렌:Rennes:0.7,몽펠리에:Montpellier:0.8,랑스:Lens:0.5
+DE|베를린:Berlin:3.8,함부르크:Hamburg:1.9,뮌헨:Munich:1.5,쾰른:Cologne:1.1,프랑크푸르트:Frankfurt:0.8,슈투트가르트:Stuttgart:0.6,뒤셀도르프:Düsseldorf:0.6,라이프치히:Leipzig:0.6,도르트문트:Dortmund:0.6,에센:Essen:0.6,브레멘:Bremen:0.6,드레스덴:Dresden:0.6
+MA|카사블랑카:Casablanca:3.4,라바트:Rabat:1.9,페스:Fes:1.2,마라케시:Marrakesh:1.0,탕헤르:Tangier:1.1,아가디르:Agadir:0.9,메크네스:Meknes:0.6,우지다:Oujda:0.5,테투안:Tetouan:0.4,케니트라:Kenitra:0.5
+GB|런던:London:9.8,맨체스터:Manchester:2.8,버밍엄:Birmingham:2.6,리버풀:Liverpool:0.9,리즈:Leeds:0.8,셰필드:Sheffield:0.6,브리스톨:Bristol:0.7,뉴캐슬:Newcastle:0.8,노팅엄:Nottingham:0.7,레스터:Leicester:0.5,사우샘프턴:Southampton:0.4,코번트리:Coventry:0.4
+SA|리야드:Riyadh:7.5,제다:Jeddah:4.7,메카:Mecca:2.4,메디나:Medina:1.5,담맘:Dammam:1.3,호바르:Khobar:0.7,타이프:Taif:0.7,부라이다:Buraidah:0.7,아브하:Abha:0.4,타부크:Tabuk:0.7
+SN|다카르:Dakar:3.3,티에스:Thiès:0.4,카올락:Kaolack:0.4,지긴쇼르:Ziguinchor:0.3,생루이:Saint-Louis:0.3,루가:Louga:0.2,음부르:Mbour:0.3,피킨:Pikine:1.2,투바:Touba:1.0,탐바쿤다:Tambacounda:0.1
+AR|부에노스아이레스:Buenos Aires:15.4,코르도바:Córdoba:1.6,로사리오:Rosario:1.3,멘도사:Mendoza:1.1,투쿠만:Tucumán:0.9,라플라타:La Plata:0.9,마르델플라타:Mar del Plata:0.6,산타페:Santa Fe:0.5,살타:Salta:0.6,아베야네다:Avellaneda:0.4
+IT|로마:Rome:4.3,밀라노:Milan:3.1,나폴리:Naples:3.1,토리노:Turin:2.2,팔레르모:Palermo:1.2,제노바:Genoa:0.8,볼로냐:Bologna:1.0,피렌체:Florence:1.0,바리:Bari:1.2,베로나:Verona:0.9,베르가모:Bergamo:0.4,카타니아:Catania:0.7
+ES|마드리드:Madrid:6.7,바르셀로나:Barcelona:5.7,발렌시아:Valencia:1.6,세비야:Seville:1.5,사라고사:Zaragoza:0.7,말라가:Málaga:1.0,빌바오:Bilbao:1.0,알리칸테:Alicante:0.8,비고:Vigo:0.4,팔마:Palma:0.4,라스팔마스:Las Palmas:0.4,산세바스티안:San Sebastián:0.2
+KR|서울:Seoul:9.4,부산:Busan:3.3,인천:Incheon:3.0,대구:Daegu:2.4,대전:Daejeon:1.4,광주:Gwangju:1.4,수원:Suwon:1.2,울산:Ulsan:1.1,창원:Changwon:1.0,전주:Jeonju:0.6,포항:Pohang:0.5,제주:Jeju:0.5
+NL|암스테르담:Amsterdam:1.2,로테르담:Rotterdam:1.0,헤이그:The Hague:0.6,위트레흐트:Utrecht:0.4,아인트호벤:Eindhoven:0.2,흐로닝언:Groningen:0.2,틸뷔르흐:Tilburg:0.2,알메러:Almere:0.2,브레다:Breda:0.2,네이메헌:Nijmegen:0.2
+PT|리스본:Lisbon:2.9,포르투:Porto:1.7,브라가:Braga:0.2,아마도라:Amadora:0.2,코임브라:Coimbra:0.1,기마랑이스:Guimarães:0.15,파루:Faro:0.06,푸샬:Funchal:0.1,세투발:Setúbal:0.1,아베이루:Aveiro:0.08
+HR|자그레브:Zagreb:0.8,스플리트:Split:0.17,리예카:Rijeka:0.11,오시예크:Osijek:0.1,자다르:Zadar:0.07,풀라:Pula:0.05,슬라본스키브로드:Slavonski Brod:0.05,카를로바츠:Karlovac:0.05,시베니크:Šibenik:0.04,바라주딘:Varaždin:0.04
+UY|몬테비데오:Montevideo:1.4,살토:Salto:0.1,파이산두:Paysandú:0.08,라스피에드라스:Las Piedras:0.07,리베라:Rivera:0.07,말도나도:Maldonado:0.06,타쿠아렘보:Tacuarembó:0.05,멜로:Melo:0.05,콜로니아:Colonia:0.03,미나스:Minas:0.04

@@ -1,0 +1,29 @@
+{
+  "name": "born-to-play-football",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "calibrate": "tsx scripts/calibrate.ts",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.13.0",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.7",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5",
+    "zod": "^4.6.7"
+  }
+}

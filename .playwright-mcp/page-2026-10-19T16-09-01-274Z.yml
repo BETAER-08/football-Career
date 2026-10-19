@@ -1,0 +1,10 @@
+- generic [ref=f17e5]:
+  - heading "태어난 김에 축구" [level=1] [ref=f17e8]
+  - paragraph [ref=f17e9]: 12세, 2026년 7월. 국적도 리그도 구단도 룰렛이 정한다.한 번뿐인 축구 인생을 실시간으로 산다.
+  - generic [ref=f17e10]:
+    - button "새로 입단하기" [ref=f17e11] [cursor=pointer]
+    - button "이어하기" [ref=f17e12] [cursor=pointer]
+    - button "저장 가져오기" [ref=f17e13] [cursor=pointer]
+    - button "지난 커리어 보관함 (2)" [ref=f17e14] [cursor=pointer]
+    - button "확률과 보정 안내" [ref=f17e15] [cursor=pointer]
+  - button "라이트 테마" [ref=f17e17] [cursor=pointer]

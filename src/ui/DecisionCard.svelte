@@ -1,0 +1,112 @@
+<script lang="ts">
+  import { store } from './store.svelte';
+  import { getClub, getCountry, getLeague } from '../engine/data';
+  import { formatKRW } from '../engine/finance';
+  import { ROLE_LABEL, type Offer } from '../engine/types';
+  import { clubLvl } from '../engine/world';
+  import { coachOfferLabel } from '../engine/coach';
+  import Chips from './Chips.svelte';
+  import { onMount } from 'svelte';
+
+  const g = $derived(store.game!);
+  const d = $derived(g.decision);
+  let demands = $state<{ wage: boolean; role: boolean; buyout: boolean }>({ wage: false, role: false, buyout: false });
+  let picked = $state(-1);
+
+  $effect(() => {
+    void d?.uid;
+    demands = { wage: false, role: false, buyout: false };
+    picked = -1;
+  });
+
+  function onKey(e: KeyboardEvent) {
+    if (!d || d.kind === 'offer') return;
+    const n = Number(e.key);
+    if (n >= 1 && n <= d.choices.length) store.choose(n - 1);
+  }
+  onMount(() => {
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
+  function lvlOf(o: Offer): number {
+    return o.clubId.startsWith('NAT:') ? 4 : clubLvl(g, o.clubId);
+  }
+  function demandStr(): string {
+    return [demands.wage ? 'wage' : '', demands.role ? 'role' : '', demands.buyout ? 'buyout' : ''].filter(Boolean).join(',');
+  }
+  const risk = $derived(Math.round(Math.min(70, 4 + (demands.wage ? 14 : 0) + (demands.role ? 17 : 0) + (demands.buyout ? 10 : 0) - g.fin.agentSkill / 6)));
+</script>
+
+{#if d}
+  <div class="panel card" class:heavy={d.heavy}>
+    <div class="panel-h"><span>{d.title}</span><span class="spacer"></span>{#if g.auto}<span class="tag">자동 결정 중</span>{/if}</div>
+    <div class="panel-b col" style="gap:10px">
+      <div class="txt">{d.text}</div>
+      {#if d.ctx}<div class="mini-hint">{d.ctx}</div>{/if}
+      {#if d.heavy && d.help}<div class="help">도움받을 곳 · {d.help}</div>{/if}
+
+      {#if d.kind === 'offer'}
+        <div class="offers">
+          {#each d.offers as o, i}
+            <div class="offer" class:sel={picked === i}>
+              {#if d.ref === 'coachjob'}
+                <div class="row"><b>{coachOfferLabel(o)}</b></div>
+                <div class="muted" style="font-size:12px">계약 {o.years}년</div>
+              {:else}
+                {@const c = getClub(o.clubId)}
+                <div class="row"><b class="ocl">{c.name}</b><span class="tag">{getCountry(c.country).flag} {getCountry(c.country).ko}</span><span class="tag">{getLeague(c.lg0).ko}</span><span class="tag">수준 {lvlOf(o)}</span>{#if o.loan}<span class="tag">임대</span>{/if}{#if o.trial}<span class="tag" style="color:var(--amber)">입단 테스트</span>{/if}</div>
+                <div class="og">
+                  <span>약속 역할 <b>{ROLE_LABEL[o.role]}</b></span><span>연봉 <b class="mono">{formatKRW(o.wage)}</b></span><span>기간 <b>{o.years}년</b></span>
+                  <span>서명 보너스 <b class="mono">{formatKRW(o.signing)}</b></span><span>출전 보너스 <b class="mono">{formatKRW(o.appBonus)}</b></span><span>바이아웃 <b class="mono">{o.buyout ? formatKRW(o.buyout) : '없음'}</b></span>
+                </div>
+                <div class="muted" style="font-size:12px">감독 {o.coachName} · {o.coachStyle}</div>
+              {/if}
+              <div class="row" style="margin-top:6px">
+                {#if picked === i && d.ref !== 'coachjob'}
+                  <label class="dm"><input type="checkbox" bind:checked={demands.wage} /> 연봉 인상 요구</label>
+                  <label class="dm"><input type="checkbox" bind:checked={demands.role} /> 역할 보장 요구</label>
+                  <label class="dm"><input type="checkbox" bind:checked={demands.buyout} /> 바이아웃 삽입</label>
+                  <span class="mini-hint">결렬 확률 약 {Math.max(2, risk)}%</span>
+                {/if}
+                <span class="spacer"></span>
+                {#if d.ref !== 'coachjob' && picked !== i}<button class="btn sm" onclick={() => (picked = i)}>협상</button>{/if}
+                <button class="btn primary sm" onclick={() => store.choose(i, picked === i ? demandStr() : '')}>{o.trial ? '테스트 응시' : d.ref === 'coachjob' ? '수락' : '서명'}</button>
+              </div>
+            </div>
+          {/each}
+        </div>
+        {#if d.choices.length > d.offers.length}
+          <button class="btn" onclick={() => store.choose(d.offers.length)}>{d.choices[d.choices.length - 1].label}</button>
+        {/if}
+      {:else}
+        <div class="choices">
+          {#each d.choices as c, i}
+            <button class="choice" onclick={() => store.choose(i)}>
+              <span class="num mono">{i + 1}</span>
+              <span class="grow col" style="gap:4px;align-items:flex-start"><b>{c.label}</b><Chips chips={c.chips} preview /></span>
+            </button>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  </div>
+{/if}
+
+<style>
+  .card { border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); animation: pop 0.3s ease; }
+  .card.heavy { border-color: color-mix(in srgb, var(--info) 55%, var(--line)); }
+  .txt { font-size: 14.5px; line-height: 1.65; }
+  .help { font-size: 12.5px; color: var(--info); background: color-mix(in srgb, var(--info) 8%, var(--panel)); border-radius: 8px; padding: 6px 10px; }
+  .choices { display: flex; flex-direction: column; gap: 8px; }
+  .choice { display: flex; gap: 12px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--line); cursor: pointer; transition: border-color 0.12s, transform 0.06s; }
+  .choice:hover { border-color: var(--accent); }
+  .choice:active { transform: translateY(1px); }
+  .num { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: var(--bg2); color: var(--muted); font-size: 12px; flex: none; }
+  .offers { display: flex; flex-direction: column; gap: 8px; }
+  .offer { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); }
+  .offer.sel { border-color: var(--accent); }
+  .ocl { font-size: 16px; }
+  .og { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px 14px; font-size: 12.5px; margin: 6px 0; color: var(--muted); }
+  .dm { font-size: 12.5px; display: flex; align-items: center; gap: 4px; }
+</style>

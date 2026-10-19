@@ -1,0 +1,12 @@
+VN|G|Thuận:투언 Dũng:중 Kiệt:끼엣
+ID|S|Prakoso:프라코소 Setyawan:세티아완 Anwar:안와르 Kartika:카르티카 Hasan:하산 Salim:살림
+PH|G|Bernard:베르나드 Christopher:크리스토퍼 Anton:안톤 Louie:루이
+PH|S|Alvarez:알바레스 Ramirez:라미레스 Diaz:디아스 Morales:모랄레스 Gutierrez:구티에레스 Soliman:솔리만 Miranda:미란다 Pineda:피네다 Tagle:타글레 Luna:루나 Mabini:마비니 Gatchalian:가찰리안
+NG|G|Anthony:앤서니 Collins:콜린스 Dominic:도미닉 Ernest:어니스트 Felix:펠릭스 Gabriel:가브리엘 Ikem:이켐 Jonathan:조너선 Kenneth:케네스 Lucky:럭키 Michael:마이클
+NG|S|Ahmed:아흐메드 Anyaegbu:아냐에그부 Chinwe:친웨 Eboh:에보 Fasanya:파산야 Gold:골드 Hamza:함자 Ikpe:이크페 Johnson:존슨 Kuti:쿠티 Lamido:라미도 Nwafor:은와포르
+GH|G|Akwesi:아크웨시 Baba:바바 Dominic:도미닉 Elvis:엘비스 Fiifi:피피 Gabriel:가브리엘 Hassan:하산 Ibrahim:이브라힘 Kwadwo:콰드워 Mubarak:무바라크 Naa:나 Ohene:오헤네
+GH|S|Ameyaw:아메야우 Boakye:보아키 Cudjoe:쿠조 Dogbe:도그베 Eshun:에순 Fosu:포수 Gyan:지안 Hayford:헤이퍼드 Inusah:이누사 Jatoe:자토 Kotey:코테이 Lumor:루모르
+KE|G|Elijah:일라이자 Hillary:힐러리 Isaac:아이작 Jared:재러드 Kelvin:켈빈 Leonard:레너드 Martin:마틴
+KE|S|Gichuki:기추키 Kinuthia:키누시아 Mburu:음부루 Nderitu:은데리투 Ogola:오골라 Oluoch:올루오치 Wasike:와시케 Wanyonyi:완요니 Yator:야토르 Kiplangat:킵랑가트
+ET|G|Aklilu:아클릴루 Bereket:베레켓 Getaneh:게타네 Hailemichael:하일레미카엘 Kibrom:키브롬 Michael:미카엘 Nahusenay:나후세나이 Tsegaye:체가예 Wendwesen:웬드웨센 Yonatan:요나탄
+VN|G|Thiên:티엔 Bảo_Anh:바오 아인

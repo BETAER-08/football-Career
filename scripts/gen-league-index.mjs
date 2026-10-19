@@ -1,0 +1,12 @@
+import { readdirSync, writeFileSync } from 'node:fs';
+const dir = new URL('../src/data/leagues/', import.meta.url);
+const codes = readdirSync(dir).filter((f) => /^[A-Z]{2}\.ts$/.test(f)).map((f) => f.slice(0, 2)).sort();
+const lines = ["import { LeagueSchema, type League } from '../schema';"];
+for (const c of codes) lines.push(`import { leagues as l${c} } from './${c}';`);
+lines.push('', 'const RAW = { ' + codes.map((c) => `${c}: l${c}`).join(', ') + ' };', '');
+lines.push('export const LEAGUES_BY_COUNTRY: Record<string, League[]> = Object.fromEntries(');
+lines.push('  Object.entries(RAW).map(([code, arr]) => [code, arr.map((l) => LeagueSchema.parse(l))])');
+lines.push(');', '');
+lines.push("export const LEAGUES_META = { note: '2025-26 시즌 기준으로 작성한 근사 데이터이며 실제와 다를 수 있습니다. 구단은 전력 순으로 나열되어 상대 전력이 계산됩니다.', estimate: true };", '');
+writeFileSync(new URL('index.ts', dir), lines.join('\n'));
+console.log(codes.length);

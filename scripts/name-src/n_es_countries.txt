@@ -1,0 +1,10 @@
+ES|G|+@esG Aitor:아이토르 Unai:우나이 Xavi:차비 Jordi:조르디 Oriol:오리올 Pau:파우 Arnau:아르나우 Gerard:헤라르드 Mikel:미켈 Asier:아시에르
+ES|S|+@esS Etxeberria:에체베리아 Goikoetxea:고이코에체아 Puig:푸이그 Vila:빌라 Costa:코스타
+MX|G|+@esG Cuauhtémoc:콰우테목 Xavier:사비에르 Uriel:우리엘 Rogelio:로헬리오 Efraín:에프라인 Hiram:이람 Jair:하이르 Edson:에드손 Erick:에릭 Abraham:아브라함
+MX|S|+@esS Rodarte:로다르테 Villalobos:비야로보스 Cervantes:세르반테스 Escobar:에스코바르 Trejo:트레호 Guzmán:구스만 Barrera:바레라 Salazar:살라사르 Valdez:발데스 Ochoa:오초아 Zamora:사모라 Espinoza:에스피노사
+AR|G|+@esG Enzo:엔소 Exequiel:엑세키엘 Giovani:조바니 Alexis:알렉시스 Emanuel:에마누엘 Lisandro:리산드로 Tobías:토비아스 Bruno:브루노 Santino:산티노 Thiago:티아고
+AR|S|+@esS Acuña:아쿠냐 Paredes:파레데스 Montiel:몬티엘 Almada:알마다 Correa:코레아 Palacios:팔라시오스 Balerdi:발레르디 Barrios:바리오스 Funes:푸네스 Bustos:부스토스 Echeverría:에체베리아 Peralta:페랄타 Sandoval:산도발
+CO|G|+@esG Yerry:예리 Wilmar:윌마르 Jhon:욘 Jefferson:제퍼슨 Duván:두반 Johan:요한 Mateus:마테우스 Brayan:브라이언 Dávinson:다빈손 Yeison:예이손
+CO|S|+@esS Valencia:발렌시아 Quintero:킨테로 Borja:보르하 Mina:미나 Lerma:레르마 Zapata:사파타 Ospina:오스피나 Mojica:모히카 Carrascal:카라스칼 Muriel:무리엘 Arboleda:아르볼레다 Palomino:팔로미노 Londoño:론도뇨
+UY|G|+@esG Darwin:다르윈 Ronald:로날드 Giorgian:조르지안 Nahitan:나이탄 Brian:브라이언 Washington:워싱턴 Gastón:가스톤 Maximiliano:막시밀리아노 Nicolás:니콜라스 Santiago:산티아고
+UY|S|+@esS Olivera:올리베라 Pellistri:펠리스트리 Canobbio:카노비오 Vecino:베시노 Cáceres:카세레스 Rochet:로셰 Laxalt:락살트 Bueno:부에노 Techera:테체라 Barrios:바리오스 Silveira:실베이라 Píriz:피리스 Fernández:페르난데스 Bergara:베르가라

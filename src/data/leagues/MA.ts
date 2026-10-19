@@ -1,0 +1,7 @@
+import type { RawLeague } from '../schema';
+
+export const leagues: RawLeague[] = [
+  { id: 'MA1', ko: '보톨라 프로', en: 'Botola Pro', tier: 1, lvl: 4, top: 68, bottom: 52, up: 0, down: 2, cup: '모로코 왕좌컵', clubs: 'Wydad Casablanca|카사블랑카;Raja Casablanca|카사블랑카;AS FAR|라바트;RS Berkane|베르칸;FUS Rabat|라바트;Maghreb Fès|페스;Hassania Agadir|아가디르;Olympique Safi|사피;Renaissance Zemamra|제마므라;Moghreb Tétouan|테투안;Difaâ El Jadida|엘자디다;Union Touarga|라바트;Raja Beni Mellal|베니멜랄;Ittihad Tanger|탕헤르;Olympic Dcheira|디슈이라;COD Meknès|메크네스' },
+  { id: 'MA2', ko: '보톨라 2', en: 'Botola 2', tier: 2, lvl: 3, top: 50, bottom: 40, up: 2, down: 3, cup: '모로코 왕좌컵', clubs: 'Kawkab Marrakech|마라케시;Chabab Mohammedia|모하메디아;Racing Casablanca|카사블랑카;Rapide Oued Zem|우에드젬;Youssoufia Berrechid|베르시드;Stade Marocain|라바트;Najm Marrakech|마라케시;Ittihad Khemisset|케미세트;Mouloudia Oujda|우지다;Wydad Fès|페스;Chabab Atlas Khénifra|케니프라;Jeunesse Soualem|수알렘;Union Sidi Kacem|시디카셈;Mouloudia Salé|살레;Hilal Tarfaya|타르파야;AS Salé|살레' },
+  { id: 'MA3', ko: '내셔널 아마추어', en: 'Championnat National Amateur', tier: 3, lvl: 2, top: 40, bottom: 32, up: 2, down: 2, cup: '모로코 왕좌컵', clubs: 'Wydad Témara|테마라;Ittihad Ouazzane|와자네;Widad Fès B|페스;Rachad Bernoussi|카사블랑카;Hassania Benslimane|벤슬리만;Raja Hoceima|알호세이마;Olympique Dcheira B|디슈이라;Mouloudia Taza|타자;Wydad Guercif|게르시프;Salam Zgharta|제가르타;Chabab Ben Guerir|벤게리르;Kawkab Ouarzazate|와르자자트;Jeunesse Massira|라윤;Ittihad Taroudant|타루단트' }
+];

@@ -1,0 +1,44 @@
+import type { RawEvent } from '../../schema';
+import { pa } from '../helpers';
+
+const Y: ('youth')[] = ['youth'];
+const YP: ('youth' | 'pro')[] = ['youth', 'pro'];
+
+export const youthPassive: RawEvent[] = [
+  pa('y_praise', Y, 5, ['{coach} 감독이 훈련이 끝난 뒤 {name}을(를) 따로 불러 짧게 칭찬했다. 한마디가 하루 종일 머릿속을 맴돌았다.', '분석 영상을 함께 보던 {coach} 감독이 {name}의 움직임을 짚으며 고개를 끄덕였다. 가슴이 뛰었다.'], 'morale+4 rel.coach+3', { cond: ['ovr>=30'], cd: 10, max: 40 }),
+  pa('y_homesick', Y, 4, ['숙소의 밤은 길다. 불을 끄고 누우면 집 생각이 먼저 난다.', '가족과의 영상통화가 끝나자 방이 유난히 조용해졌다.'], 'happy-3 stress+3 rel.mother+1', { cond: ['dorm', 'age<=15'], cd: 10, max: 20 }),
+  pa('y_growth_spurt', Y, 3, ['자고 일어나면 키가 크는 것 같았다. 몸이 마음을 따라오지 않아 첫 터치가 자꾸 길게 나갔다.', '갑자기 다리가 길어졌다. 가속은 붙었는데 균형이 어색하다.'], 'attr.pace+0.25 attr.firstTouch-0.15 attr.balance-0.15', { cond: ['growth:early', 'age>=13', 'age<=15'], max: 1, note: 'relative_age' }),
+  pa('y_late_bloomer', Y, 3, ['또래보다 한 뼘 작아 몸싸움에서 자꾸 밀렸다. 대신 발밑 기술에 더 매달렸다.', '키 큰 동기들 사이에서 눈에 띄지 않는 시즌이었다. 공을 오래 만지는 수밖에 없었다.'], 'attr.dribbling+0.25 attr.firstTouch+0.2 morale-2', { cond: ['growth:late', 'age>=12', 'age<=15'], max: 2, note: 'late_bloom' }),
+  pa('y_exam', Y, 4, ['기말고사 주간. 훈련 후 숙소에서 교과서를 펼쳤지만 눈꺼풀이 무거웠다.', '시험 전날 밤, 노트를 덮고 불을 껐다. 내일은 공도 시험도 있다.'], 'edu+3 fatigue+4 stress+3', { cond: ['age<=17'], cd: 20, max: 8, note: 'edu' }),
+  pa('y_scout_rumor', Y, 3, ['다른 구단 스카우트가 경기를 지켜봤다는 이야기가 숙소에 돌았다.', '관중석 구석에 낯선 어른이 수첩을 들고 앉아 있었다. 누구를 보러 왔는지는 아무도 몰랐다.'], 'morale+3 fameD+0.3', { cond: ['ovr>=38'], cd: 26, max: 6, note: 'scout' }),
+  pa('y_party', Y, 4, ['동기의 생일. 식당 한쪽에서 작은 파티가 열렸다. 오랜만에 축구 이야기 없이 웃었다.', '케이크 하나를 열두 명이 나눠 먹었다. 생일 주인공보다 우리가 더 신났다.'], 'happy+5 rel.mates+4 stress-4', { cd: 20, max: 10 }),
+  pa('y_boots', Y, 3, ['새 축구화를 받았다. 갑피에서 나는 가죽 냄새가 괜히 설렜다.', '낡은 축구화를 드디어 바꿨다. 첫 훈련에서 공이 발에 붙는 느낌이었다.'], 'morale+3', { cd: 52, max: 5 }),
+  pa('y_wet_pitch', Y, 3, ['비에 젖은 훈련장에서 진흙투성이가 되도록 굴렀다. 균형 감각이 조금은 늘었을까.', '폭우 속 연습경기. 패스가 자꾸 멈췄지만 모두 웃으며 뛰었다.'], 'fatigue+4 attr.balance+0.1', { cd: 12, max: 20 }),
+  pa('y_rival_goal', Y, 3, ['{rival}이(가) 연습경기에서 멋진 골을 넣었다. 박수 소리가 조금 아렸다.', '같은 포지션 경쟁자 {rival}이(가) 코치에게 칭찬받는 걸 멀리서 지켜봤다.'], 'morale-3 rel.rival-2', { cd: 16, max: 12 }),
+  pa('y_parents_watch', Y, 3, ['부모님이 먼 길을 달려와 경기를 보았다. 스탠드에서 흔드는 손이 보였다.', '오랜만에 부모님이 관중석에 앉아 있었다. 괜히 평소보다 더 열심히 뛰었다.'], 'morale+4 rel.father+3 rel.mother+3', { cond: ['supportive>=45'], cd: 20, max: 10 }),
+  pa('y_tournament', Y, 2, ['유스 토너먼트에서 팀이 우승했다. 메달을 목에 걸고 단체 사진을 찍었다.', '결승에서 이기고 모두가 엉켜 넘어졌다. 메달의 무게보다 이 순간이 오래 남을 것 같다.'], 'morale+6 happy+5 fameD+0.4', { cond: ['ovr>=34'], cd: 52, max: 5 }),
+  pa('y_minor_knock', Y, 3, ['훈련 중 가벼운 타박상. 의무팀이 얼음찜질을 시켰다.', '경합 중 정강이를 맞았다. 절뚝이며 걸었지만 하루 만에 괜찮아졌다.'], 'health-2 fatigue+2', { cd: 14, max: 20, note: 'inj_freq' }),
+  pa('y_new_drill', Y, 3, ['{coach} 감독이 새 훈련 프로그램을 도입했다. 처음엔 낯설었지만 몸이 익숙해지자 터치가 부드러워졌다.', '좁은 공간 패스 훈련이 시작됐다. 하루가 지나자 시야가 한결 넓어졌다.'], 'attr.firstTouch+0.15 attr.passing+0.1', { cd: 26, max: 8 }),
+  pa('y_video', Y, 3, ['분석 영상으로 자기 경기를 돌려 보았다. 위치 선정에서 놓친 장면이 선명했다.', '코치가 틀어 준 영상에는 내가 보지 못한 빈 공간이 있었다.'], 'attr.positioning+0.15 attr.vision+0.1', { cond: ['age>=13'], cd: 20, max: 10 }),
+  pa('y_nutrition', Y, 3, ['구단 영양사가 식단 교육을 했다. 콜라를 줄이기로 마음먹었다.', '식단표에 처음으로 채소가 늘었다. 몸이 가벼워지는 느낌이 들었다.'], 'diet+4 health+1', { cd: 30, max: 5, note: 'sleep' }),
+  pa('y_sleep', Y, 3, ['사감이 소등 시간을 철저히 지켰다. 일찍 자니 아침 훈련이 가벼웠다.', '밤에 휴대폰을 맡기고 잠들었다. 눈을 뜨자 몸이 먼저 깨어 있었다.'], 'sleep+4 fatigue-3', { cond: ['dorm'], cd: 26, max: 6, note: 'sleep' }),
+  pa('y_dorm_quarrel', Y, 2, ['방 동료와 사소한 일로 다퉜다. 하루 종일 서먹했다.', '빨래와 소등 문제로 룸메이트와 말다툼을 했다. 먼저 사과해야 할지 고민이 길었다.'], 'rel.mates-4 stress+3', { cond: ['dorm'], cd: 26, max: 6 }),
+  pa('y_captain', Y, 3, ['{captain}이(가) 어깨를 두드리며 "오늘 잘했다"고 말했다.', '주장 {captain}이(가) 훈련 후 따로 다가와 한마디 건넸다. 팀에 속해 있다는 느낌이 들었다.'], 'rel.captain+4 morale+2', { cd: 20, max: 8 }),
+  pa('y_poster', Y, 2, ['라커 안쪽에 우상의 사진을 붙였다. 언젠가 같은 무대에 서고 싶다.', '벽에 붙인 포스터를 볼 때마다 가슴 한구석이 뜨거워졌다.'], 'morale+2 hid.ambition+1', { max: 2 }),
+  pa('y_school_friends', Y, 2, ['학교 친구들이 경기를 보러 왔다. 교복 차림 응원이 어색하고도 든든했다.', '반 친구들이 현수막을 만들어 왔다. 이름 철자가 하나 틀렸지만 고마웠다.'], 'happy+4 rel.mates+1', { cond: ['age<=17'], cd: 52, max: 3 }),
+  pa('y_pocket', Y, 2, ['용돈이 조금 모였다. 편의점 앞에서 무엇을 살지 오래 고민했다.', '구단에서 받은 소액의 지원금으로 처음으로 친구들에게 간식을 샀다.'], 'happy+2 cash+3', { cd: 26, max: 8 }),
+  pa('y_fan_kid', Y, 2, ['경기 후 어린 팬이 사인을 부탁했다. 이름을 쓰는 손이 괜히 떨렸다.', '관중석 앞줄의 아이가 이름을 외쳤다. 처음 받아 보는 환호였다.'], 'fameD+0.3 happy+3', { cond: ['ovr>=36'], cd: 30, max: 5 }),
+  pa('y_trip', Y, 2, ['유스팀 전지훈련. 낯선 도시의 숙소에서 동기들과 밤새 이야기했다.', '버스 뒷좌석에서 이어폰을 나눠 끼고 노래를 들었다. 이 팀이 좋아지기 시작했다.'], 'rel.mates+4 happy+4 fatigue+3', { cd: 52, max: 6 }),
+  pa('y_fitness_test', Y, 3, ['체력 테스트 날. 마지막 셔틀런에서 토할 것 같았지만 끝까지 버텼다.', '코치의 호루라기 소리에 다리가 마지막 힘을 짜냈다. 기록이 처음으로 상위권에 들었다.'], 'attr.stamina+0.25 fatigue+8 morale+2', { cond: ['age>=13'], cd: 26, max: 12 }),
+  pa('y_interview_web', Y, 2, ['구단 홈페이지 유스 소식란에 인터뷰가 실렸다. 사진 속 표정이 어색해 친구들이 놀렸다.', '짧은 인터뷰 영상이 올라왔다. 댓글 몇 개에 하루 종일 휴대폰을 들여다봤다.'], 'fameD+0.3 followers+3', { cond: ['age>=14', 'ovr>=38'], cd: 52, max: 3 }),
+  pa('y_setpiece', Y, 3, ['세트피스를 남아서 연습했다. 마지막 프리킥이 골대 안쪽 모서리에 꽂혔다.', '프리킥 연습 100개. 마지막 한 개가 완벽하게 휘어 들어갔다.'], 'attr.freeKicks+0.2 attr.shooting+0.1', { cond: ['!pos:GK'], cd: 16, max: 12 }),
+  pa('y_gk_drill', Y, 3, ['골키퍼 코치가 1대1 훈련을 집중적으로 시켰다. 손끝에 닿는 공의 감각이 달라졌다.', '쉴 새 없는 슈팅 연습 끝에 반응이 한 박자 빨라졌다.'], 'attr.oneOnOne+0.25 attr.reflexes+0.15', { cond: ['pos:GK'], cd: 16, max: 14 }),
+  pa('y_weights', Y, 3, ['웨이트룸 첫 정식 프로그램. 근육통에 계단 내려가기가 힘들었다.', '운동 기구를 올바르게 쓰는 법부터 새로 배웠다. 몸이 단단해지는 게 느껴졌다.'], 'attr.strength+0.2 fatigue+4', { cond: ['age>=15'], cd: 20, max: 8 }),
+  pa('y_mentor_visit', Y, 2, ['1군 선수가 유스 훈련장을 찾아 후배들에게 조언했다. "프로는 매일이 테스트야."', '1군 베테랑이 유스 훈련을 지켜보다 한마디를 남기고 갔다. 그 말을 오래 곱씹었다.'], 'morale+4 hid.ambition+1', { cond: ['age>=14'], cd: 52, max: 4 }),
+  pa('y_first_team_train', Y, 2, ['1군 연습경기에 인원이 모자라 불려 나갔다. 형들의 속도에 숨이 막혔다.', '처음으로 1군 선수들과 같은 공을 찼다. 터치 하나하나가 무겁게 느껴졌다.'], 'attr.pace+0.1 sharp+2 morale+2', { cond: ['age>=15', 'ovr>=40'], cd: 52, max: 5 }),
+  pa('y_gym_music', Y, 2, ['훈련장에서 틀어 놓은 노래에 맞춰 모두가 같이 흥얼거렸다. 이상하게 마음이 편안했다.', '이어폰 속 노래가 끝나자 마음이 가라앉았다. 오늘은 잘 해낼 것 같았다.'], 'stress-4 happy+2', { cd: 12, max: 30 }),
+  pa('y_school_report', Y, 2, ['성적표가 나왔다. 훈련 때문에 졸았던 과목은 눈에 띄게 내려갔다.', '담임이 성적표를 건네며 "축구도 좋지만 공부도 놓지 마라"고 했다.'], 'edu+2 stress+3', { cond: ['age<=17'], cd: 52, max: 6, note: 'edu' }),
+  pa('y_clean_week', Y, 2, ['특별할 것 없는 한 주였다. 훈련과 식사, 수면이 규칙적으로 이어졌다.', '아무 일도 없었다는 것이 가장 큰 사건이었던 한 주. 몸은 조용히 성장하고 있었다.'], 'fatigue-2 stress-2 health+1', { cd: 8, max: 40 }),
+  pa('y_dorm_food', Y, 2, ['숙소 식당 메뉴가 바뀌었다. 먹는 재미가 조금 늘었다.', '조리사가 몰래 주먹밥을 챙겨 주었다. 숙소 밥이 이렇게 맛있었던가.'], 'happy+2 diet+1', { cond: ['dorm'], cd: 26, max: 8 }),
+  pa('y_comparison', YP, 2, ['동기 한 명이 상위 연령팀으로 월반했다. 축하는 했지만 속이 편하지는 않았다.', '같이 시작한 친구가 먼저 1군 훈련에 불려 갔다. 박수를 치면서 조용히 이를 악물었다.'], 'morale-3 hid.ambition+1 stress+2', { cond: ['age>=14', 'age<=18'], cd: 52, max: 4 })
+];

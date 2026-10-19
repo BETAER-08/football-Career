@@ -1,0 +1,122 @@
+<script lang="ts">
+  import { store } from './store.svelte';
+  import { getClub, getLeague, getCountry } from '../engine/data';
+  import { clubLeagueId, positionOf, ranking } from '../engine/world';
+  import { ROLE_LABEL } from '../engine/types';
+  import { formatKRW, netWorth, currentWage } from '../engine/finance';
+  import { dateOf, fmtDate, ageAt } from '../engine/time';
+  import { healthLabel } from '../engine/health';
+  import { roleLabel as coachRoleLabel } from '../engine/coach';
+
+  const g = $derived(store.game!);
+  const idc = $derived(g.phase === 'coach' ? g.coach.clubId : g.career.clubId);
+  const club = $derived(idc ? getClub(idc) : null);
+  const lgId = $derived(idc ? clubLeagueId(g, idc) : '');
+  const lg = $derived(lgId ? getLeague(lgId) : null);
+  const rt = $derived(lgId ? g.world.leagues[lgId] : undefined);
+  const rank = $derived(idc && rt ? positionOf(g, lgId, idc) : 0);
+  const total = $derived(rt ? rt.order.length : 0);
+  const con = $derived(g.phase === 'coach' ? g.coach.contract : g.career.contract);
+  const form = $derived(g.st.form.length ? g.st.form.reduce((a, b) => a + b, 0) / g.st.form.length : 0);
+  const cur = $derived(g.career.cur);
+  const weeksLeft = $derived(con ? Math.max(0, con.endW - g.week) : 0);
+  const retDate = $derived(g.st.injury ? fmtDate(dateOf(g.week + Math.ceil(g.st.injury.weeksLeft))) : '');
+  const wage = $derived(currentWage(g));
+  const target = $derived(g.coach.tableTarget);
+  const tone = (v: number, inv = false) => ((inv ? 100 - v : v) < 30 ? 'bad' : (inv ? 100 - v : v) < 55 ? 'warn' : '');
+  void ranking;
+  void getCountry;
+  void ageAt;
+</script>
+
+<div class="panel">
+  <div class="grid">
+    <div class="col" style="gap:5px">
+      <div class="h">현재 팀</div>
+      {#if g.phase === 'postcareer' && !club}
+        <div class="big">{{ none: '무직', pundit: '해설·방송', admin: '구단 행정', business: '사업', left: '축구계 이탈' }[g.post.path]}</div>
+        {#if g.post.path === 'admin'}<div class="muted">{{ '': '', scout: '스카우트', td: '테크니컬 디렉터', gm: '단장' }[g.post.adminRole]}</div>{/if}
+        <div class="kv"><span>전문성</span><span class="mono">{Math.round(g.post.skill)}</span></div>
+        <div class="kv"><span>평판</span><span class="mono">{Math.round(g.post.rep)}</span></div>
+      {:else if g.phase === 'coach' && g.coach.role === 'national'}
+        <div class="big">{getCountry(g.coach.natCountry).natTeam}</div>
+        <div class="muted">국가대표 감독 · 입지 {Math.round(g.coach.standing)}</div>
+      {:else if club && lg}
+        <div class="big">{club.name}</div>
+        <div class="muted">{lg.ko}{rank ? ` · ${rank}위/${total}팀` : ''}{g.phase === 'coach' && target ? ` · 목표 ${target}위` : ''}</div>
+        {#if g.phase === 'coach'}
+          <div class="kv"><span>직책</span><span>{coachRoleLabel(g.coach.role)}</span></div>
+          <div class="kv"><span>입지</span><span class="mono">{Math.round(g.coach.standing)}</span></div>
+          <div class="kv"><span>임원</span><span>{g.people.director?.name ?? '-'} · {g.people.owner?.name ?? '-'}</span></div>
+        {:else}
+          <div class="kv"><span>감독</span><span title={g.people.coach.en}>{g.people.coach.name}</span></div>
+          <div class="kv"><span>성향</span><span>{g.people.coach.style}</span></div>
+          <div class="kv"><span>역할</span><span>{con ? ROLE_LABEL[con.role] : '유망주'}</span></div>
+          <div class="kv"><span>이번 시즌</span><span class="mono">{cur.apps}경기 {cur.goals}골 {cur.assists}도움 · {cur.starts}선발</span></div>
+        {/if}
+      {:else}
+        <div class="big">무적</div>
+        <div class="muted">새 소속팀을 기다리는 중</div>
+      {/if}
+    </div>
+
+    <div class="col" style="gap:5px">
+      <div class="h">현재 상태</div>
+      {#if g.st.injury}
+        <div class="inj">🩹 {g.st.injury.ko} ({g.st.injury.part}) · 복귀 예정 {retDate}</div>
+      {/if}
+      {#each [['건강', g.st.health, false], ['피로', g.st.fatigue, true], ['폼', Math.min(100, Math.max(0, (form - 4) * 25)), false], ['경기 감각', g.st.sharp, false], ['사기', g.st.morale, false], ['행복', g.st.happy, false], ['스트레스', g.st.stress, true]] as [label, v, inv]}
+        <div class="gr"><span>{label}</span><div class="gauge {tone(v as number, inv as boolean)}"><i style="width:{v}%"></i></div><b class="mono">{label === '폼' ? (form ? form.toFixed(1) : '-') : Math.round(v as number)}</b></div>
+      {/each}
+      <div class="mini-hint">건강 {healthLabel(g.st.health)}{g.st.burnout > 50 ? ' · 번아웃 위험' : ''}</div>
+    </div>
+
+    <div class="col" style="gap:5px">
+      <div class="h">수입 · 자산</div>
+      <div class="kv"><span>연봉</span><span class="mono">{formatKRW(wage)}</span></div>
+      <div class="kv"><span>주급</span><span class="mono">{formatKRW(wage / 52)}</span></div>
+      {#if g.phase === 'pro' && con}<div class="kv"><span>보너스</span><span class="mono">출전 {formatKRW(con.appBonus)} · 득점 {formatKRW(con.goalBonus)}</span></div>{/if}
+      <div class="kv"><span>스폰서</span><span class="mono">{formatKRW(g.fin.sponsorYear)}/년</span></div>
+      <div class="kv"><span>연 소득</span><span class="mono">{formatKRW(g.fin.yearIncome || g.fin.yearIncomeAcc)}</span></div>
+      <div class="kv"><span>시장가치</span><span class="mono">{formatKRW(g.fame.value)}</span></div>
+      <div class="kv"><span>순자산</span><span class="mono up">{formatKRW(netWorth(g))}</span></div>
+      <div class="kv"><span>현금 · 부채</span><span class="mono">{formatKRW(g.fin.cash)}{g.fin.debt ? ` · -${formatKRW(g.fin.debt)}` : ''}</span></div>
+    </div>
+
+    <div class="col" style="gap:5px">
+      <div class="h">계약 상태</div>
+      {#if con && (g.phase === 'pro' || g.phase === 'coach')}
+        <div class="kv"><span>남은 기간</span><span class="mono">{Math.floor(weeksLeft / 52)}년 {Math.round((weeksLeft % 52) / 4.3)}개월</span></div>
+        {#if g.phase === 'pro'}
+          <div class="kv"><span>약속 역할</span><span>{ROLE_LABEL[g.career.promisedRole]}</span></div>
+          <div class="kv"><span>바이아웃</span><span class="mono">{con.buyout ? formatKRW(con.buyout) : '없음'}</span></div>
+          <div class="kv"><span>출전 보너스</span><span class="mono">{cur.apps}경기 / 선발 {cur.starts}</span></div>
+          {#if con.loanFrom}<div class="kv"><span>임대</span><span>{getClub(con.loanFrom).name} 소속</span></div>{/if}
+        {/if}
+        {#if g.life.mil === 'serving'}<div class="tag">병역 이행 중</div>{/if}
+        {#if g.ev.flags.wage_unpaid !== undefined}<div class="tag" style="color:var(--down)">임금 체불 중</div>{/if}
+      {:else if g.phase === 'youth'}
+        <div class="kv"><span>신분</span><span>유스 계약</span></div>
+        <div class="mini-hint">17~19세에 1군 계약 여부가 판정돼요.</div>
+      {:else}
+        <div class="muted">계약 없음</div>
+      {/if}
+      {#if g.nat.caps > 0 || g.nat.youthCaps > 0}
+        <div class="kv"><span>대표팀</span><span class="mono">A매치 {g.nat.caps}경기 {g.nat.goals}골{g.nat.youthCaps ? ` · 연령별 ${g.nat.youthCaps}` : ''}</span></div>
+      {/if}
+    </div>
+  </div>
+</div>
+
+<style>
+  .grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1fr; gap: 16px; padding: 12px 14px; }
+  .h { font-size: 11px; font-weight: 800; color: var(--faint); letter-spacing: 0.05em; }
+  .big { font-size: 17px; font-weight: 800; line-height: 1.2; }
+  .gr { display: grid; grid-template-columns: 56px 1fr 30px; gap: 8px; align-items: center; font-size: 12px; }
+  .gr span { color: var(--muted); }
+  .gr b { text-align: right; }
+  .inj { font-size: 12px; background: color-mix(in srgb, var(--down) 14%, var(--panel)); border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line)); border-radius: 6px; padding: 3px 8px; }
+  .kv { gap: 8px; white-space: nowrap; }
+  .kv span:last-child { text-align: right; }
+  @media (max-width: 1439px) { .grid { grid-template-columns: 1fr 1fr; } }
+</style>
