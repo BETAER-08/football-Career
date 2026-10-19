@@ -236,7 +236,7 @@ export function dueScheduled(s: GameState): EventDef[] {
 }
 
 export const P_CHOICE = { v: 0.13 };
-export const P_PASSIVE = { v: 0.56 };
+export const P_PASSIVE = { v: 0.28 };
 
 export function rollWeekly(s: GameState, rng: Rng): void {
   const phase = s.phase;

@@ -129,9 +129,9 @@ describe('판정식과 이벤트 규칙', () => {
     expect(p.need).toBeLessThanOrEqual(95);
     expect(Array.isArray(p.changes)).toBe(true);
   });
-  it('연간 선택 5~8개, 비선택 20~30개 수준의 밀도', () => {
+  it('연간 선택 5~8개, 비선택은 사용자 요청으로 절반 수준(연 10~16개)의 밀도', () => {
     expect(P_CHOICE.v * 52).toBeGreaterThan(5);
-    expect(P_PASSIVE.v * 52).toBeGreaterThan(20);
+    expect(P_PASSIVE.v * 52).toBeGreaterThan(10);
   });
 });
 
