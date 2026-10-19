@@ -9,7 +9,6 @@
   import ActionPanel from './ActionPanel.svelte';
   import SaveModal from './SaveModal.svelte';
   import { focusList } from '../engine/lifestyle';
-  import Chips from './Chips.svelte';
 
   const g = $derived(store.game!);
 
@@ -40,11 +39,6 @@
     <main class="c"><CenterPanel /></main>
     <aside class="r"><RightPanel /></aside>
   </div>
-  <div class="toasts">
-    {#each store.toasts as t (t.id)}
-      <div class="toast"><span>{t.text}</span>{#if t.chips.length}<Chips chips={t.chips} />{/if}</div>
-    {/each}
-  </div>
 </div>
 
 {#if store.panel === 'log'}
@@ -61,8 +55,6 @@
   .game { height: 100%; display: flex; flex-direction: column; }
   .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 400px; gap: 12px; padding: 12px; }
   .l, .c, .r { min-height: 0; min-width: 0; }
-  .toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; display: flex; flex-direction: column; gap: 6px; align-items: center; z-index: 40; pointer-events: none; }
-  .toast { background: color-mix(in srgb, var(--panel) 92%, #000); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 10px; padding: 7px 14px; font-size: 13px; max-width: 560px; display: flex; gap: 10px; align-items: center; animation: pop 0.25s ease; }
   .banner { background: color-mix(in srgb, var(--amber) 18%, var(--panel)); padding: 6px 16px; font-size: 13px; border-bottom: 1px solid var(--line); }
   :global(.app.compact) .cols { grid-template-columns: 320px minmax(0, 1fr) 340px; gap: 8px; padding: 8px; }
 </style>
