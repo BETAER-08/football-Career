@@ -30,6 +30,16 @@ export function levelWeights(code: string): Record<number, number> {
   return w;
 }
 
+export const START_BOOST: Record<number, number> = { 2: 0.5, 3: 0.8, 4: 1.3, 5: 2, 6: 2.6 };
+
+export function startWeights(code: string): Record<number, number> {
+  const w = levelWeights(code);
+  const out: Record<number, number> = {};
+  for (const k of Object.keys(w)) out[Number(k)] = w[Number(k)] * (START_BOOST[Number(k)] ?? 1);
+  if (code === 'GB' && out[4] !== undefined && out[6] !== undefined) [out[4], out[6]] = [out[6], out[4]];
+  return out;
+}
+
 export function clubWeight(c: ClubStatic): number {
   return Math.pow(c.acad / 50, 2) * (0.5 + c.fin0 / 100);
 }
@@ -46,7 +56,7 @@ export function candidateClubs(code: string, level: number): ClubStatic[] {
 }
 
 export function originIn(rng: Rng, country: string, level?: number): RouletteResult {
-  const lw = levelWeights(country);
+  const lw = startWeights(country);
   const levels = Object.keys(lw).map(Number);
   const forced = level !== undefined && levels.includes(level) ? level : undefined;
   const pool = forced !== undefined ? [forced] : levels;
