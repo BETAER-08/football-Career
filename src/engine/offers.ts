@@ -29,7 +29,7 @@ export function presentOffers(s: GameState, offers: Offer[], ref: string, title:
 export function offerScore(s: GameState, o: Offer): number {
   const lvl = clubLvl(s, o.clubId);
   const roleV = { starter: 3, rotation: 2, prospect: 1, backup: 0 }[o.role];
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   const abroadPenalty = getClub(o.clubId).country !== s.p.country ? (50 - s.hid.adapt) / 40 : 0;
   const loanPenalty = o.loan ? -1.2 : 0;
   const base = lvl * 2.2 + roleV * (age <= 22 ? 1.6 : 2.2) + Math.log(Math.max(100, o.wage)) * 0.35 - abroadPenalty + loanPenalty - (o.trial ? 0.8 : 0);

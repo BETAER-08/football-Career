@@ -46,7 +46,7 @@ export function canStudy(s: GameState): { ok: boolean; reason: string; key: 'C' 
   if (!key) return { ok: false, reason: '모든 자격증을 취득했다', key };
   if (s.coach.studying) return { ok: false, reason: '이미 과정을 이수 중이다', key };
   if (s.phase === 'pro' || s.phase === 'youth') {
-    if (ageAt(s.p.birth.y, s.week) < 28) return { ok: false, reason: '28세 이상부터 등록할 수 있다', key };
+    if (ageAt(s.p.birth, s.week) < 28) return { ok: false, reason: '28세 이상부터 등록할 수 있다', key };
     if (key !== 'C' && key !== 'B') return { ok: false, reason: '현역 중에는 C·B급만 취득할 수 있다', key };
   }
   if (s.coach.coachSeasons < NEED_SEASONS[key]) return { ok: false, reason: `지도 경력 ${NEED_SEASONS[key]}시즌이 필요하다`, key };
@@ -135,7 +135,7 @@ export function genCoachOffers(s: GameState, rng: Rng, n: number): Offer[] {
       if (r === 'youth') return lastBest === 'none' ? 3 : 0.6;
       if (r === 'assistant') return 2 + (lic >= 2 ? 1 : 0);
       if (r === 'manager') return 1.5 + fame / 40 + (s.coach.assistantSeasons > 0 ? 1.5 : 0);
-      return fame >= 60 ? 0.12 + (fame - 60) / 90 : 0;
+      return fame >= 60 ? 0.17 + (fame - 60) / 90 : 0;
     });
     const role = roles[rng.weightedIndex(wts)];
     if (role === 'national') {
@@ -150,7 +150,7 @@ export function genCoachOffers(s: GameState, rng: Rng, n: number): Offer[] {
     const lw = levels.map((L) => {
       const req = FAME_REQ[L] - (role === 'manager' ? 0 : 8);
       let v = 1 / (1 + Math.exp(-(fame - req) / 6));
-      if (L >= 5) v *= role === 'manager' ? 0.5 : 0.45;
+      if (L >= 5) v *= role === 'manager' ? 0.8 : 0.7;
       if (role === 'manager' && lic === 3 && L > 3) v = 0;
       return v + (L === 2 ? 0.03 : 0);
     });

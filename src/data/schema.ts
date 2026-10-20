@@ -34,6 +34,8 @@ export const LeagueSchema = z.object({
   up: z.number().int().min(0),
   down: z.number().int().min(0),
   elite: z.number().int().min(0).default(0),
+  cal: z.enum(['aw', 'sa']).default('aw'),
+  winterBreak: z.boolean().default(false),
   cup: z.string(),
   clubs: z.string().min(3)
 });
@@ -79,6 +81,11 @@ export const EventSchema = z
     cooldown: z.number().int().min(0).default(0),
     max: z.number().int().min(1).default(1),
     group: z.string().optional(),
+    exclusiveGroup: z.string().optional(),
+    tier: z.enum(['major', 'minor']).optional(),
+    again: z.string().optional(),
+    textBad: z.array(z.string()).optional(),
+    fxBad: z.string().optional(),
     note: z.string().optional(),
     text: z.array(z.string()).min(2),
     fx: z.string().optional(),
@@ -118,7 +125,8 @@ export const ActionSchema = z.object({
   worst: OutcomeSchema.optional(),
   handler: z.string().optional(),
   confirm: z.boolean().optional(),
-  param: z.enum(['amount']).optional()
+  param: z.enum(['amount']).optional(),
+  diminish: z.number().min(0).max(0.5).optional()
 });
 export type RawAction = z.input<typeof ActionSchema>;
 export type ActionDef = z.infer<typeof ActionSchema>;

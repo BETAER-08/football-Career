@@ -1,36 +1,33 @@
 <script lang="ts">
   import { store } from './store.svelte';
-  import { loadArchive, removeArchive, type ArchiveEntry } from './save';
-  import type { GameState } from '../engine/types';
+  import { loadArchive, removeArchive, isCurrent, exportEntry, type AnyEntry } from './save';
   import { getCountry } from '../engine/data';
 
-  let list = $state<ArchiveEntry[]>(loadArchive());
+  let list = $state<AnyEntry[]>(loadArchive());
 
-  function open(e: ArchiveEntry) {
-    const g = JSON.parse(e.state) as GameState;
-    store.game = g;
-    store.archived = true;
-    store.baseline = e.baseline ?? [];
-    store.screen = 'end';
-  }
   function del(id: string) {
     removeArchive(id);
     list = loadArchive();
+  }
+  function exp(e: AnyEntry) {
+    store.downloadText(exportEntry(e), `태어난김에축구_보관_${e.name ?? e.id}.json`);
   }
 </script>
 
 <div class="vault">
   <div class="panel box">
-    <div class="panel-h">지난 커리어 보관함 <span class="faint" style="font-weight:500">최대 50개</span><span class="spacer"></span><button class="btn sm" onclick={() => (store.screen = 'menu')}>메인 메뉴</button></div>
+    <div class="panel-h">지난 커리어 보관함 <span class="faint" style="font-weight:500">최대 50개 · 항목당 약 30KB 이하</span><span class="spacer"></span><button class="btn sm" onclick={() => (store.screen = 'menu')}>메인 메뉴</button></div>
     <div class="panel-b scroll col" style="gap:8px;max-height:70vh">
       {#each list as e (e.id)}
         <div class="it">
-          <div class="gr">{e.playerGrade === '프로 데뷔 실패' ? '실패' : e.playerGrade}</div>
+          <div class="gr">{(e.playerGrade ?? '-') === '프로 데뷔 실패' ? '실패' : (e.playerGrade ?? '-')}</div>
           <div class="grow col" style="gap:1px">
-            <b>{e.name} <span class="faint" style="font-weight:500">{getCountry(e.country).flag} {getCountry(e.country).ko} · {e.birthYear}년생 · {e.startClub}</span></b>
-            <span class="muted" style="font-size:12.5px">{e.summary}{e.coachGrade ? ` · 지도자 ${e.coachGrade}` : ''} · 운명 코드 <span class="mono">{e.code}</span></span>
+            <b>{e.name ?? '이름 없음'} <span class="faint" style="font-weight:500">{e.country ? `${getCountry(e.country).flag} ${getCountry(e.country).ko}` : ''}{e.birthYear ? ` · ${e.birthYear}년생` : ''}{e.startClub ? ` · ${e.startClub}` : ''}</span></b>
+            <span class="muted" style="font-size:12.5px">{e.summary ?? ''}{e.coachGrade ? ` · 지도자 ${e.coachGrade}` : ''}{e.code ? ' · 운명 코드 ' : ''}<span class="mono">{e.code ?? ''}</span></span>
+            {#if !isCurrent(e)}<span class="old">이전 버전 보관 항목이라 열람할 수 없어요. 내보내기만 가능합니다.</span>{/if}
           </div>
-          <button class="btn sm" onclick={() => open(e)}>다시 보기</button>
+          {#if isCurrent(e)}<button class="btn sm" onclick={() => store.showEntry(e)}>다시 보기</button>{/if}
+          <button class="btn sm" onclick={() => exp(e)}>내보내기</button>
           <button class="btn sm danger" onclick={() => del(e.id)}>삭제</button>
         </div>
       {:else}
@@ -42,7 +39,8 @@
 
 <style>
   .vault { height: 100%; display: grid; place-items: center; }
-  .box { width: 840px; max-width: 94vw; }
-  .it { display: flex; gap: 12px; align-items: center; padding: 8px 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; }
+  .box { width: 880px; max-width: 94vw; }
+  .it { display: flex; gap: 10px; align-items: center; padding: 8px 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; }
   .gr { width: 56px; text-align: center; font-size: 22px; font-weight: 900; color: var(--amber); }
+  .old { font-size: 12px; color: var(--amber); }
 </style>

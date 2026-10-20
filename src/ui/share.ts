@@ -1,48 +1,23 @@
-import type { GameState } from '../engine/types';
-import { getClub, getCountry } from '../engine/data';
-import { formatKRW, netWorth } from '../engine/finance';
-import { coachGrade } from '../engine/scoring';
+import { getCountry } from '../engine/data';
+import { formatKRW } from '../engine/finance';
+import type { EndData } from '../engine/enddata';
 
-export interface EndSummary {
-  grade: string;
-  percentile: number;
-  coachGrade: string;
-  apps: number;
-  goals: number;
-  assists: number;
-  avg: number;
-  trophies: number;
-  awards: number;
-  clubs: string[];
-  caps: number;
-}
-
-export function summarize(s: GameState, grade: string, percentile: number): EndSummary {
-  const all = s.career.seasons;
-  let apps = 0, goals = 0, assists = 0, rs = 0, rn = 0;
-  for (const r of all) { apps += r.apps; goals += r.goals; assists += r.assists; rs += r.ratingSum; rn += r.ratingN; }
-  const clubs: string[] = [];
-  for (const h of s.career.clubsHist) { const n = getClub(h.clubId).name; if (!clubs.includes(n)) clubs.push(n); }
-  return {
-    grade, percentile, coachGrade: s.coach.entered && s.coach.recs.length ? coachGrade(s.coach.peakFame) : '', apps, goals, assists, avg: rn ? rs / rn : 0,
-    trophies: s.career.trophies.length + s.coach.trophies.length, awards: s.career.awards.length, clubs, caps: s.nat.caps
-  };
-}
-
-export function summaryText(s: GameState, sum: EndSummary): string {
-  const c = getCountry(s.p.country);
+export function summaryText(d: EndData): string {
+  const c = getCountry(d.country);
   const lines = [
-    `⚽ 태어난 김에 축구 — ${s.p.name} (${c.flag} ${c.ko}, ${s.p.birth.y}년생)`,
-    `시작: ${getClub(s.p.startClubId).name} · 선수 등급 ${sum.grade}${sum.percentile ? ` (같은 출발선 상위 ${Math.max(1, Math.round(100 - sum.percentile))}%)` : ''}${sum.coachGrade ? ` · 지도자 ${sum.coachGrade}` : ''}`,
-    `통산 ${sum.apps}경기 ${sum.goals}골 ${sum.assists}도움 · 평균 평점 ${sum.avg ? sum.avg.toFixed(2) : '-'} · A매치 ${sum.caps}`,
-    `트로피 ${sum.trophies} · 개인상 ${sum.awards} · 최종 순자산 ${formatKRW(netWorth(s))}`,
-    `거친 구단: ${sum.clubs.slice(0, 6).join(' → ')}${sum.clubs.length > 6 ? ' …' : ''}`,
-    `운명 코드: ${s.cfg.seed}`
+    `⚽ 태어난 김에 축구 — ${d.name} (${c.flag} ${c.ko}, ${d.birthYear}년생)`,
+    `시작: ${d.startClub} · 선수 등급 ${d.grade}${d.percentile ? ` (같은 출발선 상위 ${Math.max(1, Math.round(100 - d.percentile))}%)` : ''}${d.coachGrade ? ` · 지도자 ${d.coachGrade}` : ''}`,
+    `통산 ${d.apps}경기 ${d.goals}골 ${d.assists}도움 · 평균 평점 ${d.avg ? d.avg.toFixed(2) : '-'} · A매치 ${d.caps}`,
+    `트로피 ${d.trophies.length + d.coachTrophies.length} · 개인상 ${d.awards.length} · 최종 순자산 ${formatKRW(d.netWorth)}`,
+    `거친 구단: ${d.clubNames.slice(0, 6).join(' → ')}${d.clubNames.length > 6 ? ' …' : ''}`
   ];
+  if (d.dream.id) lines.push(`인생의 꿈: ${d.dream.label} — ${d.dream.achieved ? '이뤘다' : '이루지 못했다'}`);
+  if (d.epilogue) lines.push(`은퇴 후: ${d.epilogue.milestones.length}/4 이정표 · ${d.epilogue.years}년`);
+  lines.push(`운명 코드: ${d.seed}`);
   return lines.join('\n');
 }
 
-export function renderShareCard(s: GameState, sum: EndSummary, cv: HTMLCanvasElement): void {
+export function renderShareCard(d: EndData, cv: HTMLCanvasElement): void {
   const W = 1200;
   const H = 630;
   cv.width = W;
@@ -61,19 +36,24 @@ export function renderShareCard(s: GameState, sum: EndSummary, cv: HTMLCanvasEle
   g.fillText('태어난 김에 축구', 56, 70);
   g.fillStyle = '#e7eaf2';
   g.font = '800 64px Pretendard, sans-serif';
-  g.fillText(s.p.name, 56, 160);
-  const c = getCountry(s.p.country);
+  g.fillText(d.name, 56, 160);
+  const c = getCountry(d.country);
   g.fillStyle = '#8d96ab';
   g.font = '500 26px Pretendard, sans-serif';
-  g.fillText(`${c.flag} ${c.ko} · ${s.p.birth.y}년생 · ${getClub(s.p.startClubId).name}에서 출발`, 56, 205);
+  g.fillText(`${c.flag} ${c.ko} · ${d.birthYear}년생 · ${d.startClub}에서 출발`, 56, 205);
   g.fillStyle = '#ffb84d';
   g.font = '800 150px Pretendard, sans-serif';
-  g.fillText(sum.grade, 56, 370);
+  g.fillText(d.grade, 56, 370);
   g.fillStyle = '#e7eaf2';
   g.font = '600 28px Pretendard, sans-serif';
-  g.fillText(sum.percentile ? `같은 출발선 상위 ${Math.max(1, Math.round(100 - sum.percentile))}%` : '프로 데뷔에는 이르지 못했어요', 56, 412);
-  if (sum.coachGrade) g.fillText(`지도자 등급 ${sum.coachGrade}`, 56, 450);
-  const stats = [['경기', sum.apps], ['골', sum.goals], ['도움', sum.assists], ['트로피', sum.trophies], ['개인상', sum.awards], ['A매치', sum.caps]];
+  g.fillText(d.percentile ? `같은 출발선 상위 ${Math.max(1, Math.round(100 - d.percentile))}%` : '프로 데뷔에는 이르지 못했어요', 56, 412);
+  if (d.coachGrade) g.fillText(`지도자 등급 ${d.coachGrade}`, 56, 450);
+  if (d.dream.id) {
+    g.fillStyle = d.dream.achieved ? '#3ddc84' : '#8d96ab';
+    g.font = '600 24px Pretendard, sans-serif';
+    g.fillText(`꿈: ${d.dream.label} ${d.dream.achieved ? '✓' : '✗'}`, 56, 488);
+  }
+  const stats: [string, number][] = [['경기', d.apps], ['골', d.goals], ['도움', d.assists], ['트로피', d.trophies.length + d.coachTrophies.length], ['개인상', d.awards.length], ['A매치', d.caps]];
   stats.forEach(([k, v], i) => {
     const x = 640 + (i % 3) * 180;
     const y = 120 + Math.floor(i / 3) * 120;
@@ -84,20 +64,19 @@ export function renderShareCard(s: GameState, sum: EndSummary, cv: HTMLCanvasEle
     g.fillText(String(v), x + 16, y + 56);
     g.fillStyle = '#8d96ab';
     g.font = '500 20px Pretendard, sans-serif';
-    g.fillText(String(k), x + 16, y + 86);
+    g.fillText(k, x + 16, y + 86);
   });
   g.fillStyle = '#8d96ab';
   g.font = '500 22px Pretendard, sans-serif';
-  g.fillText(`거친 구단: ${sum.clubs.slice(0, 5).join(' → ')}${sum.clubs.length > 5 ? ' …' : ''}`, 640, 400);
-  g.fillText(`최종 순자산 ${formatKRW(netWorth(s))}`, 640, 436);
-  const total = Math.max(1, s.hist.length + 1);
+  g.fillText(`거친 구단: ${d.clubNames.slice(0, 5).join(' → ')}${d.clubNames.length > 5 ? ' …' : ''}`, 640, 400);
+  g.fillText(`최종 순자산 ${formatKRW(d.netWorth)}`, 640, 436);
+  const total = Math.max(1, d.seasons.length + 1);
   const cw = Math.min(26, (W - 112) / total);
-  for (let i = 0; i < s.hist.length; i++) {
-    const rec = s.career.seasons.filter((r) => r.s === s.hist[i].s).pop();
-    g.fillStyle = rec ? `hsl(${getClub(rec.clubId).color} 55% 42%)` : 'rgba(255,255,255,0.08)';
+  d.seasons.forEach((r, i) => {
+    g.fillStyle = r[15] >= 0 ? `hsl(${r[15]} 55% 42%)` : 'rgba(255,255,255,0.08)';
     g.fillRect(56 + i * (cw + 2), 520, cw, cw);
-  }
+  });
   g.fillStyle = '#5f687c';
   g.font = '500 20px IBM Plex Mono, monospace';
-  g.fillText(`FATE CODE ${s.cfg.seed}`, 56, 600);
+  g.fillText(`FATE CODE ${d.seed}`, 56, 600);
 }

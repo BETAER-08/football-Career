@@ -25,7 +25,7 @@ export function currentWage(s: GameState): number {
 
 export function marketValue(s: GameState): number {
   const ovr = curOvr(s.ab);
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   let lvl = 2;
   let std = 47;
   if (s.career.clubId) {
@@ -58,7 +58,7 @@ export function weeklyFinance(s: GameState, rng: Rng): void {
   let cost = (LIVING_COST[f.livingTier] * pf) / 52;
   if (f.housing === 'rent') cost += (1200 * pf) / 52;
   if (f.housing === 'dorm') cost *= 0.4;
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   if (age < 18) cost = 0;
   cost = Math.min(cost, Math.max(f.cash > 100 ? (150 * pf) / 52 : 0, net * 0.7));
   cost += f.familySupport / 52;

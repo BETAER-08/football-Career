@@ -5,13 +5,8 @@
   let msg = $state('');
 
   function download() {
-    const blob = new Blob([store.exportText()], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
     const g = store.game;
-    a.download = `태어난김에축구_${g ? g.p.name : 'save'}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    store.downloadText(store.exportText(), `태어난김에축구_${g ? g.p.name : 'save'}.json`);
     msg = '저장 파일을 내보냈어요.';
   }
   function copy() {
@@ -19,9 +14,9 @@
     navigator.clipboard?.writeText(text).then(() => (msg = '클립보드에 복사했어요.'), () => (msg = '아래 텍스트를 직접 복사해 주세요.'));
   }
   function doImport() {
-    if (store.importText(text)) {
-      store.panel = '';
-    } else msg = '저장 파일을 읽을 수 없어요.';
+    const r = store.importText(text);
+    if (!r) store.panel = '';
+    else msg = r;
   }
   function onFile(e: Event) {
     const f = (e.target as HTMLInputElement).files?.[0];

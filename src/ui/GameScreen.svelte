@@ -8,6 +8,9 @@
   import LifeLog from './LifeLog.svelte';
   import ActionPanel from './ActionPanel.svelte';
   import SaveModal from './SaveModal.svelte';
+  import SeasonReview from './SeasonReview.svelte';
+  import BallonCeremony from './BallonCeremony.svelte';
+  import TableModal from './TableModal.svelte';
   import { focusList } from '../engine/lifestyle';
 
   const g = $derived(store.game!);
@@ -23,7 +26,10 @@
     else if (e.key === 'f' || e.key === 'F') store.cycleFocus(focusList(g.phase).map((x) => x.id));
     else if (e.key === 'a' || e.key === 'A') store.panel = store.panel === 'money' ? '' : 'money';
     else if (e.key === 'l' || e.key === 'L') store.panel = store.panel === 'log' ? '' : 'log';
-    else if (e.key === 'Escape') store.panel = '';
+    else if (e.key === 'Escape') {
+      store.panel = '';
+      store.tableOpen = false;
+    }
   }
   onMount(() => {
     window.addEventListener('keydown', onKey);
@@ -33,7 +39,7 @@
 
 <div class="game">
   <TopBar />
-  {#if store.banner}<div class="banner">{store.banner} <button class="btn sm" onclick={() => (store.banner = '')}>닫기</button></div>{/if}
+  {#if store.banner}<div class="banner">{store.banner} {#if store.bannerExport}<button class="btn sm primary" onclick={() => store.exportNow()}>지금 내보내기</button>{/if} <button class="btn sm" onclick={() => { store.banner = ''; store.bannerExport = false; }}>닫기</button></div>{/if}
   <div class="cols">
     <aside class="l"><LeftPanel /></aside>
     <main class="c"><CenterPanel /></main>
@@ -50,6 +56,9 @@
   </div>
 {/if}
 {#if store.panel === 'saves'}<SaveModal />{/if}
+{#if store.reviewOpen}<SeasonReview />{/if}
+{#if store.ceremonyOpen && !store.reviewOpen}<BallonCeremony />{/if}
+{#if store.tableOpen}<TableModal />{/if}
 
 <style>
   .game { height: 100%; display: flex; flex-direction: column; }

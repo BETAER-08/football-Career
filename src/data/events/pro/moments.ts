@@ -25,7 +25,7 @@ export const moments: RawEvent[] = [
   ], { cond: ['pos:ST|LW|RW|AM|CM'], max: 8 }),
   mo('m_derby_b', 'derby', P, ['더비 매치. 상대 팬들의 야유가 거세다. 이런 분위기에서 한 번의 터치가 승패를 가를 수 있다.', '더비전의 열기가 최고조에 달했다. 상대 에이스를 막아 세워야 하는 순간이 다가왔다.'], [
     cc('몸싸움을 걸어 흐름을 끊는다', ['적극적인 몸싸움으로 상대의 템포를 흔들었다.', 'rating+0.2'], { chk: '45 attr.aggression*1.5 attr.strength*1.5 attr.tackling*1.5', great: ['과감한 압박으로 공을 빼앗아 팀 공격의 기점이 됐다.', 'rating+0.9 rel.fans+4 morale+5'], bad: ['과한 반칙으로 경고를 받았다.', 'rating-0.4 rel.coach-1'] }),
-    cc('침착하게 자리를 지킨다', ['규율을 지키며 수비 블록을 유지했다.', 'rating+0.3 rel.coach+1'])
+    cc('침착하게 자리를 지킨다', ['규율을 지키며 수비 블록을 유지했다.', 'rating+0.3 rel.coach+1 morale-1 fameD-0.1'])
   ], { cond: ['pos:CB|DM|LB|RB|GK'], max: 8 }),
   mo('m_final_att', 'final', P, ['결승전. 한 점 차 승부, 경기 종료 직전 상대 문전에서 기회가 왔다. 마지막 장면이 될지도 모른다.', '결승 연장 후반. 상대 골키퍼와 단둘이 마주했다. 숨소리조차 들리지 않는다.'], [
     cc('강하게 마무리한다', ['모든 힘을 오른발에 실었다.', 'rating+0.1'], { chk: '42 attr.finishing*2.5 attr.composure*2 hid.bigGame*0.35', great: ['공이 그물을 흔들었다! 결승골. 모든 순간이 슬로모션처럼 흘렀다.', 'goal+1 rating+1.4 fameD+3 rel.fans+10 morale+12'], bad: ['슛이 골대를 비껴갔다. 고개를 떨궜다.', 'rating-0.4 morale-6 stress+4'] }),
@@ -50,7 +50,7 @@ export const moments: RawEvent[] = [
   ], { cond: ['pos:GK'], max: 12, note: 'shootout' }),
   mo('m_relegation_a', 'relegation', P, ['강등 결정전. 이기면 생존, 지면 강등이다. 후반 중반 흔들리는 분위기 속에서 {name}에게 공이 왔다.', '잔류를 건 마지막 경기. 관중의 불안한 침묵이 경기장을 뒤덮었다.'], [
     cc('팀을 이끌며 앞으로 나선다', ['과감히 전진하며 공격을 풀어 나갔다.', 'rating+0.1'], { chk: '48 attr.leadership*1.5 hid.bigGame*0.3 attr.composure*1', great: ['{name}의 한 방이 분위기를 바꿨다. 팀이 승리를 가져왔다.', 'rating+1.1 rel.fans+8 morale+9 fameD+1'], bad: ['무리한 전진이 역습의 빌미가 됐다.', 'rating-0.5 morale-5 stress+5'] }),
-    cc('수비적으로 안정을 찾는다', ['실수를 줄이고 팀의 안정을 우선했다.', 'rating+0.3 rel.coach+1'])
+    cc('수비적으로 안정을 찾는다', ['실수를 줄이고 팀의 안정을 우선했다.', 'rating+0.3 rel.coach+1 morale-1 fameD-0.1'])
   ], { max: 6 }),
   mo('m_relegation_b', 'relegation', P, ['생존이 걸린 마지막 경기. 후반 막판 프리킥이 주어졌다. 득점하면 극적인 잔류다.', '강등권 탈출 마지막 기회. 세트피스에서 키커로 지명됐다.'], [
     cc('직접 슈팅을 시도한다', ['공을 놓고 수비벽을 응시했다.', 'rating+0.1'], { chk: '36 attr.freeKicks*2.5 attr.composure*1.5 hid.bigGame*0.3', great: ['공이 수비벽을 넘어 골망을 흔들었다! 잔류가 확정됐다.', 'goal+1 rating+1.3 fameD+2 rel.fans+10 morale+12'], bad: ['공이 벽에 막혔다. 마지막 기회가 사라졌다.', 'rating-0.4 morale-6'] }),
@@ -58,10 +58,10 @@ export const moments: RawEvent[] = [
   ], { cond: ['!pos:GK'], max: 6 }),
   mo('m_intl_debut_a', 'intl_debut', P, ['대표팀 데뷔전. 애국가가 울려 퍼진다. 가슴에 새겨진 엠블럼이 무겁게 느껴졌다. 첫 터치가 {name}의 대표팀 커리어를 결정한다.', '처음으로 {nat} 유니폼을 입고 그라운드에 섰다. 관중의 함성이 몸을 울린다.'], [
     cc('과감하게 첫 슈팅을 노린다', ['첫 기회에서 망설이지 않았다.', 'rating+0.1'], { chk: '42 attr.shooting*2 attr.composure*2 hid.bigGame*0.3', great: ['공이 골망을 갈랐다! 대표팀 데뷔골이다.', 'goal+1 rating+1.3 fameD+2 morale+10'], bad: ['공이 골대를 벗어났다. 조금 더 침착해야 했다.', 'rating-0.3 morale-3'] }),
-    cc('팀 플레이에 집중한다', ['단순하고 정확한 플레이로 기본에 충실했다.', 'rating+0.4 rel.natcoach+2'])
+    cc('팀 플레이에 집중한다', ['단순하고 정확한 플레이로 기본에 충실했다.', 'rating+0.4 rel.natcoach+2 morale-1 fameD-0.2'])
   ], { cond: ['pos:ST|LW|RW|AM|CM'], max: 1 }),
   mo('m_intl_debut_b', 'intl_debut', P, ['대표팀 데뷔전. 수비진의 일원으로 첫 경기에 나섰다. 상대 공격수의 속도가 낯설다.', '{nat} 유니폼을 입고 서는 수비 라인. 모든 판단이 국제 경기의 무게로 다가온다.'], [
     cc('적극적인 대인 마크를 시도한다', ['과감하게 몸을 붙였다.', 'rating+0.1'], { chk: '45 attr.marking*2.5 attr.tackling*1.5 hid.bigGame*0.2', great: ['상대 에이스를 완벽히 봉쇄했다. 대표팀 감독이 엄지를 세웠다.', 'rating+1 rel.natcoach+6 fameD+1.5'], bad: ['한 번 뚫리며 위기를 허용했다.', 'rating-0.4'] }),
-    cc('안정적으로 라인을 지킨다', ['실수를 줄이고 라인을 정돈했다.', 'rating+0.4 rel.natcoach+2'])
+    cc('안정적으로 라인을 지킨다', ['실수를 줄이고 라인을 정돈했다.', 'rating+0.4 rel.natcoach+2 morale-1 fameD-0.2'])
   ], { cond: ['pos:CB|LB|RB|DM|GK'], max: 1 })
 ];

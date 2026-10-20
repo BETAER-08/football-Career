@@ -5,7 +5,11 @@
   import { getClub, getCountry } from '../engine/data';
   import { academyGrade } from '../engine/data';
   import { drawAvatar } from './pixel/avatar';
-  import { mrz, seed32 } from './format';
+  import { mrz, seed32, ageOf } from './format';
+  import { DREAM_LABEL } from '../engine/goals';
+  import type { DreamId } from '../engine/types';
+
+  const DREAMS: [DreamId, string][] = [['legend', '고향 팀의 레전드가 되고 싶다'], ['bigstarter', '빅리그의 주전이 되고 싶다'], ['national', '국가대표 유니폼을 입고 싶다'], ['ballon', '발롱도르를 들어 올리고 싶다'], ['rich', '돈 걱정 없이 살고 싶다']];
 
   let { s, revealStep = 99 }: { s: GameState; revealStep?: number } = $props();
   let cv: HTMLCanvasElement | undefined = $state();
@@ -32,7 +36,7 @@
       <div class="photo"><canvas bind:this={cv} width="96" height="96" class="pixel"></canvas></div>
       <div class="col grow" style="gap:2px">
         <div class="name">{s.p.name} <span class="en" title="원어 표기">{s.p.en}</span></div>
-        <div class="muted">{s.p.birth.y}.{String(s.p.birth.m).padStart(2, '0')}.{String(s.p.birth.d).padStart(2, '0')}생 · 12세 · {country.flag} {country.ko}</div>
+        <div class="muted">{s.p.birth.y}.{String(s.p.birth.m).padStart(2, '0')}.{String(s.p.birth.d).padStart(2, '0')}생 · {ageOf(s)}세 · {country.flag} {country.ko}</div>
         <div class="muted">고향 {s.p.hometown}{s.p.dorm ? ' · 유스 숙소 생활' : ' · 집에서 통학'}</div>
         <div class="muted">{POS_LABEL[s.ab.pos]} · {footLabel[s.p.foot]}잡이 · {growLabel[s.p.growth]} · {s.p.build} 체형</div>
       </div>
@@ -57,7 +61,7 @@
     {/if}
     {#if revealStep >= 3}
       <div class="sect reveal" style="--d:0ms">
-        <b>구단 · {club.name}</b>
+        <b>구단 · {club.name} U15</b>
         <div class="kv"><span>연고 · 아카데미 등급 · 시설</span><span>{club.city} · {academyGrade(club.acad)}등급 · {club.facil}점</span></div>
         <div class="kv"><span>유스 감독</span><span title={s.people.coach.en}>{s.people.coach.name} · {s.people.coach.style}</span></div>
         <div class="kv"><span>동기</span><span>{kids.map((k) => `${s.people[k].name} (${s.people[k].pos})`).join(' · ')}</span></div>
@@ -73,6 +77,14 @@
       <div class="sect reveal" style="--d:0ms">
         <b>입단 전 이야기</b>
         <ul>{#each s.p.story as line}<li>{line.replaceAll('{name}', s.p.name)}</li>{/each}</ul>
+      </div>
+      <div class="sect reveal" style="--d:0ms">
+        <b>인생의 꿈 <span class="faint" style="font-weight:500">하나만 고르세요 · 종료 화면에서 이뤘는지 판정해요</span></b>
+        <div class="dreams">
+          {#each DREAMS as [id, label]}
+            <button class="dream" class:on={s.dream === id} onclick={() => (s.dream = id)} title={DREAM_LABEL[id]}>{label}</button>
+          {/each}
+        </div>
       </div>
     {/if}
   </div>
@@ -90,6 +102,10 @@
   .sect { display: flex; flex-direction: column; gap: 3px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 12.5px; }
   .reveal { animation: pop 0.4s ease both; }
   ul { margin: 0; padding-left: 18px; color: var(--muted); }
+  .dreams { display: flex; flex-direction: column; gap: 5px; }
+  .dream { text-align: left; padding: 6px 10px; border: 1px solid var(--line); background: var(--panel2); border-radius: 8px; cursor: pointer; font-size: 12.5px; }
+  .dream:hover { border-color: var(--faint); }
+  .dream.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel2)); font-weight: 700; }
   .rumor { color: var(--amber); font-style: italic; }
   .mrz { padding: 6px 16px 10px; font-size: 12px; letter-spacing: 0.1em; color: var(--faint); background: var(--bg2); border-top: 1px solid var(--line); line-height: 1.3; word-break: break-all; }
 </style>

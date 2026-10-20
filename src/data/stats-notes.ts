@@ -10,6 +10,7 @@ const raw: StatNote[] = [
   { id: 'inj_early', text: '조기 복귀는 재발 위험을 높이는 것으로 알려져 있습니다.', est: true },
   { id: 'inj_concussion', text: '뇌진탕은 축구에서 드물지 않으며 충분한 휴식이 권고됩니다.', est: true },
   { id: 'youth_rate', text: '프로 아카데미 입단자 중 성인 프로에 데뷔하는 비율은 대체로 10~25% 수준입니다. (이 게임에서는 게임성을 위해 높게 보정됨)', est: true },
+  { id: 'youth_stage', text: '아카데미는 대개 U15, U17, U19처럼 연령대 팀으로 운영되며 시즌 말마다 승급·잔류·방출을 심사합니다. 16세 무렵에는 장학 계약(유스 계약)이 이어지는 경우가 많습니다.', est: true },
   { id: 'relative_age', text: '유스 선발에서는 생월이 빠른 선수가 유리한 상대 연령 효과가 알려져 있습니다.', est: true },
   { id: 'late_bloom', text: '성장 곡선이 늦은 선수는 십대에는 밀려도 성인이 되며 따라잡는 경우가 있습니다.', est: true },
   { id: 'retire_age', text: '프로 데뷔자의 평균 은퇴 나이는 31~35세로 알려져 있습니다.', est: true },

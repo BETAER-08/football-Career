@@ -81,7 +81,7 @@ export function autoDecide(s: GameState, rng: Rng, d: Decision): { idx: number; 
 export function autoFocus(s: GameState, rng: Rng): string {
   const list = focusList(s.phase).map((f) => f.id);
   const has = (id: string) => list.includes(id);
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   if (s.phase === 'youth' || s.phase === 'pro') {
     if (s.st.stress > 72 && has('rest')) return 'rest';
     if (s.st.fatigue > 78 && has('recover')) return 'recover';
@@ -109,8 +109,8 @@ export function autoActionId(s: GameState, rng: Rng): { id: string; amount: numb
     if (s.phase === 'pro' && s.fin.cash > Math.max(3000, wage * 1.3) && rng.next() < 0.35) return { id: 'invest_deposit', amount: Math.round(s.fin.cash * 0.4) };
     if (s.phase === 'pro' && s.st.injury && s.st.injury.weeksLeft >= 3 && rng.next() < 0.3) return { id: 'checkup', amount: 0 };
     if (s.st.stress > 78 && rng.next() < 0.5) return { id: 'vacation', amount: 0 };
-    if (s.phase === 'pro' && ageAt(s.p.birth.y, s.week) >= 28 && s.coach.licenses.C === 0 && s.coach.studying === '' && s.hid.ambition > 45 && rng.next() < 0.12) return { id: 'coach_license', amount: 0 };
-    if (s.phase === 'pro' && !s.coach.studying && s.coach.licenses.C && !s.coach.licenses.B && ageAt(s.p.birth.y, s.week) >= 30 && rng.next() < 0.1) return { id: 'coach_license', amount: 0 };
+    if (s.phase === 'pro' && ageAt(s.p.birth, s.week) >= 28 && s.coach.licenses.C === 0 && s.coach.studying === '' && s.hid.ambition > 45 && rng.next() < 0.12) return { id: 'coach_license', amount: 0 };
+    if (s.phase === 'pro' && !s.coach.studying && s.coach.licenses.C && !s.coach.licenses.B && ageAt(s.p.birth, s.week) >= 30 && rng.next() < 0.1) return { id: 'coach_license', amount: 0 };
   } else if (s.phase === 'coach') {
     if (!s.coach.studying && licenseLevel(s) < 4 && rng.next() < 0.1) return { id: 'coach_license', amount: 0 };
   }

@@ -64,7 +64,7 @@ export const careerActions: RawAction[] = [
     worst: { t: '농담 한 마디가 비난 여론으로 번졌다. 구단이 해명 자료까지 냈다.', fx: 'rel.media-10 rel.fans-8 rel.coach-4 stress+8' }
   },
   {
-    id: 'sns_post', group: 'career', label: 'SNS 게시', desc: '근황을 올려 팔로워를 늘린다. 논란 성향이 있으면 위험하다.', phase: PRO, cond: ['age>=15'], cooldown: 4, pv: '팔로워↑ 팬 관계 변동',
+    id: 'sns_post', group: 'career', label: 'SNS 게시', desc: '근황을 올려 팔로워를 늘린다. 논란 성향이 있으면 위험하다.', phase: PRO, cond: ['age>=15'], cooldown: 8, diminish: 0.2, pv: '팔로워↑ 팬 관계 변동',
     check: '66 hid.controversy*-0.35 hid.pro*0.1',
     great: { t: '훈련 영상 한 편이 크게 퍼졌다. 팔로워가 눈에 띄게 늘었다.', fx: 'followers+30 rel.fans+3' },
     ok: { t: '게시물에 응원 댓글이 달렸다.', fx: 'followers+8' },
@@ -83,11 +83,11 @@ export const careerActions: RawAction[] = [
     handler: 'declineNat', ok: { t: '협회에 소집 고사 의사를 전달했다. 구단 일정과 몸 상태를 우선하기로 했다.', fx: 'fatigue-5 rel.natcoach-5 rel.coach+2' }
   },
   {
-    id: 'coach_license', group: 'career', label: '지도자 자격증 과정 등록', desc: '지도자의 길을 위한 자격증 과정에 등록한다. 현역 중에는 28세 이상, C·B급만 가능하다.', phase: ['youth', 'pro', 'coach', 'postcareer'], cond: [], cooldown: 4, cost: 400, pv: '자격증 취득 확률 약 35~85%',
+    id: 'coach_license', group: 'career', label: '지도자 자격증 과정 등록', desc: '지도자의 길을 위한 자격증 과정에 등록한다. 현역 중에는 28세 이상, C·B급만 가능하다.', phase: ['youth', 'pro', 'coach', 'postcareer'], cond: ['licenseAge>=28'], cooldown: 4, cost: 400, pv: '자격증 취득 확률 약 35~85%',
     handler: 'coachLicense', ok: { t: '지도자 자격증 과정에 등록했다. 교재 첫 장부터 낯선 용어가 쏟아졌다.', fx: 'stress+2' }
   },
   {
-    id: 'retire_now', group: 'career', label: '은퇴 선언', desc: '언제든 현역에서 물러날 수 있다. 되돌릴 수 없다.', phase: ['youth', 'pro'], cond: ['age>=15'], cooldown: 0, confirm: true, pv: '선수 생활 종료',
+    id: 'retire_now', group: 'career', label: '은퇴 선언', desc: '언제든 현역에서 물러날 수 있다. 되돌릴 수 없다.', phase: ['youth', 'pro'], cond: [], cooldown: 0, confirm: true, pv: '선수 생활 종료',
     handler: 'retire', ok: { t: '기자회견장에서 마이크를 잡았다. 마지막으로 인사를 건넸다.' }
   },
   {

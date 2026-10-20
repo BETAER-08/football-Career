@@ -19,8 +19,12 @@
     const s = g;
     if (s.phase === 'postcareer') return s.post.path === 'pundit' ? 'booth' : s.post.path === 'admin' ? 'office' : 'home';
     if (s.phase === 'coach') return s.coach.role === 'none' ? 'home' : 'bench';
-    if (s.st.injury && s.st.injury.weeksLeft >= 6 && swOf(s.week) % 2 === 0) return 'hospital';
+    const tw = s.ev.flags.transferW;
+    if (tw !== undefined && s.week === tw) return 'airport';
+    const cw = s.ev.flags.trophyW;
+    if (cw !== undefined && s.week - cw <= 2 && s.week >= cw) return 'ceremony';
     if (matchesThisWeekPeek(s)) return 'stadium';
+    if (s.st.injury) return 'rehab';
     if (s.phase === 'youth' && s.fin.housing === 'dorm') return swOf(s.week) % 3 === 0 ? 'dorm' : 'field';
     if (swOf(s.week) % 5 === 4) return 'home';
     return 'field';
@@ -68,7 +72,9 @@
     if (s.phase === 'coach') return `${where} · ${club.name} · ${kind === 'bench' ? '지도자 벤치' : '훈련장'}`;
     if (kind === 'dorm') return `${where} · ${club.name} 아카데미 숙소 · 동료 ${s.p.dorm ? 2 : 0}명과 함께`;
     if (kind === 'stadium') return `${where} · ${club.name} · 경기 주간`;
-    if (kind === 'hospital') return `${where} · 재활 센터 · ${s.st.injury?.ko ?? ''}`;
+    if (kind === 'hospital' || kind === 'rehab') return `${where} · 재활실 · ${s.st.injury?.ko ?? ''}`;
+    if (kind === 'ceremony') return `${where} · ${club.name} · 트로피 세리머니`;
+    if (kind === 'airport') return `${where} · 공항 · 새 소속팀으로 떠나는 날`;
     if (kind === 'home') return `${where} · 쉬는 날의 ${s.fin.housing === 'own' ? '내 집' : s.fin.housing === 'family' ? '가족 집' : s.fin.housing === 'rent' ? '임대 집' : '숙소'}`;
     return `${where} · ${club.name} 훈련장`;
   });

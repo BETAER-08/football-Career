@@ -17,15 +17,17 @@ function pay(s: GameState, amount: number): void {
   s.fin.deposit = Math.max(0, s.fin.deposit - (amount - fromCash));
 }
 
-registerAction('deposit', (s, _c, amt) => {
+registerAction('deposit', (s, _c, amt, _g, eff) => {
+  const fee = Math.round(amt * (1 - eff) * 0.1);
   s.fin.cash -= amt;
-  s.fin.deposit += amt;
-  return [{ k: '예금', d: amt, u: '만' }];
+  s.fin.deposit += amt - fee;
+  return fee > 0 ? [{ k: '예금', d: amt - fee, u: '만' }, { k: '반복 거래 수수료', d: -fee, u: '만' }] : [{ k: '예금', d: amt, u: '만' }];
 });
-registerAction('stock', (s, _c, amt) => {
+registerAction('stock', (s, _c, amt, _g, eff) => {
+  const fee = Math.round(amt * (1 - eff) * 0.1);
   s.fin.cash -= amt;
-  s.fin.stocks += amt;
-  return [{ k: '주식', d: amt, u: '만' }];
+  s.fin.stocks += amt - fee;
+  return fee > 0 ? [{ k: '주식', d: amt - fee, u: '만' }, { k: '반복 거래 수수료', d: -fee, u: '만' }] : [{ k: '주식', d: amt, u: '만' }];
 });
 registerAction('estate', (s, _c, amt) => {
   s.fin.cash -= amt;

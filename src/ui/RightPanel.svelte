@@ -5,9 +5,16 @@
   import { formatKRW } from '../engine/finance';
   import { REL_LABEL } from '../engine/fx';
   import type { Person, SeasonRec } from '../engine/types';
+  import { whyText } from './format';
+
+  function openReview(sn: number, role: 'player' | 'coach') {
+    const i = g.reviews.findIndex((x) => x.s === sn && x.role === role);
+    if (i >= 0) store.openReviewAt(i);
+  }
+  const hasReview = (sn: number, role: 'player' | 'coach') => g.reviews.some((x) => x.s === sn && x.role === role);
 
   const g = $derived(store.game!);
-  const age = $derived(ageAt(g.p.birth.y, g.week));
+  const age = $derived(ageAt(g.p.birth, g.week));
   const curSeason = $derived(seasonOf(g.week));
   const all = $derived<SeasonRec[]>([...g.career.seasons, ...(g.career.cur.done || (!g.career.cur.apps && !g.career.cur.mins) ? [] : [g.career.cur])]);
   const tot = $derived.by(() => {
@@ -67,7 +74,7 @@
 
 <div class="right scroll col" style="gap:10px">
   <div class="panel">
-    <div class="panel-h">커리어 스탯 · 평점</div>
+    <div class="panel-h"><span>커리어 스탯 · 평점</span><span class="spacer"></span><button class="btn sm" onclick={() => (store.tableOpen = true)}>리그 순위</button></div>
     <div class="panel-b col" style="gap:8px">
       <div class="sum">
         <div><b class="mono">{tot.apps}</b><span>경기</span></div>
@@ -83,7 +90,7 @@
         <thead><tr><th>시즌</th><th>구단</th><th>리그</th><th>경기</th><th>골</th><th>도움</th><th>평점</th></tr></thead>
         <tbody>
           {#each rows as r}
-            <tr><td class="mono">{r.year % 100}/{(r.year + 1) % 100}</td><td class="cl" title={r.clubName}>{r.clubName}</td><td class="lg">{r.leagueName}</td><td class="mono">{r.apps}</td><td class="mono">{r.goals}</td><td class="mono">{r.assists}</td><td class="mono">{r.ratingN ? (r.ratingSum / r.ratingN).toFixed(1) : '-'}</td></tr>
+            <tr class:clk={hasReview(r.s, 'player')} onclick={() => openReview(r.s, 'player')} title={hasReview(r.s, 'player') ? '눌러서 시즌 결산 다시 보기' : ''}><td class="mono">{r.year % 100}/{(r.year + 1) % 100}</td><td class="cl" title={r.clubName}>{r.clubName}</td><td class="lg">{r.leagueName}</td><td class="mono">{r.apps}</td><td class="mono">{r.goals}</td><td class="mono">{r.assists}</td><td class="mono">{r.ratingN ? (r.ratingSum / r.ratingN).toFixed(1) : '-'}</td></tr>
           {:else}
             <tr><td colspan="7" class="muted">아직 시즌 기록이 없어요.</td></tr>
           {/each}
@@ -99,7 +106,7 @@
         <b style="font-size:12px;color:var(--muted)">지도 시즌 성적</b>
         <table>
           <thead><tr><th>시즌</th><th>구단</th><th>순위</th><th>목표</th><th>승점</th><th>트로피</th></tr></thead>
-          <tbody>{#each [...g.coach.recs].reverse().slice(0, 10) as r}<tr><td class="mono">{r.year % 100}/{(r.year + 1) % 100}</td><td class="cl">{r.clubName}</td><td class="mono">{r.pos || '-'}</td><td class="mono">{r.target || '-'}</td><td class="mono">{r.pts}</td><td>{r.trophies.length ? '★' + r.trophies.length : r.fired ? '경질' : '-'}</td></tr>{/each}</tbody>
+          <tbody>{#each [...g.coach.recs].reverse().slice(0, 10) as r}<tr class:clk={hasReview(r.s, 'coach')} onclick={() => openReview(r.s, 'coach')} title={hasReview(r.s, 'coach') ? '눌러서 시즌 결산 다시 보기' : ''}><td class="mono">{r.year % 100}/{(r.year + 1) % 100}</td><td class="cl">{r.clubName}</td><td class="mono">{r.pos || '-'}</td><td class="mono">{r.target || '-'}</td><td class="mono">{r.pts}</td><td>{r.trophies.length ? '★' + r.trophies.length : r.fired ? '경질' : '-'}</td></tr>{/each}</tbody>
         </table>
       {/if}
     </div>
@@ -124,7 +131,7 @@
       {#each relList as k}
         {@const p = g.people[k]}
         {@const d = chg(k)}
-        <div class="rl"><span title={p.en}>{p.name}<em>{REL_LABEL[k] ?? p.kind}{p.job && p.kind !== 'fans' ? ' · ' + p.job : ''}{p.pos ? ' · ' + p.pos : ''}</em></span><div class="gauge"><i style="width:{(p.rel + 100) / 2}%;background:{relColor(p.rel)}"></i></div><b class={d > 0.5 ? 'up' : d < -0.5 ? 'down' : 'faint'}>{d > 0.5 ? '▲' : d < -0.5 ? '▼' : '·'}</b></div>
+        <div class="rl" title={whyText(g, `rel.${k}`) || '최근 큰 변화가 없어요'}><span title={p.en}>{p.name}<em>{REL_LABEL[k] ?? p.kind}{p.job && p.kind !== 'fans' ? ' · ' + p.job : ''}{p.pos ? ' · ' + p.pos : ''}</em></span><div class="gauge"><i style="width:{(p.rel + 100) / 2}%;background:{relColor(p.rel)}"></i></div><b class={d > 0.5 ? 'up' : d < -0.5 ? 'down' : 'faint'}>{d > 0.5 ? '▲' : d < -0.5 ? '▼' : '·'}</b></div>
       {/each}
     </div>
   </div>
@@ -157,6 +164,8 @@
   table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
   th { text-align: left; color: var(--faint); font-weight: 600; padding: 2px 3px; border-bottom: 1px solid var(--line); }
   td { padding: 3px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+  tr.clk { cursor: pointer; }
+  tr.clk:hover td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
   .cl { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lg { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
   .chart { width: 100%; height: 54px; background: var(--bg2); border-radius: 6px; }

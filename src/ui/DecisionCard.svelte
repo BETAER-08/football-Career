@@ -42,6 +42,7 @@
   <div class="panel card" class:heavy={d.heavy}>
     <div class="panel-h"><span>{d.title}</span><span class="spacer"></span>{#if g.auto}<span class="tag">자동 결정 중</span>{/if}</div>
     <div class="panel-b col" style="gap:10px">
+      {#if d.quote}<div class="quote">↻ {d.quote}</div>{/if}
       <div class="txt">{d.text}</div>
       {#if d.ctx}<div class="mini-hint">{d.ctx}</div>{/if}
       {#if d.heavy && d.help}<div class="help">도움받을 곳 · {d.help}</div>{/if}
@@ -96,6 +97,7 @@
 <style>
   .card { border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); animation: pop 0.3s ease; }
   .card.heavy { border-color: color-mix(in srgb, var(--info) 55%, var(--line)); }
+  .quote { font-size: 12px; color: var(--g-none); border-left: 3px solid var(--g-none); padding: 2px 8px; background: color-mix(in srgb, var(--g-none) 8%, transparent); border-radius: 0 6px 6px 0; }
   .txt { font-size: 14.5px; line-height: 1.65; }
   .help { font-size: 12.5px; color: var(--info); background: color-mix(in srgb, var(--info) 8%, var(--panel)); border-radius: 8px; padding: 6px 10px; }
   .choices { display: flex; flex-direction: column; gap: 8px; }

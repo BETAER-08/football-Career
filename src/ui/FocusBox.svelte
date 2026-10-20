@@ -13,10 +13,10 @@
   const ident = $derived.by(() => {
     const s = g;
     const country = club ? getCountry(club.country).ko : getCountry(s.p.country).ko;
-    if (s.phase === 'youth') return `유스 ${Math.max(1, seasonOf(s.week) + 1)}년차 · ${club?.name ?? '무적'} · ${country}`;
+    if (s.phase === 'youth') return `유스 ${Math.max(1, seasonOf(s.week) + 1)}년차 · ${s.career.youthStage} · ${club?.name ?? '무적'} · ${country}`;
     if (s.phase === 'pro') return `프로 ${Math.max(1, seasonOf(s.week) - Math.max(0, s.career.debutW >= 0 ? seasonOf(s.career.debutW) : 0) + 1)}년차 · ${club?.name ?? '무적'} · ${country}`;
     if (s.phase === 'coach') return `지도자 ${s.coach.coachSeasons + 1}년차 · ${roleLabel(s.coach.role)}${club ? ' · ' + club.name : ''} · ${country}`;
-    return `은퇴 후 ${Math.max(1, ageAt(s.p.birth.y, s.week) - s.career.retireAge + 1)}년차 · ${country}`;
+    return `은퇴 후 ${Math.max(1, ageAt(s.p.birth, s.week) - s.career.retireAge + 1)}년차 · ${country}`;
   });
   let confirm = $state('');
 

@@ -6,7 +6,7 @@
   import { ageAt } from '../engine/time';
 
   const g = $derived(store.game!);
-  const age = $derived(ageAt(g.p.birth.y, g.week));
+  const age = $derived(ageAt(g.p.birth, g.week));
   const secs = $derived(Math.round(secPerYear(store.prefs.lengthMin) / (g.phase === 'postcareer' ? 2 : 1)));
   const prog = $derived(yearProgress(g));
   const speeds = [1, 2, 4, 8, 12, 16];

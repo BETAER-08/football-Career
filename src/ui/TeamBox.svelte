@@ -7,6 +7,9 @@
   import { dateOf, fmtDate, ageAt } from '../engine/time';
   import { healthLabel } from '../engine/health';
   import { roleLabel as coachRoleLabel } from '../engine/coach';
+  import { whyText } from './format';
+  import { goalValue } from '../engine/goals';
+  import { DREAM_LABEL } from '../engine/goals';
 
   const g = $derived(store.game!);
   const idc = $derived(g.phase === 'coach' ? g.coach.clubId : g.career.clubId);
@@ -65,10 +68,17 @@
       {#if g.st.injury}
         <div class="inj">🩹 {g.st.injury.ko} ({g.st.injury.part}) · 복귀 예정 {retDate}</div>
       {/if}
-      {#each [['건강', g.st.health, false], ['피로', g.st.fatigue, true], ['폼', Math.min(100, Math.max(0, (form - 4) * 25)), false], ['경기 감각', g.st.sharp, false], ['사기', g.st.morale, false], ['행복', g.st.happy, false], ['스트레스', g.st.stress, true]] as [label, v, inv]}
-        <div class="gr"><span>{label}</span><div class="gauge {tone(v as number, inv as boolean)}"><i style="width:{v}%"></i></div><b class="mono">{label === '폼' ? (form ? form.toFixed(1) : '-') : Math.round(v as number)}</b></div>
+      {#each [['건강', g.st.health, false, 'health'], ['피로', g.st.fatigue, true, 'fatigue'], ['폼', Math.min(100, Math.max(0, (form - 4) * 25)), false, ''], ['경기 감각', g.st.sharp, false, 'sharp'], ['사기', g.st.morale, false, 'morale'], ['행복', g.st.happy, false, 'happy'], ['스트레스', g.st.stress, true, 'stress']] as [label, v, inv, key]}
+        <div class="gr" title={key ? whyText(g, `st.${key}`) || '최근 큰 변화가 없어요' : '최근 5경기 평균 평점'}><span>{label}</span><div class="gauge {tone(v as number, inv as boolean)}"><i style="width:{v}%"></i></div><b class="mono">{label === '폼' ? (form ? form.toFixed(1) : '-') : Math.round(v as number)}</b></div>
       {/each}
       <div class="mini-hint">건강 {healthLabel(g.st.health)}{g.st.burnout > 50 ? ' · 번아웃 위험' : ''}</div>
+      {#if g.goals && !g.goals.settled && (g.phase === 'pro' || g.phase === 'youth')}
+        {#each [{ lab: '구단 기대', gd: g.goals.club }, { lab: '개인 목표', gd: g.goals.personal }] as { lab, gd }}
+          {@const v = goalValue(g, gd)}
+          <div class="goal" title="시즌 결산에서 달성 여부와 보상을 처리해요"><span>{lab} · {gd.label}</span><div class="gauge"><i style="width:{Math.min(100, (v / gd.target) * 100)}%"></i></div><b class="mono">{gd.metric === 'rating' ? v.toFixed(1) : Math.round(v)}/{gd.target}</b></div>
+        {/each}
+      {/if}
+      {#if g.dream}<div class="mini-hint">✦ 꿈 · {DREAM_LABEL[g.dream]}{g.dreamHits.includes(g.dream) ? ' (이룰 조짐!)' : ''}</div>{/if}
     </div>
 
     <div class="col" style="gap:5px">
@@ -96,8 +106,10 @@
         {#if g.life.mil === 'serving'}<div class="tag">병역 이행 중</div>{/if}
         {#if g.ev.flags.wage_unpaid !== undefined}<div class="tag" style="color:var(--down)">임금 체불 중</div>{/if}
       {:else if g.phase === 'youth'}
-        <div class="kv"><span>신분</span><span>유스 계약</span></div>
-        <div class="mini-hint">17~19세에 1군 계약 여부가 판정돼요.</div>
+        <div class="kv"><span>연령대</span><span>{g.career.youthStage}</span></div>
+        <div class="kv"><span>신분</span><span>{g.career.scholar === 1 ? '장학 계약' : g.career.scholar === 2 ? '유스 계약 (장학 미선발)' : '유스 계약'}</span></div>
+        {#if g.career.scholar === 1 && con}<div class="kv"><span>장학 수당</span><span class="mono">{formatKRW(con.wage)}</span></div>{/if}
+        <div class="mini-hint">시즌 말마다 승급·잔류·방출 심사를 받고, 16세에 장학 계약, 17~19세에 1군 계약 여부가 판정돼요.</div>
       {:else}
         <div class="muted">계약 없음</div>
       {/if}
@@ -115,6 +127,9 @@
   .gr { display: grid; grid-template-columns: 56px 1fr 30px; gap: 8px; align-items: center; font-size: 12px; }
   .gr span { color: var(--muted); }
   .gr b { text-align: right; }
+  .goal { display: grid; grid-template-columns: 1fr 70px 46px; gap: 6px; align-items: center; font-size: 11.5px; color: var(--muted); }
+  .goal span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .goal b { text-align: right; color: var(--text); }
   .inj { font-size: 12px; background: color-mix(in srgb, var(--down) 14%, var(--panel)); border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line)); border-radius: 6px; padding: 3px 8px; }
   .kv { gap: 8px; white-space: nowrap; }
   .kv span:last-child { text-align: right; }

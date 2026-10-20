@@ -2,6 +2,7 @@ import { INJURIES, INJURY_BY_ID } from '../data/injuries';
 import { ALL_ATTRS, type AttrKey, type GameState, type Injury } from './types';
 import { Rng, clamp } from './rng';
 import { getCal } from './calibration';
+import { recordWhy } from './why';
 
 export function parseLoss(loss: string | undefined): [AttrKey, number][] {
   if (!loss) return [];
@@ -41,6 +42,8 @@ export function startInjury(s: GameState, rng: Rng, id: string | null, age: numb
   if (!forced) weeks = Math.max(1, Math.round(weeks * (age >= 31 ? 1.15 : 1) * (s.fin.trainer > 0 ? 0.94 : 1)));
   const repeat = s.st.injHist.filter((h) => h.id === def.id).length;
   const inj: Injury = { id: def.id, ko: def.ko, part: def.part, weeksLeft: weeks, total: weeks, early: false, recurrence: repeat > 0 && s.st.recur !== null };
+  const h0 = s.st.health;
+  const m0 = s.st.morale;
   s.st.injury = inj;
   s.st.injHist.push({ id: def.id, part: def.part, w: s.week });
   if (s.st.injHist.length > 60) s.st.injHist.shift();
@@ -51,6 +54,8 @@ export function startInjury(s: GameState, rng: Rng, id: string | null, age: numb
     s.st.stress = clamp(s.st.stress + 10, 0, 100);
     s.st.happy = clamp(s.st.happy - 8, 0, 100);
   }
+  recordWhy(s, 'st.health', `부상(${def.ko})`, s.st.health - h0);
+  recordWhy(s, 'st.morale', `부상(${def.ko})`, s.st.morale - m0);
   s.career.cur.injDays += weeks * 7;
   s.st.chronic[def.part] = (s.st.chronic[def.part] ?? 0) + (def.weight > 5 ? 0.6 : 0.3);
   if (s.st.chronic[def.part] >= 3.2) s.st.chronic[def.part] = 3.2;
@@ -85,7 +90,10 @@ export function advanceInjury(s: GameState, rng: Rng): 'none' | 'recovered' {
     s.st.injury = null;
     const rp = def.recur * (s.st.rehabEarly ? 2.4 : 1) * (1 + (s.st.chronic[def.part] ?? 0) * 0.12) * clamp(s.hid.injuryProne / 50, 0.7, 1.4);
     s.st.rehabEarly = false;
-    if (rng.chance(clamp(rp, 0, 0.8))) s.st.recur = { id: def.id, w: s.week + rng.int(1, 7) };
+    if (s.ev.flags.reinjure !== undefined) {
+      delete s.ev.flags.reinjure;
+      s.st.recur = { id: def.id, w: s.week + rng.int(1, 3) };
+    } else if (rng.chance(clamp(rp, 0, 0.8))) s.st.recur = { id: def.id, w: s.week + rng.int(1, 7) };
     return 'recovered';
   }
   return 'none';

@@ -28,7 +28,7 @@ export function dateLabel(s: GameState): string {
 }
 
 export function ageOf(s: GameState): number {
-  return ageAt(s.p.birth.y, s.week);
+  return ageAt(s.p.birth, s.week);
 }
 
 export function yearProgress(s: GameState): number {
@@ -75,4 +75,10 @@ export function randomSeed(): string {
   const a = new Uint32Array(2);
   crypto.getRandomValues(a);
   return `${a[0].toString(36)}${a[1].toString(36)}`.toUpperCase();
+}
+
+export function whyText(s: GameState, key: string): string {
+  const l = s.why[key];
+  if (!l || !l.length) return '';
+  return l.map((e) => `${e.d > 0 ? '+' : '−'}${Math.abs(e.d) >= 10 ? Math.round(Math.abs(e.d)) : Math.abs(e.d).toFixed(Math.abs(e.d) < 1 ? 2 : 1)} ${e.c}`).join(' · ');
 }

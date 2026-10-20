@@ -1,36 +1,33 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { store } from './store.svelte';
-  import { summarize, summaryText, renderShareCard } from './share';
-  import { getClub, getCountry } from '../engine/data';
-  import { formatKRW, netWorth } from '../engine/finance';
+  import { summaryText, renderShareCard } from './share';
+  import { getCountry } from '../engine/data';
+  import { formatKRW } from '../engine/finance';
   import { START_YEAR } from '../engine/time';
-  import { percentileOf } from '../engine/scoring';
+  import type { EndData } from '../engine/enddata';
 
-  const g = $derived(store.game!);
-  const pg = $derived(store.grade());
-  const sum = $derived(summarize(g, pg.grade, pg.percentile));
+  const d = $derived(store.end as EndData);
   let cv: HTMLCanvasElement | undefined = $state();
   let copied = $state('');
-  const text = $derived(summaryText(g, sum));
+  const text = $derived(summaryText(d));
   const dist = $derived(store.baseline);
   const bins = $derived.by(() => {
     const n = 20;
     if (!dist.length) return [] as number[];
-    const mx = Math.max(...dist, g.score, 1);
+    const mx = Math.max(...dist, d.score, 1);
     const out = new Array(n).fill(0);
     for (const v of dist) out[Math.min(n - 1, Math.floor((v / mx) * n))]++;
     return out;
   });
-  const maxScore = $derived(Math.max(...dist, g.score, 1));
-  const mine = $derived(Math.min(0.995, g.score / maxScore));
-  const hasCoach = $derived(g.coach.entered && g.coach.recs.length > 0);
+  const maxScore = $derived(Math.max(...dist, d.score, 1));
+  const mine = $derived(Math.min(0.995, d.score / maxScore));
 
   $effect(() => {
-    void sum;
-    if (cv) renderShareCard(g, sum, cv);
+    void d;
+    if (cv) renderShareCard(d, cv);
   });
-  onMount(() => { if (cv) renderShareCard(g, sum, cv); });
+  onMount(() => { if (cv) renderShareCard(d, cv); });
 
   function copyText() {
     navigator.clipboard?.writeText(text).then(() => (copied = '요약을 복사했어요.'), () => (copied = '복사에 실패했어요.'));
@@ -39,58 +36,72 @@
     if (!cv) return;
     const a = document.createElement('a');
     a.href = cv.toDataURL('image/png');
-    a.download = `태어난김에축구_${g.p.name}.png`;
+    a.download = `태어난김에축구_${d.name}.png`;
     a.click();
   }
   function again() {
-    store.pendingConfig = { seed: g.cfg.seed, name: g.cfg.name, pos: g.cfg.pos, mode: 'code', code: g.cfg.seed, lengthMin: store.prefs.lengthMin };
+    store.pendingConfig = { seed: d.seed, name: d.cfgName, pos: d.pos, mode: 'code', code: d.seed, lengthMin: store.prefs.lengthMin };
     store.screen = 'roulette';
   }
-  void percentileOf;
 </script>
 
 <div class="end scroll">
   <div class="wrap">
     <div class="head">
-      <div class="gr">{pg.grade === '프로 데뷔 실패' ? '데뷔 실패' : pg.grade}</div>
+      <div class="gr">{d.grade === '프로 데뷔 실패' ? '데뷔 실패' : d.grade}</div>
       <div class="col" style="gap:2px">
-        <h1>{g.p.name}</h1>
-        <div class="muted">{getCountry(g.p.country).flag} {getCountry(g.p.country).ko} · {g.p.birth.y}년생 · {getClub(g.p.startClubId).name}에서 시작</div>
-        <div class="muted">{g.endReason}</div>
-        {#if pg.percentile}<div>같은 출발선 상위 <b>{Math.max(1, Math.round(100 - pg.percentile))}%</b></div>{/if}
-        {#if sum.coachGrade}<div>지도자 등급 <b>{sum.coachGrade}</b> · 최고 명성 {Math.round(g.coach.peakFame)}</div>{/if}
+        <h1>{d.name}</h1>
+        <div class="muted">{getCountry(d.country).flag} {getCountry(d.country).ko} · {d.birthYear}년생 · {d.startClub}에서 시작</div>
+        <div class="muted">{d.endReason}</div>
+        {#if d.percentile}<div>같은 출발선 상위 <b>{Math.max(1, Math.round(100 - d.percentile))}%</b></div>{/if}
+        {#if d.coachGrade}<div>지도자 등급 <b>{d.coachGrade}</b> · 최고 명성 {d.peakFame}</div>{/if}
+        {#if d.dream.id}<div>인생의 꿈 <b>{d.dream.label}</b> — <span class={d.dream.achieved ? 'up' : 'down'}>{d.dream.achieved ? '이뤘다 ✓' : '이루지 못했다 ✗'}</span></div>{/if}
       </div>
     </div>
 
+    {#if store.archiveFail}
+      <div class="fail">보관함에 저장하지 못했어요. 결과 카드 이미지와 텍스트 복사로 남겨 주세요. <button class="btn sm" onclick={() => store.exportNow()}>지금 내보내기</button></div>
+    {/if}
+
     <div class="grid">
       <div class="panel"><div class="panel-h">통산 기록</div><div class="panel-b col" style="gap:4px">
-        <div class="kv"><span>경기</span><span class="mono">{sum.apps}</span></div>
-        <div class="kv"><span>골 · 도움</span><span class="mono">{sum.goals} · {sum.assists}</span></div>
-        <div class="kv"><span>평균 평점</span><span class="mono">{sum.avg ? sum.avg.toFixed(2) : '-'}</span></div>
-        <div class="kv"><span>A매치</span><span class="mono">{g.nat.caps}경기 {g.nat.goals}골</span></div>
-        <div class="kv"><span>최종 순자산</span><span class="mono up">{formatKRW(netWorth(g))}</span></div>
-        <div class="kv"><span>선수 시절 최고 시장가치</span><span class="mono">{formatKRW(g.fame.peakValue)}</span></div>
+        <div class="kv"><span>경기</span><span class="mono">{d.apps}</span></div>
+        <div class="kv"><span>골 · 도움</span><span class="mono">{d.goals} · {d.assists}</span></div>
+        <div class="kv"><span>평균 평점</span><span class="mono">{d.avg ? d.avg.toFixed(2) : '-'}</span></div>
+        <div class="kv"><span>A매치</span><span class="mono">{d.caps}경기 {d.natGoals}골</span></div>
+        <div class="kv"><span>최종 순자산</span><span class="mono up">{formatKRW(d.netWorth)}</span></div>
+        <div class="kv"><span>선수 시절 최고 시장가치</span><span class="mono">{formatKRW(d.peakValue)}</span></div>
       </div></div>
       <div class="panel"><div class="panel-h">트로피 · 개인상</div><div class="panel-b col" style="gap:3px;max-height:220px;overflow:auto">
-        {#each g.career.trophies as t}<div>🏆 {t.year} {t.name} <span class="faint">· {t.club}</span></div>{/each}
-        {#each g.coach.trophies as t}<div>🏆 {t.year} {t.name} <span class="faint">· 감독 · {t.club}</span></div>{/each}
-        {#each g.career.awards as a}<div>🏅 {a.year} {a.name}</div>{/each}
-        {#if !g.career.trophies.length && !g.career.awards.length && !g.coach.trophies.length}<div class="muted">기록된 트로피와 개인상이 없어요.</div>{/if}
+        {#each d.trophies as t}<div>🏆 {t.year} {t.name} <span class="faint">· {t.club}</span></div>{/each}
+        {#each d.coachTrophies as t}<div>🏆 {t.year} {t.name} <span class="faint">· 감독 · {t.club}</span></div>{/each}
+        {#each d.awards as a}<div>🏅 {a.year} {a.name}</div>{/each}
+        {#if !d.trophies.length && !d.awards.length && !d.coachTrophies.length}<div class="muted">기록된 트로피와 개인상이 없어요.</div>{/if}
       </div></div>
       <div class="panel"><div class="panel-h">거쳐 간 구단</div><div class="panel-b col" style="gap:3px;max-height:220px;overflow:auto">
-        {#each g.career.clubsHist as h}<div>{getClub(h.clubId).name} <span class="faint">· {START_YEAR + h.fromS}{h.toS >= 0 ? '~' + (START_YEAR + h.toS) : ''}</span></div>{/each}
-        {#each g.coach.recs.filter((r) => !r.clubId.startsWith('NAT')) as r}<div>{r.clubName} <span class="faint">· 지도자 {r.year} · {r.role}</span></div>{/each}
+        {#each d.clubs as h}<div>{h.name} <span class="faint">· {h.from}{h.to >= 0 ? '~' + h.to : ''}</span></div>{/each}
+        {#each d.coachRecs.filter((r) => !r.clubId.startsWith('NAT')) as r}<div>{r.clubName} <span class="faint">· 지도자 {r.year} · {r.role}</span></div>{/each}
       </div></div>
     </div>
 
-    <div class="panel"><div class="panel-h">같은 출발선 분포 <span class="faint" style="font-weight:500">({getCountry(g.p.country).ko} · 수준 {g.p.startLvl} · {g.ab.pos} · 200회 시뮬레이션)</span></div>
+    {#if d.epilogue}
+      <div class="panel"><div class="panel-h">은퇴 후의 삶</div>
+        <div class="panel-b col" style="gap:6px">
+          <div class="row" style="flex-wrap:wrap"><span class="tag">{{ pundit: '해설·방송', admin: '구단 행정', business: '사업' }[d.epilogue.path]}</span><span class="tag">{d.epilogue.years}년</span><span class="tag">이정표 {d.epilogue.ms}/4</span></div>
+          {#each d.epilogue.milestones as m, i}<div>✔ {i + 1}. {m}</div>{/each}
+          <div class="muted">{d.epilogue.text}</div>
+        </div>
+      </div>
+    {/if}
+
+    <div class="panel"><div class="panel-h">같은 출발선 분포 <span class="faint" style="font-weight:500">({getCountry(d.country).ko} · 수준 {d.startLvl} · {d.pos} · 200회 시뮬레이션)</span></div>
       <div class="panel-b">
         {#if bins.length}
           <div class="hist">
             {#each bins as b, i}<div class="bar" style="height:{(b / Math.max(...bins)) * 100}%"></div>{/each}
             <div class="me" style="left:{mine * 100}%"><span>나</span></div>
           </div>
-          <div class="mini-hint">점수 {g.score.toFixed(1)} · 분포 최고 {maxScore.toFixed(0)}</div>
+          <div class="mini-hint">점수 {d.score.toFixed(1)} · 분포 최고 {maxScore.toFixed(0)}</div>
         {:else}
           <div class="muted">분포를 계산 중이에요… {Math.round(store.baselineProgress * 100)}%</div>
         {/if}
@@ -106,7 +117,7 @@
           {#if copied}<span class="muted">{copied}</span>{/if}
         </div>
         <pre class="sum">{text}</pre>
-        <div class="row">운명 코드 <b class="mono code">{g.cfg.seed}</b></div>
+        <div class="row">운명 코드 <b class="mono code">{d.seed}</b></div>
       </div>
     </div>
 
@@ -116,7 +127,6 @@
       <button class="btn big" onclick={() => (store.screen = 'vault')}>지난 커리어 보관함</button>
       <button class="btn big" onclick={() => (store.screen = 'menu')}>메인 메뉴</button>
     </div>
-    <div class="faint" style="text-align:center;font-size:12px">{hasCoach ? '' : ''}</div>
   </div>
 </div>
 
@@ -131,6 +141,7 @@
   .bar { flex: 1; background: color-mix(in srgb, var(--info) 70%, var(--panel)); border-radius: 3px 3px 0 0; min-height: 2px; }
   .me { position: absolute; bottom: 0; top: 0; width: 2px; background: var(--amber); }
   .me span { position: absolute; top: -2px; left: 4px; font-size: 12px; font-weight: 800; color: var(--amber); }
+  .fail { padding: 10px 14px; border: 1px solid var(--amber); border-radius: 10px; color: var(--amber); font-size: 13px; }
   .share { width: 100%; max-width: 720px; border-radius: 12px; border: 1px solid var(--line); }
   .sum { white-space: pre-wrap; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-family: var(--font); font-size: 13px; width: 100%; max-width: 720px; margin: 0; }
   .code { background: var(--bg2); padding: 2px 10px; border-radius: 6px; }

@@ -2,6 +2,12 @@ import type { RawEvent } from '../schema';
 import { engineEvents } from './pro/engine';
 import { youthPassive } from './youth/passive';
 import { youthChoice } from './youth/choice';
+import { youthStages } from './youth/stages';
+import { lowerLeague } from './pro/lower';
+import { faceEvents } from './pro/faces';
+import { followups } from './followups';
+import { flavorEvents } from './pro/flavor';
+import { coachNonManager } from './coach/nonmanager';
 import { proPassive } from './pro/passive';
 import { proChoice1 } from './pro/choice1';
 import { proChoice2 } from './pro/choice2';
@@ -13,8 +19,9 @@ import { coachPassive } from './coach/passive';
 import { coachChoice } from './coach/choice';
 import { postPassive } from './postcareer/passive';
 import { postChoice } from './postcareer/choice';
+import { milestoneEvents } from './postcareer/milestones';
 
 export const ALL_EVENTS: RawEvent[] = [
-  ...engineEvents, ...youthPassive, ...youthChoice, ...proPassive, ...proChoice1, ...proChoice2, ...chains1, ...chains2, ...moments, ...lifestyleEvents,
-  ...coachPassive, ...coachChoice, ...postPassive, ...postChoice
+  ...engineEvents, ...youthPassive, ...youthChoice, ...youthStages, ...lowerLeague, ...faceEvents, ...followups, ...flavorEvents, ...proPassive, ...proChoice1, ...proChoice2, ...chains1, ...chains2, ...moments, ...lifestyleEvents,
+  ...coachPassive, ...coachChoice, ...coachNonManager, ...postPassive, ...postChoice, ...milestoneEvents
 ];

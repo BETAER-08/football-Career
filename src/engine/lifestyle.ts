@@ -65,7 +65,7 @@ export function defaultFocus(phase: Phase): string {
 export function weeklyFocusEffects(s: GameState): void {
   const f = s.focus;
   const st = s.st;
-  if (s.life.studying && ageAt(s.p.birth.y, s.week) >= 18) {
+  if (s.life.studying && ageAt(s.p.birth, s.week) >= 18) {
     s.life.eduProgress += 0.5 + (f === 'study' ? 0.4 : 0);
     if (s.life.eduProgress >= 170 && s.life.eduLevel < 3) {
       s.life.eduLevel = Math.max(2, s.life.eduLevel + 1);

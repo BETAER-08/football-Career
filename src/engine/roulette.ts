@@ -12,14 +12,21 @@ export interface RouletteResult {
   clubPct: number;
 }
 
+export const U15_RATE: Record<number, number> = { 6: 1, 5: 1, 4: 0.9, 3: 0.6, 2: 0.25 };
+export const U15_SQUAD: Record<number, number> = { 6: 28, 5: 25, 4: 22, 3: 20, 2: 18 };
+
+export function u15Rate(level: number, infra: number): number {
+  const base = U15_RATE[level];
+  return level <= 3 ? base * Math.min(1, 0.5 + infra) : base;
+}
+
 export function levelWeights(code: string): Record<number, number> {
   const c = getCountry(code);
   const w: Record<number, number> = {};
-  const lower: Record<number, number> = { 2: 0.4, 3: 0.35, 4: 0.25 };
-  for (let l = 2; l <= Math.min(4, c.top); l++) w[l] = lower[l];
-  const share = c.pros > 0 ? c.big / c.pros : 0;
-  if (c.top >= 5) w[5] = share * 1.2;
-  if (c.top >= 6) w[6] = share * 0.8;
+  for (let l = 2; l <= c.top; l++) {
+    const n = candidateClubs(code, l).length;
+    if (n > 0) w[l] = n * u15Rate(l, c.infra) * U15_SQUAD[l];
+  }
   return w;
 }
 
@@ -38,29 +45,34 @@ export function candidateClubs(code: string, level: number): ClubStatic[] {
   return out;
 }
 
-export function rollOrigin(rng: Rng): RouletteResult {
-  const totalPros = COUNTRIES.reduce((s, c) => s + c.pros, 0);
-  const ci = rng.weightedIndex(COUNTRIES.map((c) => c.pros));
-  const country = COUNTRIES[ci].code;
-  const countryPct = (COUNTRIES[ci].pros / totalPros) * 100;
+export function originIn(rng: Rng, country: string, level?: number): RouletteResult {
   const lw = levelWeights(country);
   const levels = Object.keys(lw).map(Number);
-  const lwv = levels.map((l) => lw[l]);
-  const lwTotal = lwv.reduce((a, b) => a + b, 0);
-  const level = levels[rng.weightedIndex(lwv)];
-  const clubs = candidateClubs(country, level);
+  const forced = level !== undefined && levels.includes(level) ? level : undefined;
+  const pool = forced !== undefined ? [forced] : levels;
+  const lwv = pool.map((l) => lw[l]);
+  const lwTotal = levels.reduce((a, l) => a + lw[l], 0);
+  const lv = pool[rng.weightedIndex(lwv)];
+  const clubs = candidateClubs(country, lv);
   const leagueCounts: Record<string, number> = {};
   for (const c of clubs) leagueCounts[c.lg0] = (leagueCounts[c.lg0] ?? 0) + 1;
   const lgIds = Object.keys(leagueCounts);
-  const lgIdx = rng.weightedIndex(lgIds.map((id) => leagueCounts[id]));
-  const leagueId = lgIds[lgIdx];
-  const levelPct = (lw[level] / lwTotal) * 100;
+  const leagueId = lgIds[rng.weightedIndex(lgIds.map((id) => leagueCounts[id]))];
+  const levelPct = (lw[lv] / lwTotal) * 100;
   const leaguePct = levelPct * (leagueCounts[leagueId] / clubs.length);
   const inLeague = clubs.filter((c) => c.lg0 === leagueId);
   const weights = inLeague.map(clubWeight);
   const wTotal = weights.reduce((a, b) => a + b, 0);
   const idx = rng.weightedIndex(weights);
-  return { country, countryPct, leagueId, leaguePct, level, clubId: inLeague[idx].id, clubPct: (weights[idx] / wTotal) * 100 };
+  return { country, countryPct: 0, leagueId, leaguePct, level: lv, clubId: inLeague[idx].id, clubPct: (weights[idx] / wTotal) * 100 };
+}
+
+export function rollOrigin(rng: Rng): RouletteResult {
+  const totalPros = COUNTRIES.reduce((s, c) => s + c.pros, 0);
+  const ci = rng.weightedIndex(COUNTRIES.map((c) => c.pros));
+  const country = COUNTRIES[ci].code;
+  const o = originIn(rng, country);
+  return { ...o, countryPct: (COUNTRIES[ci].pros / totalPros) * 100 };
 }
 
 export function potentialMean(level: number, infra: number): number {

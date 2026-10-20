@@ -1,4 +1,6 @@
 export const START_YEAR = 2026;
+export const START_AGE = 14;
+export const START_BIRTH_YEAR = START_YEAR - START_AGE;
 export const WEEKS = 52;
 
 export interface YMD { y: number; m: number; d: number }
@@ -20,18 +22,25 @@ function seasonStartMs(s: number): number {
   return v;
 }
 
+const dateCache: YMD[] = [];
+
 export function dateOf(w: number): YMD {
+  const hit = dateCache[w];
+  if (hit) return hit;
   const s = seasonOf(w);
   const dt = new Date(seasonStartMs(s) + swOf(w) * 7 * 86400000);
-  return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+  const v = { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+  if (w >= 0 && w < 52 * 90) dateCache[w] = v;
+  return v;
 }
 
 export function yearOf(w: number): number {
   return dateOf(w).y;
 }
 
-export function ageAt(birthYear: number, w: number): number {
-  return yearOf(w) - birthYear;
+export function ageAt(birth: YMD, w: number): number {
+  const t = dateOf(w);
+  return t.y - birth.y - (t.m < birth.m || (t.m === birth.m && t.d < birth.d) ? 1 : 0);
 }
 
 export function seasonLabel(s: number): string {
@@ -64,15 +73,6 @@ export function monthOfSw(sw: number): number {
   return weekOfSeasonDate(sw).m;
 }
 
-export function isSummerWindow(sw: number): boolean {
-  return sw <= 9;
-}
-export function isWinterWindow(sw: number): boolean {
-  return sw >= 26 && sw <= 30;
-}
-export function isWindow(sw: number): boolean {
-  return sw <= 9 || (sw >= 26 && sw <= 30);
-}
 export function seasonOfSeasonStartYear(y: number): number {
   return y - START_YEAR;
 }

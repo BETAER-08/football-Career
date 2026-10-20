@@ -1,6 +1,7 @@
 import { Rng, clamp } from './rng';
 import { addLog, toast } from './log';
-import { ageAt, seasonOf, swOf, isWindow } from './time';
+import { ageAt, seasonOf, swOf } from './time';
+import { windowNow } from './calendar';
 import { curOvr } from './attributes';
 import { clubLvl, clubStd } from './world';
 import { getClub } from './data';
@@ -8,6 +9,7 @@ import { genOffers, genYouthJudgement, joinClub, leaveToFree, fallbackOffer, mak
 import { presentOffers, hasPendingOffer } from './offers';
 import { fireEvent, getEvent, pushDecision } from './events';
 import { getCal } from './calibration';
+import { scholarshipStep } from './youth';
 import type { Decision, GameState } from './types';
 
 export function endGame(s: GameState, reason: string): void {
@@ -21,7 +23,7 @@ export function endGame(s: GameState, reason: string): void {
 
 export function retirePlayer(s: GameState, rng: Rng, reason: string, byInjury = false): void {
   if (s.career.retired) return;
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   s.career.retired = true;
   s.career.retireAge = age;
   s.career.retireReason = reason;
@@ -60,7 +62,7 @@ export function expireContracts(s: GameState, rng: Rng): void {
   const con = s.career.contract;
   if (!con || !s.career.clubId) return;
   if (s.life.mil === 'serving') return;
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   if (con.loanFrom) {
     const parent = con.loanFrom;
     const o = makeOfferFor(s, rng, parent, 'loanreturn', { renew: true });
@@ -90,7 +92,7 @@ export function weeklyUnattached(s: GameState, rng: Rng): void {
   if (s.career.clubId || s.career.retired) return;
   if (s.decision && s.decision.kind === 'offer') return;
   const waited = s.week - s.career.freeAgentW;
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   if (waited > 0 && waited % 3 === 0 && rng.next() < 0.7) {
     let offers = genOffers(s, rng, 'free', 3);
     if (!offers.length && waited >= 9) {
@@ -103,10 +105,9 @@ export function weeklyUnattached(s: GameState, rng: Rng): void {
 }
 
 export function windowOffers(s: GameState, rng: Rng): void {
-  const sw = swOf(s.week);
-  if (!isWindow(sw) || !s.career.clubId || s.career.retired || s.phase !== 'pro') return;
+  if (!windowNow(s) || !s.career.clubId || s.career.retired || s.phase !== 'pro') return;
   if (s.decision || hasPendingOffer(s)) return;
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   const wantOut = s.ev.flags.transfer_request !== undefined ? 3 : 1;
   const p = (0.055 + s.fame.dom / 700 + s.career.upBias * 0.08) * wantOut;
   if (rng.next() >= p) return;
@@ -134,6 +135,7 @@ export function upBiasUpdate(s: GameState): void {
 
 export function youthStep(s: GameState, rng: Rng, age: number): void {
   const sw = swOf(s.week);
+  scholarshipStep(s, rng, age);
   if (s.phase !== 'youth' || s.career.debuted || s.career.retired) return;
   if (age >= 17 && sw === 30 && s.career.clubId) {
     const j = genYouthJudgement(s, rng);

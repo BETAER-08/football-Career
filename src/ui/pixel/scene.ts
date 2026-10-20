@@ -1,4 +1,4 @@
-export type SceneKind = 'dorm' | 'field' | 'stadium' | 'home' | 'bench' | 'booth' | 'office' | 'hospital';
+export type SceneKind = 'dorm' | 'field' | 'stadium' | 'home' | 'bench' | 'booth' | 'office' | 'hospital' | 'rehab' | 'ceremony' | 'airport';
 
 export interface SceneInput {
   kind: SceneKind;
@@ -170,6 +170,59 @@ export function drawScene(g: CanvasRenderingContext2D, inp: SceneInput): void {
       px(50, 40, 60, 8, '#6b4a2b');
       px(60, 34, 14, 6, '#222');
       px(82, 36, 8, 4, '#f5f5f5');
+      break;
+    }
+    case 'rehab': {
+      px(0, 14, W, 42, n > 0.5 ? '#232842' : '#d9dfeb');
+      px(0, 46, W, 10, n > 0.5 ? '#1b1f33' : '#aab4c6');
+      px(14, 20, 34, 18, lit);
+      px(14, 28, 34, 1, '#ffffff99');
+      px(30, 20, 1, 18, '#ffffff99');
+      px(64, 40, 44, 4, '#7b8499');
+      px(66, 32, 4, 12, '#7b8499');
+      px(104, 34, 4, 10, '#7b8499');
+      px(70 + Math.sin(inp.t * 0.07) * 4, 32, 6, 8, hsl(inp.hue, 70, 50));
+      px(71 + Math.sin(inp.t * 0.07) * 4, 29, 4, 3, '#d9a77a');
+      px(120, 36, 28, 10, '#f3f5fa');
+      px(120, 34, 28, 3, '#9aa6bd');
+      px(128, 28, 6, 8, '#d9a77a');
+      px(126, 26, 10, 3, '#fff');
+      break;
+    }
+    case 'ceremony': {
+      px(0, 30, W, 8, n > 0.5 ? '#2a2f48' : '#8b95ab');
+      for (let i = 0; i < 160; i++) {
+        if (rnd(inp.seed, i + 300) > 0.9) continue;
+        px(i, 24 + (i % 4) * 2, 1, 2, ['#ff5a5a', '#ffd45a', '#5ac8ff', '#ffffff'][(i + Math.floor(inp.t / 10)) % 4]);
+      }
+      px(50, 44, 18, 8, '#c9ccd6');
+      px(70, 40, 20, 12, '#ffd45a');
+      px(92, 46, 18, 6, '#c98a52');
+      px(77, 30, 6, 8, '#d9a77a');
+      px(76, 38, 8, 3, hsl(inp.hue, 70, 50));
+      px(77, 22, 6, 5, '#ffd45a');
+      px(79, 27, 2, 3, '#ffd45a');
+      for (let i = 0; i < 46; i++) {
+        const x = (rnd(inp.seed, i + 800) * W + Math.sin(inp.t * 0.05 + i) * 6) % W;
+        const y = (rnd(inp.seed, i + 900) * H + inp.t * 0.9 * (0.5 + rnd(inp.seed, i + 950))) % H;
+        px(x, y, 2, 2, ['#ff5a5a', '#ffd45a', '#5ac8ff', '#ffffff', '#7ddc84'][i % 5]);
+      }
+      break;
+    }
+    case 'airport': {
+      px(0, 14, W, 42, n > 0.5 ? '#232842' : '#c9d3e6');
+      px(0, 44, W, 12, n > 0.5 ? '#1b1f33' : '#a7b2c7');
+      px(8, 18, 144, 20, n > 0.5 ? '#2b3a66' : '#8fc3f0');
+      px(8 + ((inp.t * 0.6) % 120), 24, 22, 4, '#f5f5f5');
+      px(26 + ((inp.t * 0.6) % 120), 22, 6, 2, '#f5f5f5');
+      px(8 + ((inp.t * 0.6) % 120), 27, 22, 1, hsl(inp.hue, 70, 50));
+      px(40, 38, 120, 2, '#7b8499');
+      px(52, 36, 10, 8, '#7a4a2b');
+      px(66, 37, 8, 7, hsl(inp.hue, 60, 45));
+      px(100, 34, 6, 10, '#d9a77a');
+      px(99, 32, 8, 3, '#222');
+      px(108, 38, 6, 6, '#444');
+      px(20, 40, 4, 4, '#ffcc4d');
       break;
     }
     case 'hospital': {

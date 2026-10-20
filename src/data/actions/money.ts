@@ -5,11 +5,11 @@ const ADULT: ('youth' | 'pro' | 'coach' | 'postcareer')[] = ['pro', 'coach', 'po
 
 export const moneyActions: RawAction[] = [
   {
-    id: 'invest_deposit', group: 'money', label: '예금', desc: '안전하게 목돈을 불린다. 이자는 낮지만 잃을 일이 없다.', phase: P, cond: ['cash>=50'], cooldown: 2, param: 'amount', pv: '예금↑',
+    id: 'invest_deposit', group: 'money', label: '예금', desc: '안전하게 목돈을 불린다. 이자는 낮지만 잃을 일이 없다.', phase: P, cond: ['cash>=50'], cooldown: 4, diminish: 0.1, param: 'amount', pv: '예금↑',
     handler: 'deposit', ok: { t: '{amt}만원을 예금했다. 통장에 찍힌 숫자가 마음을 편하게 한다.' }
   },
   {
-    id: 'invest_stock', group: 'money', label: '주식', desc: '국가 경기와 시장 분위기에 따라 수익률이 오르내린다.', phase: ADULT, cond: ['cash>=100', 'age>=18'], cooldown: 2, param: 'amount', pv: '주식↑ 변동성↑',
+    id: 'invest_stock', group: 'money', label: '주식', desc: '국가 경기와 시장 분위기에 따라 수익률이 오르내린다.', phase: ADULT, cond: ['cash>=100', 'age>=18'], cooldown: 4, diminish: 0.1, param: 'amount', pv: '주식↑ 변동성↑',
     handler: 'stock', ok: { t: '{amt}만원어치 주식을 샀다. 경제 뉴스가 갑자기 눈에 들어온다.' }
   },
   {

@@ -62,9 +62,9 @@
   function caption(i: number): string {
     if (!origin) return '';
     if (i === 0) return `현역 프로 100명 중 ${origin.countryPct.toFixed(1)}명이 이 나라 국적`;
-    if (i === 1) return `이 나라 유스 100명 중 약 ${origin.leaguePct.toFixed(origin.leaguePct < 1 ? 2 : 1)}명이 이 리그 구단에서 시작`;
+    if (i === 1) return `이 나라 U15 선수 100명 중 약 ${origin.leaguePct.toFixed(origin.leaguePct < 1 ? 2 : 1)}명이 이 리그 구단 소속`;
     const c = getClub(origin.clubId);
-    return `${c.city} · 아카데미 ${academyGrade(c.acad)}등급 · 시설 ${c.facil}점`;
+    return `${c.city} · 아카데미 ${academyGrade(c.acad)}등급 · 시설 ${c.facil}점 · 이 리그 U15 선수 100명 중 약 ${origin.clubPct.toFixed(origin.clubPct < 1 ? 2 : 1)}명이 이 구단`;
   }
 
   function finalize(i: number) {
@@ -212,7 +212,7 @@
       <AdmitCard s={gstate} revealStep={cardStep} />
       <div class="row" style="justify-content:center;margin-top:14px">
         {#if cardStep >= 5}
-          <button class="btn primary big" onclick={begin}>유스 생활 시작</button>
+          <button class="btn primary big" disabled={!gstate.dream} onclick={begin}>{gstate.dream ? '유스 생활 시작' : '인생의 꿈을 골라 주세요'}</button>
         {:else}
           <button class="btn" onclick={() => (cardStep = 9)}>한 번에 보기</button>
         {/if}

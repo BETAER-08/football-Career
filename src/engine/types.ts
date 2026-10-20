@@ -39,6 +39,7 @@ export const HIDDEN_LABEL: Record<HiddenKey, string> = {
 };
 
 export type Phase = 'youth' | 'pro' | 'coach' | 'postcareer';
+export type YouthStage = 'U15' | 'U17' | 'U19';
 export type Role = 'starter' | 'rotation' | 'prospect' | 'backup';
 export const ROLE_LABEL: Record<Role, string> = { starter: '주전', rotation: '로테이션', prospect: '유망주', backup: '백업' };
 
@@ -69,10 +70,12 @@ export interface Chip {
   u?: string;
 }
 
+export type Grade = 'great' | 'ok' | 'bad' | 'worst' | 'none';
+
 export interface LogEntry {
   id: number;
   w: number;
-  kind: 'passive' | 'choice' | 'system' | 'match' | 'milestone' | 'chain' | 'moment';
+  kind: 'passive' | 'choice' | 'system' | 'match' | 'milestone' | 'chain' | 'moment' | 'world';
   title: string;
   text: string;
   chips: Chip[];
@@ -80,6 +83,109 @@ export interface LogEntry {
   star?: boolean;
   heavy?: boolean;
   help?: string;
+  mine?: boolean;
+  grade?: Grade;
+  pick?: string;
+  result?: string;
+  roll?: number;
+  need?: number;
+  from?: number;
+  quote?: string;
+  dream?: boolean;
+}
+
+export interface BestMatch { w: number; rating: number; line: string; comp: string; goals: number; assists: number; mins: number; result: string; momentText?: string }
+
+export interface MatchLine { w: number; comp: string; stage: string; line: string; report: string; result: 'W' | 'D' | 'L' | '-' }
+
+export interface Star {
+  id: number;
+  name: string;
+  en: string;
+  country: string;
+  birthYear: number;
+  clubId: string;
+  pos: Pos;
+  ovr: number;
+  pot: number;
+  retired: boolean;
+}
+
+export interface Face {
+  key: string;
+  role: 'mate' | 'rival';
+  name: string;
+  en: string;
+  country: string;
+  pos: Pos;
+  ovr: number;
+  pot: number;
+  birthYear: number;
+  clubId: string;
+  status: 'youth' | 'pro' | 'retired' | 'quit';
+  debutS: number;
+  caps: number;
+  injuredS: number;
+  wedS: number;
+  coachS: number;
+  lvl: number;
+  told: string;
+}
+
+export interface BallonRec { s: number; year: number; top: { name: string; club: string; country: string }[]; player: number; playerScore: number; winnerIsPlayer: boolean }
+
+export interface TournRec { s: number; year: number; id: string; ko: string; winner: string; runner: string; semis: string[]; player: string }
+
+export interface SeasonChamps {
+  s: number;
+  leagues: Record<string, string>;
+  cups: Record<string, string>;
+  cont: Record<string, string>;
+}
+
+export interface WorldInfo {
+  stars: Star[];
+  nextStarId: number;
+  faces: Face[];
+  ballon: BallonRec[];
+  tourn: TournRec[];
+  champs: SeasonChamps;
+  ceremony: BallonRec | null;
+  ceremonyDue: boolean;
+  youthCoach: { name: string; retireS: number };
+}
+
+export interface GoalDef { id: string; label: string; metric: 'apps' | 'starts' | 'goals' | 'cs' | 'rating' | 'promo'; target: number; done?: boolean }
+export interface SeasonGoals { s: number; club: GoalDef; personal: GoalDef; settled: boolean }
+
+export type DreamId = 'legend' | 'bigstarter' | 'national' | 'ballon' | 'rich';
+
+export interface WhyEntry { c: string; d: number; w: number }
+
+export interface TableRow { id: string; name: string; pts: number; gf: number; ga: number; zone: '' | 'champ' | 'cont' | 'down' }
+export interface LeaderRow { name: string; club: string; v: number; me: boolean }
+export interface ReviewAward { name: string; scope: 'club' | 'league'; mine: boolean }
+export interface SeasonReview {
+  s: number;
+  year: number;
+  role: 'player' | 'coach';
+  clubName: string;
+  leagueName: string;
+  pos: number;
+  n: number;
+  rec: { apps: number; starts: number; mins: number; goals: number; assists: number; cs: number; avg: number; yc: number; rc: number; injDays: number };
+  table: TableRow[];
+  myIdx: number;
+  scorers: LeaderRow[];
+  assisters: LeaderRow[];
+  awards: ReviewAward[];
+  clubPoy: { name: string; rating: number }[];
+  best: string;
+  change: { ovr: number; val: number; wage: number; fame: number };
+  trophies: string[];
+  goals: { label: string; done: boolean; reward: string }[];
+  next: { club: string; personal: string };
+  coach?: { target: number; pts: number; mvp: string; standing: number; standingDelta: number };
 }
 
 export interface Contract {
@@ -124,6 +230,7 @@ export interface SeasonRec {
   awards: string[];
   avail: number;
   done: boolean;
+  best?: BestMatch;
 }
 
 export interface TrophyRec { year: number; name: string; club: string }
@@ -333,6 +440,9 @@ export interface CareerState {
   lastSeasonPos: number;
   youthJudged: boolean;
   youthFailW: number;
+  youthStage: YouthStage;
+  stageSeasons: number;
+  scholar: 0 | 1 | 2;
   promisedRole: Role;
   loanOut: boolean;
   nextLoanClub: string;
@@ -391,6 +501,12 @@ export interface CoachState {
 
 export interface PostState {
   path: 'none' | 'pundit' | 'admin' | 'business' | 'left';
+  ms: Record<string, number>;
+  msWeek: Record<string, number>;
+  lastAsk: number;
+  askCount: number;
+  endedBy: string;
+  epiWeeks: number;
   adminRole: '' | 'scout' | 'td' | 'gm';
   skill: number;
   rep: number;
@@ -399,14 +515,32 @@ export interface PostState {
   legendEvents: number;
 }
 
+export interface Src { w: number; q: string; log: number; ref: string }
+
+export interface Budget {
+  s: number;
+  choiceT: number;
+  choiceN: number;
+  majorN: number;
+  minorN: number;
+  passT: number;
+  passN: number;
+  lastChoiceW: number;
+}
+
 export interface EvState {
   cd: Record<string, number>;
   count: Record<string, number>;
   recent: string[];
   flags: Record<string, number>;
-  sched: { id: string; at: number; exp: number }[];
+  sched: { id: string; at: number; exp: number; src?: Src }[];
+  pendSrc: Record<string, Src>;
+  last: Record<string, { w: number; label: string; grade: string }>;
+  bud: Budget;
   actCd: Record<string, number>;
+  actUse: Record<string, number[]>;
   nextId: number;
+  logSeq: number;
   lastRollW: number;
 }
 
@@ -429,6 +563,8 @@ export interface Decision {
   help: string;
   ctx: string;
   offers: Offer[];
+  quote?: string;
+  from?: number;
 }
 
 export interface ResultPanel {
@@ -441,6 +577,8 @@ export interface ResultPanel {
   later: boolean;
   w: number;
 }
+
+export interface Snap { ovr: number; val: number; wage: number; fame: number; standing: number }
 
 export interface WorldState {
   countries: Record<string, CountryRT>;
@@ -501,4 +639,14 @@ export interface GameState {
   extra: { champs: number; ballon: number; lastSwitch: number };
   decCtx: Record<string, string>;
   hist: { s: number; age: number; ovr: number; val: number; fame: number }[];
+  wld: WorldInfo;
+  reviews: SeasonReview[];
+  pendingReview: number;
+  goals: SeasonGoals | null;
+  dream: DreamId | '';
+  dreamHits: string[];
+  snap: Snap;
+  cues: string[];
+  why: Record<string, WhyEntry[]>;
+  recent: MatchLine[];
 }

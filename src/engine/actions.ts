@@ -1,14 +1,28 @@
 import { ActionSchema, type ActionDef, type RawAction } from '../data/schema';
 import { Rng } from './rng';
-import { applyFx, checkPct, evalConds, parseCond, parseCheck, validateFx, previewChips, pctChip, type FxCtx } from './fx';
+import { applyFx, checkPct, evalConds, parseCond, parseCheck, scaleFx, validateFx, previewChips, pctChip, type FxCtx } from './fx';
 import { decideOutcome, render } from './events';
 import { addLog, isFast } from './log';
+import { clearCause, setCause } from './why';
+import { dateOf } from './time';
 import { curOvr } from './attributes';
 import { priceF } from './finance';
 import type { Chip, GameState, ResultPanel } from './types';
 
 const registry = new Map<string, ActionDef>();
-export type ActionHandler = (s: GameState, ctx: FxCtx, amount: number, grade: string) => Chip[] | void;
+export type ActionHandler = (s: GameState, ctx: FxCtx, amount: number, grade: string, eff: number) => Chip[] | void;
+
+const DIMINISH_WINDOW = 26;
+const DIMINISH_FLOOR = 0.4;
+
+export function recentUses(s: GameState, id: string): number {
+  return (s.ev.actUse[id] ?? []).filter((w) => s.week - w < DIMINISH_WINDOW).length;
+}
+
+export function effectMul(s: GameState, def: ActionDef): number {
+  if (!def.diminish) return 1;
+  return Math.max(DIMINISH_FLOOR, 1 - def.diminish * recentUses(s, def.id));
+}
 const handlers: Record<string, ActionHandler> = {};
 
 export function registerAction(name: string, fn: ActionHandler): void {
@@ -61,13 +75,17 @@ export function actionStatus(s: GameState, def: ActionDef): ActionStatus {
   const cost = actionCost(s, def, 0);
   if (!reason && def.param !== 'amount' && cost > s.fin.cash + s.fin.deposit && cost > 2500) reason = '현금이 부족하다';
   if (!reason && def.param === 'amount' && s.fin.cash < 10) reason = '현금이 부족하다';
-  const chips = isFast() ? [] : previewChips(def.ok.fx, s);
+  const chips = isFast() ? [] : previewChips(scaleFx(def.ok.fx, effectMul(s, def)), s);
   if (def.check && !isFast()) chips.unshift(pctChip(checkPct(s, def.check, curOvr(s.ab))));
   return { def, enabled: !reason, reason, cdLeft, cost, chips };
 }
 
 function condReason(s: GameState, def: ActionDef): string {
-  for (const c of def.cond) if (!parseCond(c)(s)) return `조건 미충족: ${c.replace('>=', ' ≥ ').replace('<=', ' ≤ ')}`;
+  for (const c of def.cond) {
+    if (parseCond(c)(s)) continue;
+    if (c.startsWith('licenseAge')) return '현역 선수는 28세 이상부터 등록할 수 있다';
+    return `조건 미충족: ${c.replace('>=', ' ≥ ').replace('<=', ' ≤ ')}`;
+  }
   return '조건 미충족';
 }
 
@@ -92,16 +110,23 @@ export function runAction(s: GameState, rng: Rng, id: string, amount: number): R
   }
   s.decCtx = { amt: String(Math.round(amount)) };
   const outcome = decideOutcome(s, rng, def);
+  const sched0 = s.ev.sched.length;
+  setCause(def.label);
+  const eff = effectMul(s, def);
   if (def.handler) {
-    const r = handlers[def.handler](s, ctx, amount, outcome.grade);
+    const r = handlers[def.handler](s, ctx, amount, outcome.grade, eff);
     if (r) for (const c of r) chips.push(c);
   }
-  applyFx(s, ctx, outcome.out.fx, chips);
-  if (outcome.out.fu) applyFx(s, ctx, outcome.out.fu, chips);
+  applyFx(s, ctx, scaleFx(outcome.out.fx, eff), chips);
+  if (outcome.out.fu) applyFx(s, ctx, scaleFx(outcome.out.fu, eff), chips);
+  clearCause();
+  if (eff < 1) chips.push({ k: `반복 사용 효과 ${Math.round(eff * 100)}%`, d: 0 });
+  if (def.diminish) s.ev.actUse[def.id] = [...(s.ev.actUse[def.id] ?? []).filter((w) => s.week - w < DIMINISH_WINDOW), s.week];
   s.ev.actCd[def.id] = s.week + def.cooldown;
   const text = render(s, outcome.out.t);
   const later = /fu:/.test(outcome.out.fx ?? '') || /fu:/.test(outcome.out.fu ?? '');
   const panel: ResultPanel = { title: def.label, grade: outcome.grade, roll: outcome.roll, need: outcome.need, text, changes: chips, later, w: s.week };
-  addLog(s, 'system', def.label, text, chips);
+  const lid = addLog(s, 'system', def.label, text, chips, { mine: true, grade: outcome.grade, pick: def.label, result: text, roll: outcome.roll, need: outcome.need });
+  if (lid) for (let i = sched0; i < s.ev.sched.length; i++) s.ev.sched[i].src = { w: s.week, q: `${dateOf(s.week).y}년 ${dateOf(s.week).m}월 · 선택: ${def.label}`, log: lid, ref: def.id };
   return panel;
 }

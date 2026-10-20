@@ -5,7 +5,8 @@ import { ageAt, seasonOf, yearOf } from './time';
 import { genName, makePerson } from './relations';
 import { INJURY_BY_ID } from '../data/injuries';
 import { startInjury, injuryEndsCareer } from './health';
-import { retirePlayer } from './lifecycle';
+import { retirePlayer, endGame } from './lifecycle';
+import { isCosmetic } from './flags';
 import { leaveToFree, genOffers, joinClub, makeOfferFor, buildClubPeople, setupClubSeason, fallbackOffer } from './transfer';
 import { presentOffers, hasPendingOffer } from './offers';
 import { playIntl } from './season';
@@ -13,9 +14,10 @@ import { clubLvl } from './world';
 import { getClub, getCountry, leaguesOf } from './data';
 import type { GameState, PersonKind } from './types';
 import { TRAIT_LABEL } from './player';
+import { scholarWage } from './youth';
 
 function afterInjury(s: GameState, rng: import('./rng').Rng, id: string): void {
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   if (injuryEndsCareer(s, rng, id, age)) {
     const def = INJURY_BY_ID[id];
     retirePlayer(s, rng, `${def.ko}의 후유증으로 더는 선수 생활을 이어갈 수 없었다.`, true);
@@ -28,7 +30,7 @@ export function addPerson(s: GameState, rng: import('./rng').Rng, key: string, k
 
 registerFx('inj', (s, { rng }, arg) => {
   if (s.st.injury) return;
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   const inj = startInjury(s, rng, arg || null, age);
   toast(s, `${inj.ko} (${inj.part}) — ${inj.total}주`);
   afterInjury(s, rng, inj.id);
@@ -47,6 +49,12 @@ registerFx('newAgent', (s, { rng }, arg) => {
   s.fin.agentSkill = arg === 'good' ? rng.int(60, 90) : arg === 'bad' ? rng.int(15, 40) : rng.int(35, 80);
   s.fin.agentFee = rng.int(5, 10);
   addLog(s, 'system', '에이전트 계약', `${s.people.agent.name}와(과) 에이전트 계약을 맺었다.`, []);
+});
+registerFx('agentFee', (s, _c, arg) => {
+  s.fin.agentFee = Number(arg);
+});
+registerFx('reinjure', (s) => {
+  s.ev.flags.reinjure = s.week;
 });
 registerFx('agentGone', (s) => {
   if (s.people.agent) s.people.agent.gone = true;
@@ -71,7 +79,7 @@ registerFx('newCoach', (s, { rng }) => {
 });
 registerFx('romance', (s, { rng }) => {
   if (s.life.romance === 'dating' || s.life.romance === 'married') return;
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   addPerson(s, rng, 'partner', 'partner', { age: clamp(age + rng.int(-3, 4), 16, 45), job: rng.pick(['대학생', '간호사', '디자이너', '교사', '모델', '회사원', '요리사', '의대생']), rel: rng.int(30, 55) });
   s.life.romance = 'dating';
   s.life.romanceW = s.week;
@@ -186,11 +194,13 @@ registerFx('offers', (s, { rng }, arg) => {
   else toast(s, '구체적인 제안으로 이어지지는 않았다.');
 });
 registerFx('youthMove', (s, { rng }, arg) => {
-  const start = s.p.startLvl;
-  const lvl = clamp(arg === 'up' ? start + 1 : arg === 'down' ? start - 1 : start, 2, getCountry(s.p.country).top);
+  const cur = s.career.clubId ? clubLvl(s, s.career.clubId) : s.p.startLvl;
+  const top = getCountry(s.p.country).top;
+  const lvl = clamp(arg === 'up' ? cur + 1 : arg === 'down' ? cur - 1 : arg === 'low' ? 2 : cur, 2, top);
   const lgs = leaguesOf(s.p.country);
   const cands: string[] = [];
   for (const l of lgs) for (const id of l.clubIds) if (clubLvl(s, id) === lvl && id !== s.career.clubId) cands.push(id);
+  if (!cands.length) for (const l of lgs) for (const id of l.clubIds) if (clubLvl(s, id) <= cur && id !== s.career.clubId) cands.push(id);
   if (!cands.length) return;
   const id = rng.pick(cands);
   const cs = getClub(id);
@@ -204,7 +214,24 @@ registerFx('youthMove', (s, { rng }, arg) => {
   s.career.cur.clubName = cs.name;
   s.p.dorm = true;
   s.fin.housing = 'dorm';
-  addLog(s, 'milestone', '유스 이적', `${cs.name} 유스팀으로 옮겼다.`, [], { star: true });
+  if (s.career.scholar === 1 && s.career.contract) s.career.contract.wage = scholarWage(s, false);
+  addLog(s, 'milestone', '유스 이적', `${cs.name} ${s.career.youthStage} 팀으로 옮겼다.`, [], { star: true });
+});
+registerFx('scholar', (s, _c, arg) => {
+  const con = s.career.contract;
+  if (arg === 'none') {
+    s.career.scholar = 2;
+    return;
+  }
+  s.career.scholar = 1;
+  if (con) con.wage = scholarWage(s, arg === 'high');
+  addLog(s, 'milestone', '장학 계약', `${getClub(s.career.clubId).name}와(과) 유스 장학 계약을 맺었다.`, [], { star: true });
+  return [{ k: '장학 수당', d: con ? con.wage : 0, u: '만' }];
+});
+registerFx('youthCap', (s) => {
+  s.nat.youthCaps += 1;
+  if (s.nat.status === 'none') s.nat.status = 'youth';
+  if (s.nat.youthCaps === 1) addLog(s, 'milestone', '연령별 대표팀', `${getCountry(s.p.country).natTeam} 연령별 대표팀에 처음 선발됐다.`, [], { star: true });
 });
 registerFx('clubCrash', (s) => {
   s.ev.flags.club_crash = s.week;
@@ -225,7 +252,7 @@ registerFx('lifestyle', (s, _c, arg) => {
 });
 registerFx('rivalNew', (s, { rng }) => {
   const clubId = s.career.clubId;
-  const r = makePerson(rng, s.ev, 'rival', clubId ? getClub(clubId).country : s.p.country, { age: clamp(ageAt(s.p.birth.y, s.week) + rng.int(-2, 3), 15, 36), refYear: yearOf(s.week), job: '같은 포지션 경쟁자', rel: rng.int(-25, 0), pos: s.ab.pos, ovr: Math.round(curOvrSafe(s) + rng.normal(0, 3)), pot: 70, clubId });
+  const r = makePerson(rng, s.ev, 'rival', clubId ? getClub(clubId).country : s.p.country, { age: clamp(ageAt(s.p.birth, s.week) + rng.int(-2, 3), 15, 36), refYear: yearOf(s.week), job: '같은 포지션 경쟁자', rel: rng.int(-25, 0), pos: s.ab.pos, ovr: Math.round(curOvrSafe(s) + rng.normal(0, 3)), pot: 70, clubId });
   s.people.rival = r;
 });
 function curOvrSafe(s: GameState): number {
@@ -354,4 +381,27 @@ registerFx('adminBoost', (s, _c, arg) => {
   const v = Number(arg || 3);
   s.post.skill = clamp(s.post.skill + v, 0, 100);
   s.post.rep = clamp(s.post.rep + v, 0, 100);
+});
+
+import { advanceMilestone, MILESTONES, isEpiPath } from './postcareer';
+registerFx('msUp', (s) => {
+  const name = advanceMilestone(s);
+  if (!name) return;
+  const n = s.post.ms[s.post.path] ?? 0;
+  addLog(s, 'milestone', '이정표', `${name}에 이르렀다. (${n}/4)`, [], { star: true });
+  toast(s, `이정표 달성: ${name}`);
+  if (isCosmetic()) s.cues.push('trophy');
+});
+registerFx('msDelay', (s) => {
+  if (isEpiPath(s.post.path)) s.post.msWeek[s.post.path] = s.week;
+});
+registerFx('epiAsk', (s) => {
+  s.post.askCount += 1;
+});
+registerFx('epiEnd', (s) => {
+  const path = s.post.path;
+  s.post.endedBy = path;
+  const done = isEpiPath(path) ? (s.post.ms[path] ?? 0) : 0;
+  void MILESTONES;
+  endGame(s, done >= 4 ? '모든 이정표를 지나 오랜 축구 인생을 조용히 마무리했다.' : '새로운 일상으로 걸어 들어가며 축구 인생을 마무리했다.');
 });

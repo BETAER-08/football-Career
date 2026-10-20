@@ -6,10 +6,10 @@ const K = 'chain-step' as const;
 
 export const chains1: RawEvent[] = [
   ch('af_1', P, 3, ['에이전트 {agent}이(가) 재정 관리까지 맡아 주겠다고 제안했다. "선수는 운동만 하면 되잖아요." 위임장 한 장이면 된다.', '{agent}이(가) 세금과 투자까지 한 번에 관리해 주겠다고 했다. 믿음직하지만 서류가 많다.'], [
-    cc('전부 맡긴다', ['서류에 서명했다. 신경 쓸 일이 확 줄었다.', 'rel.agent+4 stress-3 flag:af_trust fu:af_2@14-34'], { pv: '편의↑ 위험 숨어 있음' }),
-    cc('일부만 맡긴다', ['세금 업무만 맡기고 나머지는 직접 챙기기로 했다.', 'rel.agent+1 hid.thrift+1']),
+    cc('전부 맡긴다', ['서류에 서명했다. 신경 쓸 일이 확 줄었다.', 'rel.agent+4 stress-3 flag:af_trust fu:af_2@14-34'], { chk: '40 hid.thrift*0.3 attr.vision*0.3 agent*0.2', pv: '편의↑ 위험 숨어 있음', bad: ['서류에 적힌 권한 범위가 지나치게 넓었다는 걸 뒤늦게 알았다.', 'rel.agent+4 stress+3 flag:af_trust fu:af_2@6-14'] }),
+    cc('일부만 맡긴다', ['세금 업무만 맡기고 나머지는 직접 챙기기로 했다.', 'rel.agent+1 hid.thrift+1 stress+2']),
     cc('직접 관리한다', ['"돈은 제가 챙길게요." 에이전트는 어깨를 으쓱했다.', 'hid.thrift+2 rel.agent-1'])
-  ], { kind: K, chain: 'agent_fraud', cond: ['hasAgent', 'age>=19', 'cash>=3000', 'agentSkill<=75'], cd: 400, max: 1, note: 'agent_fraud' }),
+  ], { cond: ['hasAgent', 'age>=19', 'cash>=3000', 'agentSkill<=75'], cd: 400, max: 1, note: 'agent_fraud', kind: K, chain: 'agent_fraud', tier: 'major' }),
   ch('af_2', P, 1, ['통장 입출금 내역에 낯선 항목이 몇 건 눈에 띄었다. 에이전트가 관리하는 계좌다.', '명세서를 훑어보다 이상한 이체 내역을 발견했다. 설명 없이 반복된 금액들이다.'], [
     cc('{agent}에게 직접 묻는다', ['에이전트는 "수수료와 세금 문제"라고 얼버무렸다. 설명이 매끄럽지 않다.', 'rel.agent-6 stress+5 fu:af_3a@8-16'], { chk: '42 attr.vision*0.5 hid.thrift*0.2 hid.pro*0.1', great: ['정곡을 찌르는 질문에 에이전트가 당황했다. 해명 요구서에 서명을 받아 냈다.', 'rel.agent-8 stress+2 fu:af_3b@2-6'] }),
     cc('회계사에게 감사를 의뢰한다', ['전문가의 조사가 시작됐다. 비용은 들지만 마음이 놓인다.', 'cashw-2 stress+2 fu:af_3b@4-10'], { pv: '지출↑ 피해 최소화' }),
@@ -23,7 +23,7 @@ export const chains1: RawEvent[] = [
     cc('같은 방식으로 맞받는다', ['언론을 통해 반박했다. 팬들이 편을 갈랐다.', 'rel.rival-8 rel.media+3 rel.fans+2 stress+4 fu:rf_2@6-14'], { pv: '긴장↑' }),
     cc('무시한다', ['흔들리지 않기로 했다. 하지만 마음 한구석이 불편했다.', 'stress+2 fu:rf_2@10-20']),
     cc('직접 만나 이야기한다', ['어색한 만남이었지만 서로의 입장을 들었다.', 'rel.rival+8 stress-2'], { chk: '40 hid.social*0.25 hid.temper*-0.2 rel.rival*0.1', bad: ['대화는 평행선이었다. 오히려 감정이 상했다.', 'rel.rival-4 stress+3 fu:rf_2@6-14'] })
-  ], { kind: K, chain: 'rival_feud', cond: ['rel.rival<=-4', 'fameD>=6'], cd: 300, max: 1 }),
+  ], { cond: ['rel.rival<=-4', 'fameD>=6'], cd: 300, max: 1, kind: K, chain: 'rival_feud', tier: 'major' }),
   ch('rf_2', P, 1, ['경기 중 {rival}과(와) 정면으로 맞부딪혔다. 두 선수 사이로 심판이 급히 들어왔다. 관중석이 술렁인다.', '{rival}과(와)의 신경전이 그라운드에서 폭발했다. 주변 선수들이 말리기 시작했다.'], [
     cc('먼저 손을 내민다', ['"그만하자." 짧은 한마디와 함께 악수를 청했다. {rival}은(는) 잠시 머뭇거렸다.', 'rel.rival+6 stress-3 fu:rf_3a@2-6'], { chk: '45 hid.temper*-0.25 attr.composure*1', bad: ['손을 뿌리쳤다. 분위기가 더 나빠졌다.', 'rel.rival-6 fu:rf_3b@2-6'] }),
     cc('끝까지 맞선다', ['한 걸음도 물러서지 않았다. 카드가 오갔다.', 'rel.rival-8 stress+4 fx:banned=3 fu:rf_3b@2-6'])
@@ -34,25 +34,25 @@ export const chains1: RawEvent[] = [
   ch('mf_1', P, 2, ['낯선 사내가 접근해 다음 경기 결과에 "협조"하면 큰돈을 주겠다고 속삭였다. 몇 번이고 거절해도 그의 눈은 포기하지 않는 듯했다.', '경기를 앞두고 휴대폰에 알 수 없는 번호로 메시지가 왔다. 승부조작을 암시하는 제안이었다.'], [
     cc('단호히 거절한다', ['"그런 일은 하지 않습니다." 사내는 말없이 사라졌다. 심장이 빠르게 뛰었다.', 'hid.pro+3 stress+4 fu:mf_2a@4-10'], { pv: '프로의식↑' }),
     cc('구단에 즉시 알린다', ['구단 보안팀이 즉시 조사에 착수했다. 리그 사무국과 수사기관의 협조가 이어졌다.', 'rel.coach+4 rel.director+4 stress+5 fu:mf_3c@8-20']),
-    cc('제안을 받아들인다', ['"한 번만이다." 마음이 흔들렸다. 계좌에 첫 입금이 이뤄졌다.', 'cashw+10 hid.pro-5 stress+8 fu:mf_2b@2-6'], { pv: '위험 수위↑↑' })
-  ], { kind: K, chain: 'match_fixing', cond: ['lvl<=3', 'age>=18', 'ovr>=35'], cd: 500, max: 1, heavy: true, help: '불법적인 제안을 받으면 구단·리그 사무국·수사기관에 즉시 알리는 것이 안전합니다. 혼자 고민하지 마세요.', note: 'match_fix' }),
+    cc('제안을 받아들인다', ['"한 번만이다." 마음이 흔들렸다. 계좌에 첫 입금이 이뤄졌다.', 'cashw+10 hid.pro-5 stress+8 fu:mf_2b@2-6'], { chk: '35 hid.pro*-0.15 hid.bigGame*0.1', pv: '위험 수위↑↑ 적발 확률 높음', bad: ['첫 입금 직후 구단 보안팀의 감시망에 걸렸다. 모든 것이 빠르게 무너지기 시작했다.', 'cashw+10 hid.pro-5 stress+12 rel.coach-15 fu:mf_3b@2-6'] })
+  ], { cond: ['lvl<=3', 'age>=18', 'ovr>=35'], cd: 500, max: 1, note: 'match_fix', heavy: true, help: '불법적인 제안을 받으면 구단·리그 사무국·수사기관에 즉시 알리는 것이 안전합니다. 혼자 고민하지 마세요.', kind: K, chain: 'match_fixing', tier: 'major' }),
   ch('mf_2a', P, 1, ['거절 이후에도 같은 번호에서 연락이 이어졌다. 협박성 메시지까지 섞여 있다. 불안감이 커졌다.', '정체를 알 수 없는 사람들이 숙소 근처에서 서성이는 것 같았다.'], [
-    cc('구단과 경찰에 알린다', ['구단과 수사기관의 조사가 이어졌다. 오랜 불안이 마침내 걷혔다.', 'rel.coach+4 stress-4 fu:mf_3c@6-14'], { pv: '안전↑' }),
+    cc('구단과 경찰에 알린다', ['구단과 수사기관의 조사가 이어졌다. 오랜 불안이 마침내 걷혔다.', 'rel.coach+4 stress-4 fu:mf_3c@6-14'], { chk: '55 rel.coach*0.2 hid.pro*0.2', pv: '안전↑', bad: ['신고 과정에서 불필요한 소문이 퍼졌다.', 'stress+4 rel.media-3 fu:mf_3c@6-14'] }),
     cc('혼자 감당한다', ['혼자 끙끙 앓았다. 훈련 중에도 집중이 흐트러졌다.', 'stress+8 sharp-4 sleep-6'])
   ], { kind: K, chain: 'match_fixing', sched: true, max: 1, heavy: true, help: '위협을 받는다면 혼자 감당하지 말고 구단 보안팀·경찰·상담 기관에 도움을 요청하세요.' }),
   ch('mf_2b', P, 1, ['"다음 경기도 부탁한다." 사내가 더 큰 금액을 제시했다. 이미 한 번 선을 넘었다는 사실이 목을 조여 온다.', '돈을 받은 뒤 마음은 점점 무거워졌다. 이제 빠져나가기가 쉽지 않다.'], [
-    cc('계속 협조한다', ['선을 넘었다. 이제는 돌아갈 곳이 없다.', 'cashw+15 hid.pro-6 stress+10 fu:mf_3b@6-16'], { pv: '위험 수위↑↑↑' }),
+    cc('계속 협조한다', ['선을 넘었다. 이제는 돌아갈 곳이 없다.', 'cashw+15 hid.pro-6 stress+10 fu:mf_3b@6-16'], { chk: '30 hid.pro*-0.2 hid.bigGame*0.1', pv: '위험 수위↑↑↑', bad: ['협조가 이어지던 중 구단 조사에 꼬리를 밟혔다.', 'cashw+15 hid.pro-6 stress+12 fu:mf_3b@2-5'] }),
     cc('그만두고 자수를 고민한다', ['구단에 사실을 알리고 조사에 협조하기로 했다. 처벌은 피하기 어렵겠지만 더는 숨기지 않기로 했다.', 'stress+8 hid.pro+2 fu:mf_3b@4-10'])
   ], { kind: K, chain: 'match_fixing', sched: true, max: 1, heavy: true, help: '불법 행위에 연루되었다면 변호사와 상담하고 수사에 협조하는 것이 가장 안전합니다.' }),
   pa('mf_3b', P, 1, ['수사기관이 승부조작 정황을 포착했다. 구단은 즉각 {name}을(를) 분리 조치했다. 오랜 시간 쌓은 모든 것이 한순간에 무너졌다.', '조사 결과 승부조작 연루 사실이 확인됐다. 협회는 장기 출전 정지를 결정했다.'], 'fx:banned=40 fx:release val-60 fameD-15 rel.fans-30 rel.media-25 rel.coach-20 happy-20 stress+20 hid.controversy+5', { kind: K, chain: 'match_fixing', sched: true, max: 1, heavy: true, help: '큰 잘못을 저지른 뒤에도 책임을 지고 도움을 구하는 길은 있습니다. 가족과 전문가에게 이야기하세요.' }),
   pa('mf_3c', P, 1, ['당신의 신고 덕분에 승부조작 조직이 적발됐다. 리그와 구단은 감사를 표했고 팬들은 박수를 보냈다. 지키기 어려웠던 원칙이 빛났다.', '수사 결과 승부조작 조직이 검거됐다. 용기 있는 신고가 리그 전체를 지켰다는 평가가 나왔다.'], 'rel.fans+10 rel.media+8 fameD+2 hid.pro+4 happy+6', { kind: K, chain: 'match_fixing', sched: true, max: 1 }),
 
   ch('il_1', P, 3, ['같은 부위를 또 다쳤다. 이번에는 정말 수술이 필요할지도 모른다는 이야기가 나온다.', '재활을 끝낸 지 얼마 되지 않았는데 같은 자리에서 통증이 다시 올라왔다. 의무팀의 표정이 굳어 있다.'], [
-    cc('수술을 받는다', ['수술은 성공적으로 끝났다. 긴 재활이 기다린다.', 'health-3 stress+4 fx:fullRehab fu:il_2@8-14'], { pv: '재발 위험↓ 장기 결장' }),
+    cc('수술을 받는다', ['수술은 성공적으로 끝났다. 긴 재활이 기다린다.', 'health-3 stress+4 fx:fullRehab fu:il_2@8-14'], { chk: '55 health*0.15 hid.pro*0.1', pv: '재발 위험↓ 장기 결장', bad: ['수술 후 합병증이 생겨 재활이 길어졌다.', 'health-6 stress+6 fx:fullRehab fu:il_2@8-14'] }),
     cc('보존 치료를 선택한다', ['수술 대신 재활과 치료로 가기로 했다.', 'stress+3 fu:il_2@6-12'])
-  ], { kind: K, chain: 'injury_loop', cond: ['injured', 'injweeks>=3', 'age>=19'], cd: 300, max: 2, note: 'inj_recur' }),
+  ], { cond: ['injured', 'injweeks>=3', 'age>=19'], cd: 300, max: 2, note: 'inj_recur', kind: K, chain: 'injury_loop', tier: 'major' }),
   ch('il_2', P, 1, ['재활 중 통증이 다시 올라왔다. 팀은 한창 바쁜 시기다. 서둘러 돌아오라는 눈치가 느껴진다.', '재활 센터 훈련은 지루하다. 몸이 거의 회복된 것 같은 착각이 든다.'], [
-    cc('서두르지 않고 천천히 간다', ['더디지만 단단하게 회복해 나갔다.', 'health+3 stress+2 fx:fullRehab fu:il_3@10-20'], { pv: '재발 위험↓' }),
+    cc('서두르지 않고 천천히 간다', ['더디지만 단단하게 회복해 나갔다.', 'health+3 stress+2 fx:fullRehab fu:il_3@10-20'], { chk: '50 hid.pro*0.2 health*0.1', pv: '재발 위험↓', bad: ['천천히 가는 사이 팀 내 입지가 흔들렸다.', 'rel.coach-3 stress+4 fx:fullRehab fu:il_3@10-20'] }),
     cc('서둘러 복귀한다', ['감독의 기대에 부응하기 위해 일정을 앞당겼다.', 'fx:earlyReturn morale+3 rel.coach+3 fu:il_3@4-10'], { pv: '재발 위험↑↑' })
   ], { kind: K, chain: 'injury_loop', sched: true, max: 2, note: 'inj_early' }),
   ch('il_3', P, 1, ['다시 그라운드에 섰다. 몸의 반응이 예전 같지는 않지만 마음은 단단해졌다. 앞으로의 선수 생활에 대한 생각이 많아졌다.', '복귀 후 첫 경기. 몸이 낯설고 두렵다. 그래도 공을 차는 순간 모든 것이 선명해졌다.'], [
@@ -79,9 +79,9 @@ export const chains1: RawEvent[] = [
   pa('cc_3b', P, 1, ['새 감독의 구상에서 {name}의 자리가 줄어들었다. 벤치에서 보내는 시간이 늘었다. 쉽지 않은 시간이 될 것이다.', '새로운 전술에서 {name}의 장점이 살아나지 않았다. 감독의 신뢰를 다시 얻어야 한다.'], 'fx:role=backup morale-6 stress+4 rel.coach-3', { kind: K, chain: 'coach_change', sched: true, max: 4 }),
 
   ch('mar_1', P, 2, ['결혼 후 첫 시즌이 시작됐다. 원정과 훈련 일정이 잦아 {partner}과(와) 보내는 시간이 줄었다. 서로 서운함이 스며들기 시작했다.', '신혼의 달콤함이 일정표 앞에서 흔들린다. {partner}이(가) 말없이 현관에 앉아 있었다.'], [
-    cc('집과 가족에 더 신경 쓴다', ['훈련 후 곧장 집으로 돌아갔다. 서로의 이야기를 들어 주는 시간이 늘었다.', 'rel.partner+8 happy+4 sharp-1 fu:mar_2@20-40'], { pv: '연인 관계↑' }),
+    cc('집과 가족에 더 신경 쓴다', ['훈련 후 곧장 집으로 돌아갔다. 서로의 이야기를 들어 주는 시간이 늘었다.', 'rel.partner+8 happy+4 sharp-1 fu:mar_2@20-40'], { chk: '55 rel.partner*0.15 hid.family*0.15', pv: '연인 관계↑', bad: ['시간을 쏟아도 서로의 기대가 어긋났다.', 'rel.partner-3 stress+4 fu:mar_2@12-30'] }),
     cc('커리어에 더 집중한다', ['"이번 시즌만 지나면 괜찮아질 거야." 말은 그렇게 했지만 마음은 무거웠다.', 'rel.partner-6 stress+4 fu:mar_2@12-30'])
-  ], { kind: K, chain: 'marriage', cond: ['married'], cd: 500, max: 1, note: 'divorce' }),
+  ], { cond: ['married'], cd: 500, max: 1, note: 'divorce', kind: K, chain: 'marriage', tier: 'major' }),
   ch('mar_2', P, 1, ['부부 사이의 갈등이 깊어졌다. 같은 이야기를 반복하다 침묵으로 끝나는 날이 늘었다.', '{partner}은(는) 말수가 줄고 {name}도 말을 아낀다. 서로를 위한 결정이 필요하다.'], [
     cc('부부 상담을 받아 본다', ['전문가 앞에서 처음으로 서로의 이야기를 들어 보았다.', 'rel.partner+6 stress-2 cashw-1 fu:mar_3a@8-20'], { chk: '52 rel.partner*0.3 hid.family*0.15', bad: ['상담은 서로의 상처를 더 선명하게 했다.', 'rel.partner-4 fu:mar_3b@6-16'] }),
     cc('일단 거리를 둔다', ['잠시 떨어져 시간을 갖기로 했다. 집이 낯설게 느껴졌다.', 'rel.partner-6 stress+5 fu:mar_3b@6-16']),
@@ -91,9 +91,9 @@ export const chains1: RawEvent[] = [
   pa('mar_3b', P, 1, ['더 이상 같은 길을 걷기 어렵다는 결론에 이르렀다. 서류에 서명하는 손이 떨렸다. 이혼 소식은 짧게 보도됐다.', '조용한 이별이었다. 서로의 앞날을 존중하기로 했다.'], 'fx:divorce', { kind: K, chain: 'marriage', sched: true, max: 1, note: 'divorce' }),
 
   ch('pi_1', P, 2, ['고향에서 급한 연락이 왔다. 아버지가 병원에 입원하셨다고 한다. 구단 일정은 빠듯하다.', '어머니의 떨리는 목소리가 전화기 너머에서 들렸다. 아버지가 쓰러져 병원에 계시다고 했다.'], [
-    cc('즉시 고향으로 간다', ['감독에게 사정을 말하고 곧장 짐을 쌌다. 병실의 아버지 손을 잡았다.', 'fx:parentIll rel.father+10 rel.mother+6 stress+6 sharp-4 rel.coach-2 fu:pi_2@2-5'], { pv: '가족 관계↑↑ 경기 감각↓' }),
+    cc('즉시 고향으로 간다', ['감독에게 사정을 말하고 곧장 짐을 쌌다. 병실의 아버지 손을 잡았다.', 'fx:parentIll rel.father+10 rel.mother+6 stress+6 sharp-4 rel.coach-2 fu:pi_2@2-5'], { chk: '55 hid.family*0.15 rel.father*0.1', pv: '가족 관계↑↑ 경기 감각↓', bad: ['급히 이동하느라 경기 일정에 혼선이 생겼다. 감독이 불편한 기색이다.', 'fx:parentIll rel.father+8 rel.coach-5 stress+8 fu:pi_2@2-5'] }),
     cc('치료비를 보내고 경기에 집중한다', ['가족이 괜찮다고 했다. 마음은 하루 종일 병원에 있었다.', 'fx:parentIll cashy-0.2 stress+8 rel.father+3 fu:pi_2@4-8'])
-  ], { kind: K, chain: 'parent_illness', cond: ['age>=22', 'rel.father>=0', '!flag:parent_ill'], cd: 500, max: 1, heavy: true, help: '가족의 건강 문제는 큰 스트레스를 줍니다. 혼자 견디지 말고 가까운 사람이나 상담 기관의 도움을 받으세요.' }),
+  ], { cond: ['age>=22', 'rel.father>=0', '!flag:parent_ill'], cd: 500, max: 1, heavy: true, help: '가족의 건강 문제는 큰 스트레스를 줍니다. 혼자 견디지 말고 가까운 사람이나 상담 기관의 도움을 받으세요.', kind: K, chain: 'parent_illness', tier: 'major' }),
   ch('pi_2', P, 1, ['아버지의 치료는 길어지고 있다. 의사는 경과를 지켜봐야 한다고 말한다. 경기와 가족 사이에서 마음이 갈린다.', '병원 복도의 의자에 앉아 숨을 고르고 있다. 가족의 일상이 많이 달라졌다.'], [
     cc('자주 병원을 찾아간다', ['틈이 날 때마다 병원을 찾았다. 아버지가 힘없이 웃었다.', 'rel.father+8 stress+5 fatigue+6 fu:pi_3a@6-14'], { chk: '50 rel.father*0.2 health*0.1', bad: ['정성에도 불구하고 상태는 쉽게 호전되지 않았다.', 'stress+8 fu:pi_3b@4-10'] }),
     cc('더 좋은 병원과 치료를 지원한다', ['전문 병원으로 옮기고 치료를 지원했다.', 'cashy-0.4 rel.father+6 stress+4 fu:pi_3a@6-14'], { chk: '55 rel.father*0.15', bad: ['최선을 다했지만 쉽지 않은 상황이었다.', 'stress+8 fu:pi_3b@4-10'] })

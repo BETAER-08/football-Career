@@ -7,12 +7,12 @@
   import { POS_LABEL, ATTR_LABEL, TECH_KEYS, GK_KEYS, PHYS_KEYS, MENTAL_KEYS, HIDDEN_KEYS, type AttrKey } from '../engine/types';
   import { curOvr } from '../engine/attributes';
   import { TRAIT_LABEL } from '../engine/player';
-  import { mrz, seed32 } from './format';
+  import { mrz, seed32, whyText } from './format';
   import { licenseLabel, licenseLevel, LICENSE_NAME } from '../engine/coach';
   import { hashString } from '../engine/rng';
 
   const g = $derived(store.game!);
-  const age = $derived(ageAt(g.p.birth.y, g.week));
+  const age = $derived(ageAt(g.p.birth, g.week));
   const country = $derived(getCountry(g.p.country));
   const clubId = $derived(g.phase === 'coach' ? g.coach.clubId : g.career.clubId || g.p.startClubId);
   let cv: HTMLCanvasElement | undefined = $state();
@@ -23,7 +23,7 @@
   const isGk = $derived(g.ab.pos === 'GK');
   const keys = $derived<readonly AttrKey[]>(tab === 'tech' ? (isGk ? [...GK_KEYS, ...TECH_KEYS.slice(0, 3)] : TECH_KEYS) : tab === 'phys' ? PHYS_KEYS : MENTAL_KEYS);
   const ovr = $derived(curOvr(g.ab));
-  const width = $derived(Math.max(2, Math.round(14 - (age - 12) * 1.2)));
+  const width = $derived(Math.max(2, Math.round(14 - (age - 14) * 1.5)));
   const potMid = $derived(g.ab.pot + ((hashString(g.cfg.seed + 'scout') % 7) - 3) * Math.max(0.2, width / 12));
   const lo = $derived(Math.max(Math.round(ovr), Math.round(potMid - width)));
   const hi = $derived(Math.min(99, Math.round(potMid + width)));
@@ -100,7 +100,7 @@
         {#each keys as k}
           {@const v = g.ab.a[k]}
           {@const d = delta(k)}
-          <div class="ab"><span>{ATTR_LABEL[k]}</span><div class="gauge" class:warn={v < 7} class:bad={v < 4}><i style="width:{(v / 20) * 100}%"></i></div><b class="mono">{Math.round(v)}</b><em class={d > 0.25 ? 'up' : d < -0.25 ? 'down' : 'faint'}>{d > 0.25 ? '▲' : d < -0.25 ? '▼' : '·'}</em></div>
+          <div class="ab" title={whyText(g, `attr.${k}`) || '최근 큰 변화가 없어요'}><span>{ATTR_LABEL[k]}</span><div class="gauge" class:warn={v < 7} class:bad={v < 4}><i style="width:{(v / 20) * 100}%"></i></div><b class="mono">{Math.round(v)}</b><em class={d > 0.25 ? 'up' : d < -0.25 ? 'down' : 'faint'}>{d > 0.25 ? '▲' : d < -0.25 ? '▼' : '·'}</em></div>
         {/each}
         {#if tab === 'phys'}
           <div class="kv"><span>체지방률</span><span class="mono">{g.ab.bodyFat.toFixed(1)}%</span></div>

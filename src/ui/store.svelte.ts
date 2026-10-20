@@ -5,8 +5,10 @@ import { defaultFocus } from '../engine/lifestyle';
 import { playerGrade, coachGrade, percentileOf } from '../engine/scoring';
 import type { Decision, GameConfig, GameState, ResultPanel, Toast } from '../engine/types';
 import type { RouletteResult } from '../engine/roulette';
-import { clearSave, exportSave, hasSave, importSave, loadGame, loadPrefs, pushArchive, saveGame, savePrefs, type Prefs } from './save';
-import { setMusic, chime, click } from './audio';
+import { clearSave, exportSave, hasSave, importSave, loadGame, loadPrefs, pushArchive, saveGame, savePrefs, exportEntry, type Prefs, type ArchiveEntry } from './save';
+import { setMusic, chime, click, sfx } from './audio';
+import { ARCHIVE_VERSION, buildEndData, type EndData } from '../engine/enddata';
+import { isEpiPath } from '../engine/postcareer';
 import { getClub } from '../engine/data';
 import { formatKRW } from '../engine/finance';
 import { netWorth } from '../engine/finance';
@@ -23,6 +25,15 @@ class Store {
   speed = $state(1);
   toasts = $state<Toast[]>([]);
   banner = $state('');
+  bannerExport = $state(false);
+  legacy = $state.raw<{ raw: string; reason: string } | null>(null);
+  end = $state.raw<EndData | null>(null);
+  archiveFail = $state(false);
+  reviewOpen = $state(false);
+  reviewIdx = $state(-1);
+  ceremonyOpen = $state(false);
+  tableOpen = $state(false);
+  private epiSpeedFor = '';
   result = $state.raw<ResultPanel | null>(null);
   panel = $state<'' | 'money' | 'career' | 'life' | 'log' | 'info' | 'saves'>('');
   pendingConfig = $state.raw<GameConfig | null>(null);
@@ -78,6 +89,11 @@ class Store {
     this.toasts = [];
     this.seenToast = 0;
     this.archived = false;
+    this.archiveFail = false;
+    this.end = null;
+    this.reviewOpen = false;
+    this.ceremonyOpen = false;
+    this.epiSpeedFor = '';
     this.playing = true;
     this.skipping = false;
     this.screen = 'game';
@@ -124,7 +140,7 @@ class Store {
     const g = this.game;
     if (!g) return 1000;
     const base = (secPerYear(this.prefs.lengthMin) * 1000) / 52;
-    const post = g.phase === 'postcareer' ? 2 : 1;
+    const post = g.phase === 'postcareer' && g.post.path === 'none' ? 2 : 1;
     return base / this.speed / post;
   }
 
@@ -143,6 +159,8 @@ class Store {
       autoStep(g);
       this.notify();
     }
+    this.checkModals(g);
+    if (this.reviewOpen || this.ceremonyOpen) return;
     if (g.decision || (!this.playing && !this.skipping)) return;
     this.acc += this.skipping ? 1e9 : dt;
     let n = 0;
@@ -165,6 +183,7 @@ class Store {
     if (n > 0) {
       this.snapRel();
       this.pullToasts();
+      this.pullCues();
       this.notify();
       if (performance.now() - this.lastSave > 2000 || g.decision) this.saveNow();
     }
@@ -176,6 +195,54 @@ class Store {
     if (!g || g.week - this.relSnapWeek < 26) return;
     this.relSnapWeek = g.week;
     this.relSnap = Object.fromEntries(Object.entries(g.people).map(([k, p]) => [k, p.rel]));
+  }
+
+  private reviewTimer: number | null = null;
+
+  checkModals(g: GameState): void {
+    if (g.pendingReview >= 0 && !this.reviewOpen) {
+      this.reviewIdx = g.reviews.length - 1;
+      this.reviewOpen = true;
+      this.playing = this.playing && !g.auto ? false : this.playing;
+      if (g.auto) {
+        if (this.reviewTimer !== null) window.clearTimeout(this.reviewTimer);
+        this.reviewTimer = window.setTimeout(() => this.closeReview(), 8000);
+      }
+    } else if (g.wld.ceremonyDue && !this.ceremonyOpen && !this.reviewOpen) {
+      this.ceremonyOpen = true;
+      if (g.auto) window.setTimeout(() => this.closeCeremony(), 8000);
+    }
+  }
+
+  openReviewAt(i: number): void {
+    this.reviewIdx = i;
+    this.reviewOpen = true;
+  }
+
+  closeReview(): void {
+    const g = this.game;
+    if (this.reviewTimer !== null) window.clearTimeout(this.reviewTimer);
+    this.reviewTimer = null;
+    this.reviewOpen = false;
+    if (g) {
+      g.pendingReview = -1;
+      if (!g.decision && !g.ended) this.playing = true;
+    }
+    this.notify();
+  }
+
+  closeCeremony(): void {
+    const g = this.game;
+    this.ceremonyOpen = false;
+    if (g) g.wld.ceremonyDue = false;
+    this.notify();
+  }
+
+  pullCues(): void {
+    const g = this.game;
+    if (!g || !g.cues.length) return;
+    if (this.prefs.music) for (const c of new Set(g.cues)) sfx(c);
+    g.cues.length = 0;
   }
 
   pullToasts(): void {
@@ -235,8 +302,18 @@ class Store {
     if (!g.decision && !g.ended) this.playing = true;
     chime();
     this.pullToasts();
+    this.pullCues();
+    this.epiSpeed(g);
     this.notify();
     this.saveNow();
+  }
+
+  epiSpeed(g: GameState): void {
+    if (g.phase === 'postcareer' && isEpiPath(g.post.path) && this.epiSpeedFor !== g.post.path) {
+      this.epiSpeedFor = g.post.path;
+      this.speed = 4;
+      this.toast('에필로그 진로라 기본 배속을 4×로 맞췄어요');
+    }
   }
 
   private resultTimer: number | null = null;
@@ -279,6 +356,7 @@ class Store {
       chime();
     }
     this.pullToasts();
+    this.pullCues();
     this.notify();
     return p;
   }
@@ -297,15 +375,28 @@ class Store {
     const g = this.game;
     if (!g) return;
     this.lastSave = performance.now();
-    const ok = saveGame({ ...g, log: g.log.slice(-900) });
+    const ok = saveGame(g);
     if (ok) this.hasSaved = true;
-    else if (!this.banner) this.banner = '저장 공간을 사용할 수 없어요. 저장 내보내기를 사용해 주세요.';
+    else if (!this.banner) {
+      this.banner = '저장 공간을 사용할 수 없어요. 지금 내보내 두세요.';
+      this.bannerExport = true;
+    }
+  }
+
+  refreshSaved(): void {
+    this.hasSaved = hasSave();
+    const r = loadGame();
+    this.legacy = r.kind === 'legacy' ? { raw: r.raw, reason: r.reason } : null;
   }
 
   loadSaved(): boolean {
-    const g = loadGame();
-    if (!g) return false;
-    this.begin(g, null);
+    const r = loadGame();
+    if (r.kind === 'legacy') {
+      this.legacy = { raw: r.raw, reason: r.reason };
+      return false;
+    }
+    if (r.kind !== 'ok') return false;
+    this.begin(r.state, null);
     return true;
   }
 
@@ -313,11 +404,34 @@ class Store {
     return this.game ? exportSave(this.game) : '';
   }
 
-  importText(text: string): boolean {
-    const g = importSave(text);
-    if (!g) return false;
-    this.begin(g, null);
-    return true;
+  importText(text: string): string {
+    const r = importSave(text);
+    if (r.kind === 'ok') {
+      this.begin(r.state, null);
+      return '';
+    }
+    if (r.kind === 'legacy') {
+      this.legacy = { raw: r.raw, reason: r.reason };
+      return `${r.reason}. 내보내기만 할 수 있어요.`;
+    }
+    return '저장 파일을 읽을 수 없어요';
+  }
+
+  downloadText(text: string, name: string): void {
+    const blob = new Blob([text], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  exportNow(): void {
+    if (this.end) {
+      this.downloadText(JSON.stringify({ app: 'born-to-play-archive', data: this.end }), `태어난김에축구_${this.end.name}.json`);
+    } else if (this.game) {
+      this.downloadText(this.exportText(), `태어난김에축구_${this.game.p.name}.json`);
+    }
   }
 
   grade(): { grade: string; percentile: number } {
@@ -337,12 +451,17 @@ class Store {
     if (!g) return;
     this.playing = false;
     this.skipping = false;
+    this.reviewOpen = false;
+    this.ceremonyOpen = false;
+    const pg = this.grade();
+    const data = buildEndData(g, pg.grade, pg.percentile, this.baseline);
+    this.end = data;
     this.screen = 'end';
     if (!this.archived) {
       this.archived = true;
-      const pg = this.grade();
-      pushArchive({
+      const entry: ArchiveEntry = {
         id: g.cfg.seed + ':' + g.p.birth.m + g.p.birth.d + ':' + g.week,
+        version: ARCHIVE_VERSION,
         savedAt: Date.now(),
         name: g.p.name,
         country: g.p.country,
@@ -352,12 +471,25 @@ class Store {
         coachGrade: this.coachGradeText(),
         summary: `${g.career.seasons.length}시즌 · ${formatKRW(netWorth(g))}`,
         code: this.fateCode(),
-        state: JSON.stringify({ ...g, log: g.log.slice(-600) }),
-        baseline: [...this.baseline]
-      });
+        data
+      };
+      const r = pushArchive(entry);
+      this.archiveFail = !r.ok;
     }
     clearSave();
     this.hasSaved = false;
+  }
+
+  showEntry(e: ArchiveEntry): void {
+    this.end = e.data;
+    this.baseline = e.data.baseline;
+    this.archived = true;
+    this.archiveFail = false;
+    this.screen = 'end';
+  }
+
+  exportEntryText(e: ArchiveEntry): string {
+    return exportEntry(e);
   }
 
   fateCode(): string {

@@ -1,4 +1,12 @@
 import { AWARDS } from '../data/awards';
+import { clubAwards, buildPlayerReview } from './review';
+import { settleGoals, makeGoals } from './goals';
+import { worldSeasonEnd } from './worldsim';
+import { checkDreamSeason } from './dream';
+import { isCosmetic } from './flags';
+import { recordWhy } from './why';
+import { ALL_ATTRS } from './types';
+import { pushMatchLine, commentary } from './matchtext';
 import { CONT_COMPS, CONT_KO_NAMES, CONT_KO_WEEKS, INTL_WINDOWS, TOURNAMENTS } from '../data/competitions';
 import { Rng, clamp } from './rng';
 import { curOvr } from './attributes';
@@ -32,6 +40,8 @@ export function openSeason(s: GameState, rng: Rng): void {
     s.career.cur = emptyRec(seasonOf(s.week), '', '', '', '', 2);
     s.career.fixtures.length = 0;
   }
+  s.goals = makeGoals(s);
+  snapSeason(s);
 }
 
 function gamesOfLeague(s: GameState, lg: string): number {
@@ -104,6 +114,8 @@ export function awardTrophy(s: GameState, name: string, clubId: string): void {
   s.st.morale = clamp(s.st.morale + 8, 0, 100);
   s.st.happy = clamp(s.st.happy + 6, 0, 100);
   s.extra.champs += 1;
+  s.ev.flags.trophyW = s.week;
+  if (isCosmetic()) s.cues.push('trophy');
   addLog(s, 'milestone', '트로피', `${club}에서 ${name}을(를) 들어 올렸다!`, [], { star: true });
   toast(s, `🏆 ${name}`);
 }
@@ -115,6 +127,7 @@ export function awardPrize(s: GameState, name: string, pts = 0): void {
   s.fame.dom = clamp(s.fame.dom + 2.5 + pts, 0, 100);
   s.fame.abroad = clamp(s.fame.abroad + 1.5 + pts, 0, 100);
   s.st.happy = clamp(s.st.happy + 5, 0, 100);
+  if (isCosmetic()) s.cues.push('trophy');
   addLog(s, 'milestone', '개인상', `${name} 수상!`, [], { star: true });
   toast(s, `🏅 ${name}`);
 }
@@ -126,7 +139,7 @@ function trigMoment(s: GameState, rng: Rng, out: MatchOut): void {
   markFired(s, def);
   s.decCtx = { opp: out.fx.opp };
   const d = buildDecision(s, rng, def);
-  d.ctx = out.line;
+  d.ctx = isCosmetic() ? commentary(s, out) : out.line;
   pushDecision(s, d);
 }
 
@@ -146,6 +159,12 @@ export function playFixtureToday(s: GameState, rng: Rng, fx: Fixture, youth: boo
   if (fx.kind === 'league') recordLeagueResult(s, lgId, clubId, fx, out);
   if (fx.kind === 'cup' || fx.kind === 'cont') nextCupOrCont(s, rng, fx, out, clubId);
   s.career.cur.avail += fx.kind === 'friendly' ? 0 : 1;
+  if (out.played && fx.kind !== 'friendly') {
+    const bm = s.career.cur.best;
+    if (!bm || out.rating > bm.rating) s.career.cur.best = { w: s.week, rating: out.rating, line: out.line, comp: `${fx.comp} ${fx.stage}`, goals: out.goals, assists: out.assists, mins: out.mins, result: out.result, momentText: bm ? bm.momentText : undefined };
+    if (isCosmetic() && (out.goals > 0 || out.assists > 0)) s.cues.push('goal');
+  }
+  pushMatchLine(s, fx, out);
   if (out.played && fx.kind !== 'friendly') {
     const notable = out.firstPro || out.goals >= 2 || out.rc > 0 || out.rating >= 9 || fx.final || (out.goals >= 1 && s.career.cur.goals === 1) || (out.started && s.career.cur.starts === 1);
     if (notable) {
@@ -196,7 +215,7 @@ export function trainingWeekLoad(s: GameState): void {
   if (st.stress > 75) st.burnout = clamp(st.burnout + 0.6, 0, 100);
   else st.burnout = clamp(st.burnout - 0.4, 0, 100);
   if (st.fatigue > 85 || st.burnout > 70) st.morale = clamp(st.morale - 0.4, 0, 100);
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   const drinkUp = age >= 18 ? (s.hid.social > 60 ? 0.22 : 0.06) + (st.stress > 65 ? 0.1 : 0) : 0;
   st.drink = clamp(st.drink + drinkUp - 0.1 - (s.fin.psychCoach > 0 ? 0.05 : 0), 0, 100);
   st.sleep = clamp(st.sleep + (72 - st.stress * 0.45 - st.drink * 0.3 + (s.fin.housing === 'own' ? 4 : 0) - st.sleep) * 0.02, 0, 100);
@@ -219,7 +238,7 @@ export function playIntl(s: GameState, rng: Rng, label: string, ko = false, fina
     s.nat.goals += out.goals;
     if (!s.nat.debut) {
       s.nat.debut = true;
-      addLog(s, 'milestone', 'A매치 데뷔', `${getCountry(s.p.country).natTeam} 유니폼을 입고 A매치에 데뷔했다.`, [], { star: true });
+      addLog(s, 'milestone', 'A매치 데뷔', `${getCountry(s.p.country).natTeam} 유니폼을 입고 A매치에 데뷔했다.`, [], { star: true, dream: s.dream === 'national' });
     }
     s.fame.dom = clamp(s.fame.dom + 0.6, 0, 100);
     s.fame.abroad = clamp(s.fame.abroad + 0.3, 0, 100);
@@ -229,7 +248,7 @@ export function playIntl(s: GameState, rng: Rng, label: string, ko = false, fina
 }
 
 export function natCallScore(s: GameState): number {
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   if (age < 18) return -9;
   const ovr = curOvr(s.ab);
   const base = natTeamBase(s.p.country);
@@ -245,7 +264,7 @@ export function natCallScore(s: GameState): number {
 export function intlWindow(s: GameState, rng: Rng, sw: number): void {
   if (!INTL_WINDOWS.includes(sw)) return;
   if (s.st.injury || s.phase !== 'pro' || !s.career.clubId) return;
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   if (s.week - s.nat.lastCallW < 6) return;
   const x = natCallScore(s);
   const p = 1 / (1 + Math.exp(-x));
@@ -279,7 +298,7 @@ function makeNatCoach(s: GameState, rng: Rng) {
 
 export function tournamentWeek(s: GameState, rng: Rng, sw: number): void {
   if (sw < 44 || sw > 51) return;
-  const year = yearOf(s.week) + 1;
+  const year = yearOf(s.week);
   const c = getCountry(s.p.country);
   for (const t of TOURNAMENTS) {
     if (t.confed !== 'ALL' && t.confed !== c.confed) continue;
@@ -300,7 +319,7 @@ export function tournamentWeek(s: GameState, rng: Rng, sw: number): void {
       s.ev.flags[`${key}:pts`] = 0;
     }
     if (s.ev.flags[`${key}:alive`] !== 1) continue;
-    const age = ageAt(s.p.birth.y, s.week);
+    const age = ageAt(s.p.birth, s.week);
     const x = natCallScore(s) + 0.6;
     const inSquad = age >= 18 && !s.st.injury && (s.ev.flags[`${key}:squad`] !== undefined ? s.ev.flags[`${key}:squad`] === 1 : (() => { const v = rng.next() < 1 / (1 + Math.exp(-x)) ? 1 : 0; s.ev.flags[`${key}:squad`] = v; return v === 1; })());
     const grp = stageIdx < 3;
@@ -349,7 +368,7 @@ export function tournamentWeek(s: GameState, rng: Rng, sw: number): void {
 }
 
 export function endSeason(s: GameState, rng: Rng): void {
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   const cur = s.career.cur;
   const clubId = s.career.clubId;
   const season = seasonOf(s.week);
@@ -366,6 +385,10 @@ export function endSeason(s: GameState, rng: Rng): void {
   const games = clubId ? gamesOfLeague(s, lgId) : 0;
   s.ab.playShare = clamp(0.6 * s.ab.playShare + 0.4 * (games > 0 ? cur.mins / (games * 90) : 0), 0, 1);
   if (clubId && cur.apps > 0 && s.phase !== 'youth') seasonAwards(s, rng, cur.pos, games, age);
+  clubAwards(s);
+  const goalRes = settleGoals(s, rng);
+  void goalRes;
+  worldSeasonEnd(s);
   cur.avail = Math.max(cur.avail, cur.apps);
   if (clubId) {
     if (!cur.done) {
@@ -383,6 +406,7 @@ export function endSeason(s: GameState, rng: Rng): void {
     if (info.relegated.includes(clubId)) addLog(s, 'milestone', '강등', `${getClub(clubId).name}이(가) 강등됐다.`, [], { star: true });
   }
   seasonEndGrowth(s, age);
+  if (isCosmetic()) for (const k of ALL_ATTRS) recordWhy(s, `attr.${k}`, '시즌 훈련·성장', s.ab.a[k] - s.ab.prev[k]);
   s.ab.prev = { ...s.ab.a };
   s.hist.push({ s: season, age, ovr: Math.round(curOvr(s.ab) * 10) / 10, val: s.fame.value, fame: Math.round(s.fame.dom) });
   s.career.seasonMinsAcc = 0;
@@ -396,6 +420,12 @@ export function endSeason(s: GameState, rng: Rng): void {
   s.fame.abroad = clamp(s.fame.abroad * 0.97, 0, 100);
   agePeople(s, rng);
   s.st.chronic = Object.fromEntries(Object.entries(s.st.chronic).map(([k, v]) => [k, Math.max(0, v - 0.25)]).filter(([, v]) => (v as number) > 0));
+  checkDreamSeason(s);
+  buildPlayerReview(s);
+}
+
+export function snapSeason(s: GameState): void {
+  s.snap = { ovr: curOvr(s.ab), val: s.fame.value, wage: s.career.contract ? s.career.contract.wage : s.coach.contract ? s.coach.contract.wage : 0, fame: s.phase === 'coach' ? s.coach.fame : s.fame.dom, standing: s.coach.standing };
 }
 
 export function seasonAwards(s: GameState, rng: Rng, pos: number, games: number, age: number): void {
@@ -421,21 +451,6 @@ export function seasonAwards(s: GameState, rng: Rng, pos: number, games: number,
   }
   if (s.ab.pos === 'GK' && cs(cur) >= 12 && frac >= 0.6 && rng.next() < 0.35) awardPrize(s, `${lg.ko} ${AWARDS.goldenGlove}`, lvl * 0.2);
   if (avg >= 7.0 && frac >= 0.5 && rng.next() < clamp((avg - 6.9) * 0.4, 0, 0.5)) awardPrize(s, `${lg.ko} ${AWARDS.bestEleven}`, lvl * 0.15);
-  if (age >= 20 && lvl >= 4) {
-    const ovr = curOvr(s.ab);
-    const champ = cur.trophies.some((t) => t.includes('챔피언스') || t.includes('리베르타도레스')) ? 5 : 0;
-    const tourn = Object.keys(s.ev.flags).some((k) => k.startsWith(`T:won:`) && k.endsWith(String(yearOf(s.week) + 1)) && s.nat.caps > 0) ? 6 : 0;
-    const score = ovr + (pos === 1 ? 2.5 : 0) + champ + tourn + cur.goals * 0.08 + cur.assists * 0.04 + (lvl >= 6 ? 1.5 : 0) + (frac < 0.5 ? -4 : 0);
-    const rivals = [rng.normal(87, 2.2), rng.normal(86, 2.2), rng.normal(85, 2.4), rng.normal(84, 2.6)];
-    const best = Math.max(...rivals);
-    if (score > best && avg >= 7.2) {
-      awardPrize(s, AWARDS.ballon, 8);
-      s.extra.ballon += 1;
-    } else if (score > best - 3 && avg >= 7.2 && rng.next() < 0.5) {
-      const conf = getCountry(s.p.country).confed;
-      awardPrize(s, AWARDS.continental[conf] ?? AWARDS.continental.UEFA, 2);
-    }
-  }
 }
 
 function cs(c: { cs: number }): number {

@@ -1,10 +1,12 @@
 import { Rng, seedState, clamp, hashString } from './rng';
 import { ALL_ATTRS, ATTR_GROUP, HIDDEN_KEYS, type AttrKey, type GameConfig, type GameState, type HiddenKey, type Person, type Pos } from './types';
-import { ageProgress, makeCeil } from './attributes';
+import { ageProgress, curOvr, makeCeil } from './attributes';
+import { initWorld } from './worldsim';
+import { STATE_VERSION } from './migrate';
 import { getClub, getCountry, citiesOf } from './data';
 import { rollOrigin, potentialMean, type RouletteResult } from './roulette';
 import { FATHER_JOBS, MOTHER_JOBS, genName, makePerson, mediaPerson, randomPos } from './relations';
-import { START_YEAR } from './time';
+import { START_AGE, START_BIRTH_YEAR, START_YEAR } from './time';
 import { ensureCountry } from './world';
 import { emptyRec } from './records';
 import { setupClubSeason } from './transfer';
@@ -106,7 +108,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   const nameGen = genName(rng, country.code);
   const name = cfg.name.trim() ? cfg.name.trim() : nameGen.name;
   const en = cfg.name.trim() ? cfg.name.trim() : nameGen.en;
-  const month = rng.int(1, 12);
+  const month = rng.int(1, 6);
   const day = rng.int(1, 28);
   const cities = citiesOf(country.code);
   const cw = cities.map((c) => c.pop * (c.ko === club.city ? 6 : 1));
@@ -121,11 +123,11 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   const foot = rng.weighted<'R' | 'L' | 'B'>(['R', 'L', 'B'], [77, 20, 3]);
   const growth = rng.weighted<'early' | 'normal' | 'late'>(['early', 'normal', 'late'], [25, 50, 25]);
   const finalHeight = Math.round(clamp(rng.normal(country.height, 6.5), 150, 205));
-  const frac = (growth === 'early' ? 0.89 : growth === 'late' ? 0.83 : 0.86) + rng.normal(0, 0.008);
+  const frac = (growth === 'early' ? 0.935 : growth === 'late' ? 0.87 : 0.905) + rng.normal(0, 0.008);
   const height = Math.round(finalHeight * frac);
-  const bmi = clamp(rng.normal(17.4, 1.4), 13.5, 24);
+  const bmi = clamp(rng.normal(18.6, 1.5), 14.5, 26);
   const weight = Math.round(bmi * (height / 100) * (height / 100));
-  const build = bmi < 16.4 ? '마름' : bmi > 18.8 ? '건장' : '보통';
+  const build = bmi < 17.4 ? '마름' : bmi > 20.2 ? '건장' : '보통';
   const pos: Pos = cfg.pos === 'random' ? randomPos(rng) : cfg.pos;
   let pot = rng.normal(potentialMean(origin.level, country.infra), 8);
   if (rng.chance(0.02)) pot += 8;
@@ -138,7 +140,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     const g = ATTR_GROUP[k];
     const isGkAttr = g === 'gk';
     if (isGkAttr && pos !== 'GK') a[k] = ceil[k];
-    else a[k] = clamp(ceil[k] * ageProgress(g, 12, growth) + rng.normal(0, 0.5), 1, 20);
+    else a[k] = clamp(ceil[k] * ageProgress(g, START_AGE, growth) + rng.normal(0, 0.5), 1, 20);
     prev[k] = a[k];
   }
   const hid = hiddenInit(rng, incomeTier, supportive);
@@ -158,16 +160,16 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   people.mother = makePerson(rng, st0, 'mother', country.code, { age: mAge, refYear, job: mjob, rel: rng.int(35, 75), name: momN.name, en: momN.en });
   const nSib = rng.weighted([0, 1, 2, 3], [24, 42, 24, 10]);
   for (let i = 1; i <= nSib; i++) {
-    people[`sibling${i}`] = makePerson(rng, st0, 'sibling', country.code, { age: clamp(12 + rng.int(-6, 7), 3, 26), refYear, job: '학생', rel: rng.int(20, 65) });
+    people[`sibling${i}`] = makePerson(rng, st0, 'sibling', country.code, { age: clamp(START_AGE + rng.int(-6, 7), 3, 28), refYear, job: '학생', rel: rng.int(20, 65) });
   }
   const mateKeys = ['mate1', 'mate2', 'mate3'];
   for (const k of mateKeys) {
     people[k] = makePerson(rng, st0, 'mate', country.code, {
-      age: 12, refYear, job: '유스 동기', rel: rng.int(0, 30), pos: randomPos(rng), ovr: Math.round(pot * 0.55 + rng.normal(-3, 4)), pot: Math.round(pot + rng.normal(0, 6)), clubId: club.id
+      age: START_AGE, refYear, job: '유스 동기', rel: rng.int(0, 30), pos: randomPos(rng), ovr: Math.round(pot * 0.6 + rng.normal(-3, 4)), pot: Math.round(pot + rng.normal(0, 6)), clubId: club.id
     });
   }
-  people.captain = makePerson(rng, st0, 'captain', country.code, { age: 13, refYear, job: '유스팀 주장', rel: rng.int(0, 20), pos: randomPos(rng), ovr: Math.round(pot * 0.58), pot: Math.round(pot + 3), clubId: club.id });
-  people.rival = makePerson(rng, st0, 'rival', country.code, { age: 12, refYear, job: '같은 포지션 경쟁자', rel: rng.int(-20, 5), pos, ovr: Math.round(pot * 0.56), pot: Math.round(pot + rng.normal(2, 6)), clubId: club.id });
+  people.captain = makePerson(rng, st0, 'captain', country.code, { age: START_AGE + 1, refYear, job: '유스팀 주장', rel: rng.int(0, 20), pos: randomPos(rng), ovr: Math.round(pot * 0.64), pot: Math.round(pot + 3), clubId: club.id });
+  people.rival = makePerson(rng, st0, 'rival', country.code, { age: START_AGE, refYear, job: '같은 포지션 경쟁자', rel: rng.int(-20, 5), pos, ovr: Math.round(pot * 0.6), pot: Math.round(pot + rng.normal(2, 6)), clubId: club.id });
   people.fans = makePerson(rng, st0, 'fans', country.code, { age: 30, refYear, name: '팬', en: 'Fans', job: '서포터즈', rel: 0 });
   people.media = mediaPerson(rng, st0, country.code, refYear);
   people.media.rel = 0;
@@ -179,7 +181,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   };
   const rumor = rumorText(pot, rng);
   const state: GameState = {
-    v: 1,
+    v: STATE_VERSION,
     cfg,
     rng: [0, 0, 0, 0],
     week: 0,
@@ -187,7 +189,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     ended: false,
     endReason: '',
     p: {
-      name, en, birth: { y: 2014, m: month, d: day }, country: country.code, hometown, hometownEn, dorm, foot, build, growth,
+      name, en, birth: { y: START_BIRTH_YEAR, m: month, d: day }, country: country.code, hometown, hometownEn, dorm, foot, build, growth,
       finalHeight, story: [], rumor, startClubId: club.id, startLeagueId: lgStat, startLvl: origin.level, incomeTier, supportive, famExp
     },
     ab,
@@ -214,7 +216,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
       debuted: false, debutW: -1, seasons: [], cur: emptyRec(0, club.id, club.name, lgStat, '', origin.level), trophies: [], awards: [],
       clubsHist: [{ clubId: club.id, fromS: 0, toS: -1 }], maxLvl: origin.level, playedLvl5: false, lvl5Apps: 0, bigClub: false, retired: false, retireAge: 0, retireReason: '',
       freeAgentW: -1, lastOfferW: -99, upBias: 0, rejectCount: 0, endedByInjury: false, fixtures: [], cupAlive: true, cupRound: 0, contAlive: false,
-      contStage: 0, contComp: '', contQualified: '', contPts: 0, contGames: 0, seasonMinsAcc: 0, seasonAvailAcc: 0, lastSeasonPos: 0, youthJudged: false, youthFailW: -1,
+      contStage: 0, contComp: '', contQualified: '', contPts: 0, contGames: 0, seasonMinsAcc: 0, seasonAvailAcc: 0, lastSeasonPos: 0, youthJudged: false, youthFailW: -1, youthStage: 'U15', stageSeasons: 0, scholar: 0,
       promisedRole: 'prospect', loanOut: false, nextLoanClub: ''
     },
     coach: {
@@ -223,9 +225,9 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
       standing: 60, fired: 0, recs: [], squad: [], offers: [], managerSeasons: 0, assistantSeasons: 0, everManager: false, everBig: false, everNat: false,
       jobless: 0, halfFired: false, tablePos: 0, tablePts: 0, tableTarget: 0, quit: false, trophies: [], lastOfferW: -99, seasonPts: 0, seasonGames: 0
     },
-    post: { path: 'none', adminRole: '', skill: 0, rep: 0, income: 0, enteredW: 0, legendEvents: 0 },
+    post: { path: 'none', adminRole: '', skill: 0, rep: 0, income: 0, enteredW: 0, legendEvents: 0, ms: {}, msWeek: {}, lastAsk: -1, askCount: 0, endedBy: '', epiWeeks: 0 },
     people,
-    ev: { cd: {}, count: {}, recent: [], flags: {}, sched: [], actCd: {}, nextId: st0.nextId, lastRollW: 0 },
+    ev: { cd: {}, count: {}, recent: [], flags: {}, sched: [], pendSrc: {}, last: {}, bud: { s: -1, choiceT: 0, choiceN: 0, majorN: 0, minorN: 0, passT: 0, passN: 0, lastChoiceW: -99 }, actCd: {}, actUse: {}, nextId: st0.nextId, logSeq: 1, lastRollW: 0 },
     world: { countries: {}, leagues: {}, cupSeed: hashString(cfg.seed) },
     decision: null,
     decQueue: [],
@@ -238,8 +240,19 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     score: 0,
     extra: { champs: 0, ballon: 0, lastSwitch: 0 },
     decCtx: {},
-    hist: []
+    hist: [],
+    wld: initWorld(cfg.seed, people, club.id, country.code, origin.level, START_YEAR),
+    reviews: [],
+    pendingReview: -1,
+    goals: null,
+    dream: '',
+    dreamHits: [],
+    snap: { ovr: 0, val: 0, wage: 0, fame: 0, standing: 60 },
+    cues: [],
+    why: {},
+    recent: []
   };
+  state.snap = { ovr: curOvr(state.ab), val: state.fame.value, wage: 0, fame: 0, standing: 60 };
   state.rng = seedState(cfg.seed + '|sim');
   state.p.story = storyLines(rng, state, origin, famExp);
   ensureCountry(state, country.code);

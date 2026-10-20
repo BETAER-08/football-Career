@@ -3,6 +3,7 @@ import { curOvr } from './attributes';
 import { clubSt, clubStd, dyn, simScore, record, positionOf } from './world';
 import { getClub, getCountry } from './data';
 import { ageAt } from './time';
+import { recordWhy } from './why';
 import type { Fixture, GameState, Pos, Role } from './types';
 
 export const ROLE_BONUS: Record<Role, number> = { starter: 1.4, rotation: 0.2, prospect: -0.9, backup: -2 };
@@ -110,7 +111,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   const myName = fx.kind === 'intl' ? '대표팀' : myClub.name;
   out.homeName = fx.home ? myName : fx.opp;
   out.awayName = fx.home ? fx.opp : myName;
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   if (s.st.injury || s.phase === 'coach' || s.phase === 'postcareer' || (fx.kind === 'friendly' && false)) return out;
   const role = s.career.contract?.role ?? 'prospect';
   const pos = s.ab.pos;
@@ -190,11 +191,15 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
     s.st.form.push(rating);
     if (s.st.form.length > 5) s.st.form.shift();
   }
+  const mor0 = s.st.morale;
+  const fat0 = s.st.fatigue;
   s.st.sharp = clamp(s.st.sharp + mf * 9, 0, 100);
   s.st.fatigue = clamp(s.st.fatigue + mf * (fx.kind === 'friendly' ? 4 : 7.5), 0, 100);
   s.st.morale = clamp(s.st.morale + (result === 'W' ? 2.2 : result === 'L' ? -2 : 0.2) + (rating - 6.5) * 0.7, 0, 100);
   s.st.happy = clamp(s.st.happy + (result === 'W' ? 0.8 : result === 'L' ? -0.6 : 0) + (started ? 0.3 : -0.2), 0, 100);
   s.st.stress = clamp(s.st.stress + (fx.final ? 4 : 0.6) + (rc ? 3 : 0) - (result === 'W' ? 0.7 : 0), 0, 100);
+  recordWhy(s, 'st.morale', `경기 ${result === 'W' ? '승리' : result === 'L' ? '패배' : '무승부'}`, s.st.morale - mor0);
+  recordWhy(s, 'st.fatigue', '경기 출전', s.st.fatigue - fat0);
   if (rc && fx.kind === 'league') s.ev.flags.suspended = s.week;
   const con = s.career.contract;
   if (con && fx.kind !== 'friendly') {

@@ -103,3 +103,15 @@ export function setMusic(on: boolean): void {
 export function isMusicOn(): boolean {
   return musicOn;
 }
+
+export function sfx(kind: string): void {
+  if (kind === 'goal') {
+    for (let i = 0; i < 7; i++) setTimeout(() => blip(180 + Math.random() * 260, 0.22, 'sawtooth', 0.045), i * 45);
+    setTimeout(() => blip(523, 0.18, 'triangle', 0.08), 40);
+  } else if (kind === 'trophy') {
+    [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => blip(f, i === 3 ? 0.5 : 0.18, 'square', 0.09), i * 150));
+  } else if (kind === 'transfer') {
+    blip(880, 0.1, 'triangle', 0.1);
+    setTimeout(() => blip(1175, 0.16, 'triangle', 0.1), 120);
+  }
+}

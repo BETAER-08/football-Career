@@ -6,7 +6,10 @@ import { addLog, isFast, toast } from './log';
 import { getClub, getCountry, getLeague } from './data';
 import { curOvr } from './attributes';
 import { formatKRW } from './finance';
-import { ageAt, seasonOf } from './time';
+import { ageAt, dateOf, seasonOf, swOf } from './time';
+import { clearCause, setCause } from './why';
+import { budgetTarget, initBudget, tierRoom } from './budget';
+import type { Src } from './types';
 import type { Chip, Decision, DecisionChoice, GameState, Phase, ResultPanel } from './types';
 
 export interface Loaded { def: EventDef; has: boolean }
@@ -31,6 +34,7 @@ export function loadEvents(raw: RawEvent[]): void {
     const outs: RawOutcome[] = [];
     if (def.fx) validateFx(def.fx);
     if (def.fu) validateFx(def.fu);
+    if (def.fxBad) validateFx(def.fxBad);
     if (def.choices) for (const ch of def.choices) {
       if (ch.check) parseCheck(ch.check);
       for (const o of [ch.ok, ch.bad, ch.great, ch.worst]) if (o) outs.push(o);
@@ -85,6 +89,12 @@ export function render(s: GameState, tpl: string): string {
       case 'coach': return s.people.coach?.name ?? '감독';
       case 'captain': return s.people.captain?.name ?? '주장';
       case 'mate': return mate;
+      case 'mate1': return s.people.mate1?.name ?? mate;
+      case 'mate2': return s.people.mate2?.name ?? mate;
+      case 'mate3': return s.people.mate3?.name ?? mate;
+      case 'oldmate': return s.wld.faces.find((f) => f.role === 'mate' && f.status !== 'quit')?.name ?? mate;
+      case 'oldrival': return s.wld.faces.find((f) => f.role === 'rival')?.name ?? '옛 라이벌';
+      case 'youthcoach': return s.wld.youthCoach.name || '유스 시절 감독';
       case 'rival': return s.people.rival?.name ?? '라이벌';
       case 'agent': return s.people.agent && !s.people.agent.gone ? s.people.agent.name : '에이전트';
       case 'father': return s.people.father?.name ?? '아버지';
@@ -99,7 +109,7 @@ export function render(s: GameState, tpl: string): string {
       case 'city': return s.p.hometown;
       case 'country': return getCountry(s.p.country).ko;
       case 'nat': return getCountry(s.p.country).natTeam;
-      case 'age': return String(ageAt(s.p.birth.y, s.week));
+      case 'age': return String(ageAt(s.p.birth, s.week));
       case 'opp': return s.decCtx.opp ?? '상대 팀';
       case 'wk': return formatKRW(con ? con.wage / 52 : 100);
       case 'yr': return formatKRW(con ? con.wage : 1000);
@@ -107,6 +117,7 @@ export function render(s: GameState, tpl: string): string {
       case 'star': return s.coach.squad.length ? s.coach.squad[s.week % s.coach.squad.length].name : mate;
       case 'cash': return formatKRW(s.fin.cash);
       case 'year': return String(2026 + seasonOf(s.week));
+      case 'stage': return s.career.youthStage;
       default: return `{${k}}`;
     }
   });
@@ -125,8 +136,22 @@ function chipsFor(s: GameState, ch: EventDef['choices'] extends (infer C)[] | un
   return chips;
 }
 
+function quoteOf(s: GameState, label: string): string {
+  const d = dateOf(s.week);
+  return `${d.y}년 ${d.m}월 · 선택: ${label}`;
+}
+
+function takeSrc(s: GameState, id: string): Src | undefined {
+  const src = s.ev.pendSrc[id];
+  if (src) delete s.ev.pendSrc[id];
+  return src;
+}
+
 export function buildDecision(s: GameState, rng: Rng, def: EventDef): Decision {
-  const text = render(s, pick(rng, def.text));
+  const prev = s.ev.last[def.id];
+  const base = render(s, pick(rng, def.text));
+  const text = def.again && prev ? `${render(s, def.again.replace(/\{prev\}/g, prev.label))} ${base}` : base;
+  const src = takeSrc(s, def.id);
   const choices: DecisionChoice[] = (def.choices ?? []).map((ch) => ({
     label: render(s, ch.label),
     chips: isFast() ? [] : chipsFor(s, ch),
@@ -135,7 +160,7 @@ export function buildDecision(s: GameState, rng: Rng, def: EventDef): Decision {
   }));
   const dec: Decision = {
     uid: s.ev.nextId++, kind: def.kind === 'moment' ? 'moment' : 'event', ref: def.id, title: def.chain ? '이어지는 이야기' : def.kind === 'moment' ? '결정적 순간' : '선택의 순간',
-    text, choices, w: s.week, heavy: !!def.heavy, help: def.help ?? '', ctx: '', offers: []
+    text, choices, w: s.week, heavy: !!def.heavy, help: def.help ?? '', ctx: '', offers: [], quote: src?.q, from: src?.log
   };
   return dec;
 }
@@ -148,17 +173,19 @@ export function markFired(s: GameState, def: EventDef): void {
   if (def.group) {
     s.ev.flags[`grp:${def.group}`] = s.week;
   }
+  if (def.exclusiveGroup) s.ev.flags[`xg:${def.exclusiveGroup}`] = seasonOf(s.week);
 }
 
 export function eligible(s: GameState, def: EventDef, groupWindow = 6): boolean {
   if ((s.ev.count[def.id] ?? 0) >= def.max) return false;
   const cd = s.ev.cd[def.id];
   if (cd !== undefined && s.week < cd) return false;
-  if (s.ev.recent.includes(def.id)) return false;
+  if (def.cooldown < 20 && s.ev.recent.includes(def.id)) return false;
   if (def.group) {
     const g = s.ev.flags[`grp:${def.group}`];
     if (g !== undefined && s.week - g < groupWindow) return false;
   }
+  if (def.exclusiveGroup && s.ev.flags[`xg:${def.exclusiveGroup}`] === seasonOf(s.week)) return false;
   return evalConds(s, def.cond);
 }
 
@@ -170,11 +197,16 @@ export function pushDecision(s: GameState, d: Decision): void {
 export function firePassive(s: GameState, rng: Rng, def: EventDef): void {
   markFired(s, def);
   s.decCtx = {};
-  const text = render(s, pick(rng, def.text));
-  const chips = applyFx(s, { rng }, def.fx);
+  const src = takeSrc(s, def.id);
+  const bad = !!src && !!def.textBad && ['bad', 'worst'].includes(s.ev.last[src.ref]?.grade ?? '');
+  const pool = bad ? (def.textBad as string[]) : def.text;
+  const text = render(s, pick(rng, pool));
+  setCause(text.slice(0, 14));
+  const chips = applyFx(s, { rng }, bad && def.fxBad !== undefined ? def.fxBad : def.fx);
   if (def.fu) applyFx(s, { rng }, def.fu);
+  clearCause();
   if (!isFast()) {
-    addLog(s, def.chain ? 'chain' : 'passive', '', text, chips, { note: def.note, heavy: def.heavy, help: def.help });
+    addLog(s, def.chain ? 'chain' : 'passive', '', text, chips, { note: def.note, heavy: def.heavy, help: def.help, from: src?.log, quote: src?.q });
     toast(s, text, chips);
   }
 }
@@ -195,13 +227,23 @@ export function resolveEventChoice(s: GameState, rng: Rng, d: Decision, idx: num
   const outcome = decideOutcome(s, rng, ch);
   const chips: Chip[] = [];
   s.decCtx.eventId = def.id;
+  const label = render(s, ch.label);
+  const sched0 = s.ev.sched.length;
+  setCause(label);
   applyFx(s, { rng }, outcome.out.fx, chips);
   if (outcome.out.fu) applyFx(s, { rng }, outcome.out.fu, chips);
+  clearCause();
   const later = parseFx(outcome.out.fx).some((o) => o.kind === 'fu') || parseFx(outcome.out.fu).some((o) => o.kind === 'fu');
   const text = render(s, outcome.out.t);
-  const panel: ResultPanel = { title: render(s, ch.label), grade: outcome.grade, roll: outcome.roll, need: outcome.need, text, changes: chips, later, w: s.week };
+  const panel: ResultPanel = { title: label, grade: outcome.grade, roll: outcome.roll, need: outcome.need, text, changes: chips, later, w: s.week };
+  s.ev.last[def.id] = { w: s.week, label, grade: outcome.grade };
   const gl = { great: '대성공', ok: '성공', bad: '실패', worst: '대실패', none: '' }[outcome.grade];
-  if (!isFast()) addLog(s, def.kind === 'moment' ? 'moment' : def.chain ? 'chain' : 'choice', render(s, ch.label), `${d.text}\n→ ${text}${gl ? `\n판정 ${gl} · 굴린 값 ${outcome.roll} / 필요 ${outcome.need}` : ''}${later ? '\n↻ 이 선택은 나중에 다시 돌아올 수 있어요.' : ''}`, chips, { heavy: def.heavy, help: def.help, note: def.note });
+  if (!isFast()) {
+    const id = addLog(s, def.kind === 'moment' ? 'moment' : def.chain ? 'chain' : 'choice', label, `${d.text}\n→ ${text}${gl ? `\n판정 ${gl} · 굴린 값 ${outcome.roll} / 필요 ${outcome.need}` : ''}${later ? '\n↻ 이 선택은 나중에 다시 돌아올 수 있어요.' : ''}`, chips, {
+      heavy: def.heavy, help: def.help, note: def.note, mine: true, grade: outcome.grade, pick: label, result: text, roll: outcome.roll, need: outcome.need, from: d.from, quote: d.quote
+    });
+    for (let i = sched0; i < s.ev.sched.length; i++) s.ev.sched[i].src = { w: s.week, q: quoteOf(s, label), log: id, ref: def.id };
+  }
   return panel;
 }
 
@@ -226,6 +268,7 @@ export function dueScheduled(s: GameState): EventDef[] {
     if (!def) continue;
     if ((s.ev.count[it.id] ?? 0) >= def.max) continue;
     if (evalConds(s, def.cond) && !(s.ev.cd[it.id] !== undefined && s.week < s.ev.cd[it.id])) {
+      if (it.src) s.ev.pendSrc[def.id] = it.src;
       out.push(def);
       continue;
     }
@@ -235,9 +278,8 @@ export function dueScheduled(s: GameState): EventDef[] {
   return out;
 }
 
-export const P_CHOICE = { v: 0.12 };
 export const MIN_GAP = { v: 1 };
-export const P_PASSIVE = { v: 0.42 };
+export const CHOICE_GAP = 8;
 
 export function rollWeekly(s: GameState, rng: Rng): void {
   const phase = s.phase;
@@ -247,12 +289,24 @@ export function rollWeekly(s: GameState, rng: Rng): void {
   }
   const pool = byPhase[phase];
   if (!pool.length) return;
+  const season = seasonOf(s.week);
+  const b = s.ev.bud;
+  if (b.s !== season) initBudget(s, rng);
   if (s.week - s.ev.lastRollW <= MIN_GAP.v) return;
-  const pc = P_CHOICE.v * (phase === 'youth' ? 0.9 : 1);
-  if (!s.decision && rng.next() < pc) {
-    if (pickAndFire(s, rng, pool, true)) { s.ev.lastRollW = s.week; return; }
+  const left = Math.max(1, 51 - swOf(s.week));
+  const cTarget = budgetTarget(s);
+  if (!s.decision && s.week - b.lastChoiceW >= CHOICE_GAP && b.choiceN < cTarget) {
+    const pc = Math.min(0.7, ((cTarget - b.choiceN) / left) * 1.25);
+    if (rng.next() < pc && pickAndFire(s, rng, pool, true)) {
+      s.ev.lastRollW = s.week;
+      b.lastChoiceW = s.week;
+      return;
+    }
   }
-  if (rng.next() < P_PASSIVE.v && pickAndFire(s, rng, pool, false)) s.ev.lastRollW = s.week;
+  if (b.passN < b.passT) {
+    const pp = Math.min(0.8, ((b.passT - b.passN) / left) * 1.2);
+    if (rng.next() < pp && pickAndFire(s, rng, pool, false)) s.ev.lastRollW = s.week;
+  }
 }
 
 function pickAndFire(s: GameState, rng: Rng, pool: EventDef[], interactive: boolean): boolean {
@@ -261,12 +315,19 @@ function pickAndFire(s: GameState, rng: Rng, pool: EventDef[], interactive: bool
   for (const def of pool) {
     const isInt = !!(def.choices && def.choices.length);
     if (isInt !== interactive) continue;
+    if (isInt && !tierRoom(s, def.tier)) continue;
     if (!eligible(s, def)) continue;
     cands.push(def);
     w.push(def.weight);
   }
   if (!cands.length) return false;
   const def = cands[rng.weightedIndex(w)];
+  const b = s.ev.bud;
+  if (interactive) {
+    b.choiceN += 1;
+    if (def.tier === 'major') b.majorN += 1;
+    else b.minorN += 1;
+  } else b.passN += 1;
   fireEvent(s, rng, def);
   return true;
 }

@@ -8,6 +8,11 @@ export interface EvOpt {
   cd?: number;
   max?: number;
   group?: string;
+  xg?: string;
+  tier?: 'major' | 'minor';
+  again?: string;
+  textBad?: string[];
+  fxBad?: string;
   note?: string;
   heavy?: boolean;
   help?: string;
@@ -19,9 +24,9 @@ export interface EvOpt {
 
 const o = (a: O) => ({ t: a[0], fx: a[1], fu: a[2] });
 
-export function pa(id: string, ph: Phase[], w: number, texts: [string, string], fx: string, opt: EvOpt = {}): RawEvent {
+export function pa(id: string, ph: Phase[], w: number, texts: string[], fx: string, opt: EvOpt = {}): RawEvent {
   return {
-    id, kind: opt.kind ?? 'passive', phase: ph, weight: w, cond: opt.cond ?? [], cooldown: opt.cd ?? 26, max: opt.max ?? 4, group: opt.group,
+    id, kind: opt.kind ?? 'passive', phase: ph, weight: w, cond: opt.cond ?? [], cooldown: opt.cd ?? 26, max: opt.max ?? 4, group: opt.group, exclusiveGroup: opt.xg, tier: opt.tier, again: opt.again, textBad: opt.textBad, fxBad: opt.fxBad,
     note: opt.note, text: texts, fx: fx || undefined, fu: opt.fu, heavy: opt.heavy, help: opt.help, chain: opt.chain, scheduledOnly: opt.sched
   };
 }
@@ -34,14 +39,14 @@ export function cc(label: string, ok: O, opt: CcOpt = {}): RawChoice {
   };
 }
 
-export function ch(id: string, ph: Phase[], w: number, texts: [string, string], choices: RawChoice[], opt: EvOpt = {}): RawEvent {
+export function ch(id: string, ph: Phase[], w: number, texts: string[], choices: RawChoice[], opt: EvOpt = {}): RawEvent {
   return {
-    id, kind: opt.kind ?? 'choice', phase: ph, weight: w, cond: opt.cond ?? [], cooldown: opt.cd ?? 40, max: opt.max ?? 2, group: opt.group, note: opt.note,
+    id, kind: opt.kind ?? 'choice', phase: ph, weight: w, cond: opt.cond ?? [], cooldown: opt.cd ?? 40, max: opt.max ?? 2, group: opt.group, exclusiveGroup: opt.xg, tier: opt.tier, again: opt.again, note: opt.note,
     text: texts, choices, heavy: opt.heavy, help: opt.help, chain: opt.chain, scheduledOnly: opt.sched, fu: opt.fu
   };
 }
 
-export function mo(id: string, trigger: string, ph: Phase[], texts: [string, string], choices: RawChoice[], opt: EvOpt = {}): RawEvent {
+export function mo(id: string, trigger: string, ph: Phase[], texts: string[], choices: RawChoice[], opt: EvOpt = {}): RawEvent {
   return {
     id, kind: 'moment', phase: ph, weight: 1, cond: opt.cond ?? [], cooldown: opt.cd ?? 0, max: opt.max ?? 99, group: opt.group, note: opt.note,
     text: texts, choices, trigger

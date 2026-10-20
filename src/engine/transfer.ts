@@ -8,9 +8,11 @@ import { ageAt, seasonOf, swOf } from './time';
 import { genName, makePerson, randomPos } from './relations';
 import { marketValue, priceF } from './finance';
 import { addLog, toast } from './log';
+import { isCosmetic } from './flags';
 import type { Contract, GameState, Offer, Role } from './types';
 import { emptyRec } from './records';
-import { CUP_WEEKS, CONT_LP_WEEKS, CONT_COMPS } from '../data/competitions';
+import { CONT_LP_WEEKS, CONT_COMPS } from '../data/competitions';
+import { leagueWeek, profileOf } from './calendar';
 
 export const ROLE_VAL: Record<Role, number> = { starter: 3, rotation: 2, prospect: 1, backup: 0 };
 
@@ -71,7 +73,7 @@ function pickClubIn(s: GameState, rng: Rng, code: string, L: number, ovr: number
 
 export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string, opts: { loan?: boolean; trial?: boolean; first?: boolean; renew?: boolean } = {}): Offer | null {
   const ovr = curOvr(s.ab);
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   const std = clubStd(s, clubId);
   const margin = ovr - std;
   let role = roleFor(margin, age, s.ab.pot, std);
@@ -106,7 +108,7 @@ export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string
 
 export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count: number): Offer[] {
   const ovr = curOvr(s.ab);
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   const curLvl = s.career.clubId ? clubLvl(s, s.career.clubId) : 1;
   const mf = mFor(s.p.country);
   const out: Offer[] = [];
@@ -161,7 +163,7 @@ export function fallbackOffer(s: GameState, rng: Rng, kind: OfferGen['kind']): O
   const pool = ids.filter((id) => id !== excl);
   if (!pool.length) return null;
   const id = rng.pick(pool);
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   const wage = Math.max(300, Math.round(wageFor(s, id, 'backup', curOvr(s.ab), age) * 0.8));
   const cn = genName(rng, getClub(id).country);
   return {
@@ -224,7 +226,7 @@ export function buildClubPeople(s: GameState, rng: Rng, clubId: string, firstJoi
   s.people.coach = makePerson(rng, tmp, 'coach', code, { age: rng.int(38, 62), refYear: year, job: '감독', rel: rng.int(-5, 15), clubId });
   s.people.coach.traitVal = rng.normal(0, 0.45);
   s.people.captain = makePerson(rng, tmp, 'captain', code, { age: rng.int(27, 35), refYear: year, job: '주장', rel: rng.int(-5, 15), pos: randomPos(rng), ovr: Math.round(clubStd(s, clubId) + 2), clubId });
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   for (let i = 1; i <= 3; i++) {
     s.people[`mate${i}`] = makePerson(rng, tmp, 'mate', code, {
       age: clamp(age + rng.int(-3, 4), 15, 36), refYear: year, job: '팀 동료', rel: rng.int(-5, 20), pos: randomPos(rng), ovr: Math.round(clubStd(s, clubId) + rng.normal(0, 4)), clubId
@@ -249,10 +251,11 @@ export function setupClubSeason(s: GameState, rng: Rng, clubId: string, mid: boo
   const rt = s.world.leagues[lgId];
   const games = (rt.order.length % 2 === 0 ? rt.order.length - 1 : rt.order.length) * 2;
   const sw = swOf(s.week);
+  const cal = profileOf(getLeague(lgId).cal);
   const rounds = buildRounds(rt.order);
   let r0 = 0;
   if (mid) {
-    while (r0 < games && 6 + Math.floor((r0 * 39) / games) < sw) r0++;
+    while (r0 < games && leagueWeek(cal, r0, games) < sw) r0++;
     for (let r = 0; r < r0; r++) {
       for (const [h, a] of rounds[r]) {
         const [hg, ag] = simScore(rng, dyn(s, h).st, dyn(s, a).st);
@@ -272,11 +275,11 @@ export function setupClubSeason(s: GameState, rng: Rng, clubId: string, mid: boo
     const home = pair[0] === clubId;
     const opp = home ? pair[1] : pair[0];
     const big = getClub(opp).city === cs.city;
-    fixtures.push({ w: 6 + Math.floor((r * 39) / games), comp: getLeague(lgId).ko, kind: 'league', opp: getClub(opp).name, oppSt: dyn(s, opp).st, ko: false, stage: `${r + 1}라운드`, home, big, final: false, round: r, oppId: opp });
+    fixtures.push({ w: leagueWeek(cal, r, games), comp: getLeague(lgId).ko, kind: 'league', opp: getClub(opp).name, oppSt: dyn(s, opp).st, ko: false, stage: `${r + 1}라운드`, home, big, final: false, round: r, oppId: opp });
   }
   const country = cs.country;
   const cRT = ensureCountry(s, country);
-  for (const w of [2, 4]) {
+  for (const w of cal.friendlies) {
     if (w <= sw) continue;
     const pool = membersOf(s, lgId).filter((id) => id !== clubId);
     const oid = rng.pick(pool);
@@ -284,7 +287,7 @@ export function setupClubSeason(s: GameState, rng: Rng, clubId: string, mid: boo
   }
   const tier = getLeague(lgId).tier;
   const entry = tier >= 4 ? 0 : tier === 3 ? 1 : tier === 2 ? 2 : 3;
-  s.career.cupAlive = !mid || sw < 20;
+  s.career.cupAlive = !mid || sw < cal.cupWeeks[3] - 3;
   s.career.cupRound = entry;
   if (s.career.cupAlive) scheduleCup(s, rng, clubId, lgId, entry);
   const q = cRT.qual[clubId];
@@ -317,7 +320,7 @@ export function scheduleCup(s: GameState, rng: Rng, clubId: string, lgId: string
   const oppSt = clamp(st + rng.normal(-4 + (stage - 2) * 1.8, 7), 20, 98);
   const final = stage === 6;
   s.career.fixtures.push({
-    w: CUP_WEEKS[stage], comp: getLeague(lgId).cup, kind: 'cup', opp: `${getLeague(lgId).cup} 상대`, oppSt, ko: true,
+    w: profileOf(getLeague(lgId).cal).cupWeeks[stage], comp: getLeague(lgId).cup, kind: 'cup', opp: `${getLeague(lgId).cup} 상대`, oppSt, ko: true,
     stage: ['1라운드', '2라운드', '3라운드', '16강', '8강', '4강', '결승'][stage], home: rng.chance(0.5), big: false, final, round: stage, oppId: ''
   });
 }
@@ -329,7 +332,7 @@ export function closeCurrent(s: GameState): void {
 }
 
 export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void {
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   const prev = s.career.clubId;
   const cs = getClub(o.clubId);
   const firstPro = !s.career.debuted && !o.trial && !o.loan ? true : !s.career.debuted;
@@ -385,6 +388,8 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
     addLog(s, 'milestone', o.loan ? '임대' : '이적', `${cs.name}${o.loan ? '로 임대 이적' : '로 이적'}했다 (${reason}). 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
   }
   toast(s, `${cs.name} 입단 · ${roleLabel(o.role)}`);
+  s.ev.flags.transferW = s.week;
+  if (isCosmetic()) s.cues.push('transfer');
   s.fame.value = marketValue(s);
 }
 
@@ -396,7 +401,7 @@ export function updateRole(s: GameState): void {
   const con = s.career.contract;
   if (!con || !s.career.clubId) return;
   const margin = curOvr(s.ab) - clubStd(s, s.career.clubId);
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   const r = roleFor(margin + s.people.coach.rel / 40, age, s.ab.pot, clubStd(s, s.career.clubId));
   const target: Role = r ?? 'backup';
   if (ROLE_VAL[target] > ROLE_VAL[con.role]) con.role = target;

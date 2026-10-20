@@ -1,7 +1,8 @@
 import { ALL_ATTRS, ATTR_LABEL, HIDDEN_KEYS, HIDDEN_LABEL, type AttrKey, type Chip, type GameState, type HiddenKey } from './types';
 import { Rng, clamp } from './rng';
-import { getCountry } from './data';
-import { ageAt, swOf, seasonOf } from './time';
+import { getClub, getCountry } from './data';
+import { ageAt, dateOf, swOf, seasonOf } from './time';
+import { whyNow } from './why';
 
 export type Op =
   | { kind: 'var'; t: string; sign: '+' | '-' | '='; v: number }
@@ -79,6 +80,20 @@ function validTarget(t: string): boolean {
   return false;
 }
 
+export function scaleFx(src: string | undefined, k: number): string | undefined {
+  if (!src || k >= 1) return src;
+  return src
+    .trim()
+    .split(/\s+/)
+    .map((tok) => {
+      const m = /^([A-Za-z_][\w.]*)([+\-=])(-?\d+(?:\.\d+)?)$/.exec(tok);
+      if (!m || m[2] === '=') return tok;
+      const v = Number(m[3]) * k;
+      return `${m[1]}${m[2]}${v >= 10 ? Math.round(v) : Math.round(v * 100) / 100}`;
+    })
+    .join(' ');
+}
+
 export function validateFx(src: string | undefined): void {
   for (const op of parseFx(src)) {
     if (op.kind === 'fx' && !hasFx(op.n)) throw new Error(`unknown fx:${op.n}`);
@@ -122,6 +137,7 @@ export function applyVar(s: GameState, t: string, sign: '+' | '-' | '=', v: numb
     s.ab.a[k] = clamp(set ? v : before + signed, 1, 20);
     s.ab.ceil[k] = clamp(Math.max(s.ab.ceil[k] + (set ? 0 : signed * 0.6), s.ab.a[k] * 0.9), 1, 20);
     addChip(chips, ATTR_LABEL[k], s.ab.a[k] - before);
+    whyNow(s, t, s.ab.a[k] - before);
     return;
   }
   if (t.startsWith('ceil.')) {
@@ -143,6 +159,7 @@ export function applyVar(s: GameState, t: string, sign: '+' | '-' | '=', v: numb
       const before = p.rel;
       p.rel = clamp(set ? v : p.rel + signed, -100, 100);
       addChip(chips, `${REL_LABEL[kk] ?? p.name} 관계`, p.rel - before);
+      whyNow(s, `rel.${kk}`, p.rel - before);
     }
     return;
   }
@@ -160,6 +177,7 @@ export function applyVar(s: GameState, t: string, sign: '+' | '-' | '=', v: numb
       const before = o[t];
       o[t] = clamp(set ? v : before + signed, 0, 100);
       addChip(chips, label, o[t] - before);
+      whyNow(s, `st.${t}`, o[t] - before);
       return;
     }
     case 'fameD': { const b = s.fame.dom; s.fame.dom = clamp(set ? v : b + signed, 0, 100); addChip(chips, label, s.fame.dom - b); return; }
@@ -344,14 +362,24 @@ export function pctChip(p: number): Chip {
 }
 
 type Getter = (s: GameState) => number;
-export interface CondEnv { clubLvl: (s: GameState) => number; ovr: (s: GameState) => number; abroad: (s: GameState) => boolean; hasWindow: (s: GameState) => boolean }
+export interface CondEnv {
+  clubLvl: (s: GameState) => number;
+  ovr: (s: GameState) => number;
+  abroad: (s: GameState) => boolean;
+  hasWindow: (s: GameState) => boolean;
+  preseason: (s: GameState) => boolean;
+  offseason: (s: GameState) => boolean;
+  seasonEnd: (s: GameState) => boolean;
+  winterBreak: (s: GameState) => boolean;
+  springAutumn: (s: GameState) => boolean;
+}
 let condEnv: CondEnv | null = null;
 export function setCondEnv(e: CondEnv): void {
   condEnv = e;
 }
 
 const getters: Record<string, Getter> = {
-  age: (s) => ageAt(s.p.birth.y, s.week),
+  age: (s) => ageAt(s.p.birth, s.week),
   season: (s) => seasonOf(s.week),
   sw: (s) => swOf(s.week),
   ovr: (s) => condEnv!.ovr(s),
@@ -389,9 +417,44 @@ const getters: Record<string, Getter> = {
   agentSkill: (s) => s.fin.agentSkill,
   abroad: (s) => (condEnv!.abroad(s) ? 1 : 0),
   window: (s) => (condEnv!.hasWindow(s) ? 1 : 0),
+  preseason: (s) => (condEnv!.preseason(s) ? 1 : 0),
+  offseason: (s) => (condEnv!.offseason(s) ? 1 : 0),
+  seasonEnd: (s) => (condEnv!.seasonEnd(s) ? 1 : 0),
+  winterBreak: (s) => (condEnv!.winterBreak(s) ? 1 : 0),
+  springAutumn: (s) => (condEnv!.springAutumn(s) ? 1 : 0),
   dorm: (s) => (s.p.dorm && s.fin.housing === 'dorm' ? 1 : 0),
   retired: (s) => (s.career.retired ? 1 : 0),
   caps: (s) => s.nat.caps,
+  natGap: (s) => condEnv!.ovr(s) - (getCountry(s.p.country).natBase - 4),
+  sinceCall: (s) => s.week - s.nat.lastCallW,
+  wcFever: (s) => {
+    const d = dateOf(s.week);
+    return (d.y - 2026) % 4 === 0 && ((d.m === 5 && d.d >= 15) || d.m === 6 || (d.m === 7 && d.d <= 19)) ? 1 : 0;
+  },
+  birthWeek: (s) => {
+    const d = dateOf(s.week);
+    const t0 = Date.UTC(d.y, d.m - 1, d.d);
+    const b = s.p.birth;
+    return [d.y, d.y + 1].some((y) => {
+      const x = Date.UTC(y, b.m - 1, b.d);
+      return x >= t0 && x < t0 + 7 * 86400000;
+    }) ? 1 : 0;
+  },
+  faceInLeague: (s) => {
+    const lg = s.career.cur.leagueId;
+    return lg && s.career.clubId && s.wld.faces.some((f) => f.status === 'pro' && f.clubId !== s.career.clubId && getClub(f.clubId).lg0 === lg) ? 1 : 0;
+  },
+  faceWedding: (s) => (s.wld.faces.some((f) => f.status !== 'youth' && f.status !== 'quit' && f.wedS >= 0 && f.wedS >= seasonOf(s.week) - 1) ? 1 : 0),
+  faceCoach: (s) => (s.wld.faces.some((f) => f.status === 'retired' && f.coachS >= 0 && f.coachS <= seasonOf(s.week)) ? 1 : 0),
+  rivalInjured: (s) => (s.wld.faces.some((f) => f.role === 'rival' && f.status === 'pro' && f.injuredS >= seasonOf(s.week) - 1) ? 1 : 0),
+  rivalSameTeam: (s) => (s.career.clubId && s.wld.faces.some((f) => f.role === 'rival' && f.status === 'pro' && f.clubId === s.career.clubId) ? 1 : 0),
+  youthCoachRetire: (s) => (s.wld.youthCoach.name && seasonOf(s.week) >= s.wld.youthCoach.retireS ? 1 : 0),
+  business: (s) => s.fin.business,
+  msN: (s) => s.post.ms[s.post.path] ?? 0,
+  pathYears: (s) => (s.week - s.post.enteredW) / 52,
+  pathWeeks: (s) => s.week - s.post.enteredW,
+  sinceMs: (s) => s.week - (s.post.msWeek[s.post.path] ?? -999),
+  partnered: (s) => (s.life.romance === 'dating' || s.life.romance === 'married' ? 1 : 0),
   contractLeft: (s) => (s.career.contract ? Math.max(0, s.career.contract.endW - s.week) : 0),
   hasClub: (s) => (s.career.clubId ? 1 : 0),
   coachFame: (s) => s.coach.fame,
@@ -414,7 +477,9 @@ const getters: Record<string, Getter> = {
   mil: (s) => (s.life.mil === 'pending' ? 1 : 0),
   squadStrength: (s) => s.coach.squad.length,
   roleRank: (s) => ({ starter: 3, rotation: 2, prospect: 1, backup: 0 })[s.career.contract?.role ?? 'backup'],
-  youth: (s) => (s.phase === 'youth' ? 1 : 0)
+  youth: (s) => (s.phase === 'youth' ? 1 : 0),
+  licenseAge: (s) => (s.phase === 'youth' || s.phase === 'pro' ? ageAt(s.p.birth, s.week) : 99),
+  studying: (s) => (s.coach.studying ? 1 : 0)
 };
 
 export function getVar(s: GameState, name: string): number {

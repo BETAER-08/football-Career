@@ -1,6 +1,7 @@
 import { Rng, hashString } from './rng';
 import { rngOf } from './world';
-import { ageAt, isWindow, swOf } from './time';
+import { ageAt, swOf } from './time';
+import { windowNow, isPreseason, isOffseason, isSeasonEnd, hasWinterBreak, calKindOf } from './calendar';
 import { createState, originFromSeed } from './player';
 import { ensureContent } from './content';
 import { growWeek } from './growth';
@@ -9,12 +10,17 @@ import { weeklyFinance } from './finance';
 import { advanceInjury, startInjury, injuryHazard, injuryEndsCareer } from './health';
 import { INJURY_BY_ID } from '../data/injuries';
 import { addLog, toast } from './log';
-import { openSeason, matchesThisWeek, playFixtureToday, intlWindow, tournamentWeek, endSeason, trainingWeekLoad } from './season';
+import { openSeason, matchesThisWeek, playFixtureToday, intlWindow, tournamentWeek, endSeason, trainingWeekLoad, snapSeason } from './season';
 import { expireContracts, weeklyUnattached, windowOffers, youthStep, forceRetireCheck, retirePlayer, endGame, upBiasUpdate, retirePressure } from './lifecycle';
 import { rollWeekly, resolveEventChoice, applyMomentContext, pushDecision, getEvent, eventsLoaded, buildDecision, markFired } from './events';
 import { resolveOffer } from './offers';
 import { coachWeekly, coachSeasonEnd, acceptCoachJob } from './coach';
 import { postWeekly, setPath, type PathId } from './postcareer';
+import { youthSeasonReview } from './youth';
+import { midSeasonSummary } from './summary';
+import { buildCoachReview, patchCoachReview } from './review';
+import { ceremonyWeek, worldSeasonEnd } from './worldsim';
+import { makeGoals } from './goals';
 import { runAction } from './actions';
 import { autoDecide, autoFocus, autoActionId } from './auto';
 import { updateRole, leaveToFree, makeOfferFor, joinClub } from './transfer';
@@ -24,6 +30,7 @@ import { getClub } from './data';
 import { clubLvl } from './world';
 import { curOvr } from './attributes';
 import { setCondEnv } from './fx';
+import { isCosmetic } from './flags';
 
 setCondEnv({
   clubLvl: (s) => {
@@ -35,7 +42,12 @@ setCondEnv({
     const id = s.phase === 'coach' ? s.coach.clubId : s.career.clubId;
     return !!id && getClub(id).country !== s.p.country;
   },
-  hasWindow: (s) => isWindow(swOf(s.week))
+  hasWindow: (s) => windowNow(s),
+  preseason: (s) => isPreseason(s),
+  offseason: (s) => isOffseason(s),
+  seasonEnd: (s) => isSeasonEnd(s),
+  winterBreak: (s) => hasWinterBreak(s),
+  springAutumn: (s) => calKindOf(s) === 'sa'
 });
 
 export function newGame(cfg: GameConfig, forced?: import('./roulette').RouletteResult): GameState {
@@ -43,6 +55,7 @@ export function newGame(cfg: GameConfig, forced?: import('./roulette').RouletteR
   const origin = forced ?? originFromSeed(cfg);
   const { state } = createState(cfg, origin);
   state.focus = defaultFocus('youth');
+  state.goals = makeGoals(state);
   return state;
 }
 
@@ -82,7 +95,7 @@ function injuryWeek(s: GameState, rng: Rng, age: number, weekMins: number): void
 
 function playerWeek(s: GameState, rng: Rng): void {
   const sw = swOf(s.week);
-  const age = ageAt(s.p.birth.y, s.week);
+  const age = ageAt(s.p.birth, s.week);
   if (sw === 0 && s.week > 0) {
     openSeason(s, rng);
     if (s.life.mil === 'serving' && s.week >= s.life.milEnd) returnFromMilitary(s, rng);
@@ -116,17 +129,20 @@ function playerWeek(s: GameState, rng: Rng): void {
   if (!s.career.retired) injuryWeek(s, rng, age, s.career.cur.mins - beforeMins);
   if (s.career.retired) return;
   if (s.career.clubId) {
-    if (isWindow(sw)) windowOffers(s, rng);
+    windowOffers(s, rng);
     intlWindow(s, rng, sw);
     tournamentWeek(s, rng, sw);
   } else weeklyUnattached(s, rng);
   youthStep(s, rng, age);
   if (s.career.retired) return;
   militaryWeek(s, rng);
+  if (sw === 25) ceremonyWeek(s);
+  midSeasonSummary(s, rng);
   rollWeekly(s, rng);
   if (sw === 51) {
     upBiasUpdate(s);
     endSeason(s, rng);
+    youthSeasonReview(s, rng);
     retirePressure(s, rng, age + 0);
     expireContracts(s, rng);
     forceRetireCheck(s, rng, age + 0);
@@ -160,13 +176,21 @@ export function tickState(s: GameState): boolean {
       playerWeek(s, rng);
       break;
     case 'coach': {
-      const age = ageAt(s.p.birth.y, s.week);
+      const age = ageAt(s.p.birth, s.week);
       weeklyFocusEffects(s);
       trainingWeekLoad(s);
       weeklyFinance(s, rng);
       coachWeekly(s, rng);
+      midSeasonSummary(s, rng);
       rollWeekly(s, rng);
-      if (swOf(s.week) === 51) coachSeasonEnd(s, rng);
+      if (swOf(s.week) === 0 && s.week > 0) snapSeason(s);
+      if (swOf(s.week) === 25) ceremonyWeek(s);
+      if (swOf(s.week) === 51) {
+        buildCoachReview(s);
+        worldSeasonEnd(s);
+        coachSeasonEnd(s, rng);
+        patchCoachReview(s);
+      }
       if (age >= 75) endGame(s, '75세에 이르렀다. 긴 축구 인생이 막을 내린다.');
       break;
     }
@@ -176,7 +200,9 @@ export function tickState(s: GameState): boolean {
       weeklyFinance(s, rng);
       postWeekly(s, rng);
       rollWeekly(s, rng);
+      if (swOf(s.week) === 25) ceremonyWeek(s);
       if (swOf(s.week) === 51) {
+        worldSeasonEnd(s);
         s.fame.dom = clamp(s.fame.dom * 0.95, 0, 100);
         s.post.rep = clamp(s.post.rep * 0.985, 0, 100);
       }
@@ -184,7 +210,7 @@ export function tickState(s: GameState): boolean {
     }
   }
   s.week += 1;
-  if (!s.ended && ageAt(s.p.birth.y, s.week) >= 75) endGame(s, '75세에 이르렀다. 긴 축구 인생이 막을 내린다.');
+  if (!s.ended && ageAt(s.p.birth, s.week) >= 75) endGame(s, '75세에 이르렀다. 긴 축구 인생이 막을 내린다.');
   return true;
 }
 
@@ -221,7 +247,14 @@ export function resolveDecision(s: GameState, idx: number, demands = '', record 
     panel = { title: '새로운 길', grade: 'none', roll: 0, need: 100, text: ['지도자의 길을 걷기로 했다.', '해설위원석에 앉게 된다.', '구단 행정 쪽으로 방향을 잡았다.', '사업에 도전하기로 했다.', '축구계를 떠나기로 했다.'][idx], changes: [], later: false, w: s.week };
   } else {
     panel = resolveEventChoice(s, rng, d, idx);
-    if (d.kind === 'moment') applyMomentContext(s);
+    if (d.kind === 'moment') {
+      applyMomentContext(s);
+      if (isCosmetic() && (panel.grade === 'great' || panel.grade === 'ok')) {
+        const cur = s.career.cur;
+        const b = cur.best ?? { w: s.week, rating: 0, line: '', comp: '', goals: 0, assists: 0, mins: 0, result: '' };
+        if (panel.grade === 'great' || !b.momentText) cur.best = { ...b, momentText: `${d.text.split('\n')[0]} ${panel.text}` };
+      }
+    }
   }
   s.result = panel;
   if (!s.decision && s.decQueue.length) s.decision = s.decQueue.shift() as Decision;
