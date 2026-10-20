@@ -102,9 +102,10 @@ button { font-family: inherit; color: inherit; }
 .scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
 .pixel { image-rendering: pixelated; image-rendering: crisp-edges; }
 .modal-bg { position: fixed; inset: 0; background: rgba(5, 8, 14, 0.62); display: grid; place-items: center; z-index: 50; padding: 24px; backdrop-filter: blur(2px); }
-.modal { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; max-width: 980px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; box-shadow: var(--shadow); }
-.modal-h { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-weight: 800; }
-.modal-b { padding: 14px 16px; overflow-y: auto; }
+.modal { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; max-width: 980px; width: 100%; max-height: calc(88vh / var(--z, 1)); min-height: 0; display: flex; flex-direction: column; box-shadow: var(--shadow); }
+.modal-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-weight: 800; }
+.modal-b { padding: 14px 16px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
+.modal-h { flex: none; }
 input[type='text'], textarea, select {
   background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; color: var(--text); padding: 7px 10px; font-family: inherit; font-size: 13px; width: 100%;
 }

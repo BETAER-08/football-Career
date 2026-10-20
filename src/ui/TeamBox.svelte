@@ -9,6 +9,10 @@
   import { roleLabel as coachRoleLabel } from '../engine/coach';
   import { whyText } from './format';
   import { goalValue } from '../engine/goals';
+  import { youthRank } from '../engine/yleague';
+  import { captionOf } from './caption';
+  import { schoolInfo } from '../engine/school';
+  import { STAGE_LABEL } from '../engine/stages';
   import { DREAM_LABEL } from '../engine/goals';
 
   const g = $derived(store.game!);
@@ -26,6 +30,14 @@
   const retDate = $derived(g.st.injury ? fmtDate(dateOf(g.week + Math.ceil(g.st.injury.weeksLeft))) : '');
   const wage = $derived(currentWage(g));
   const target = $derived(g.coach.tableTarget);
+  const yt = $derived(g.phase === 'youth' ? g.yt : null);
+  const yRank = $derived(yt ? youthRank(g) : 0);
+  const yc = $derived(g.career.yCur);
+  const yAvg = $derived(yc.ratingN ? (yc.ratingSum / yc.ratingN).toFixed(1) : '-');
+  const entry = $derived(g.career.entry);
+  const entryText = $derived(g.career.debuted ? '1군 데뷔 완료' : entry.step >= 2 ? `1군 명단 ${entry.squadN}회${g.career.signed ? '' : ' (프로 계약 필요)'}` : entry.step === 1 ? '1군 훈련 합류' : '아직 1군 접점 없음');
+  const sch = $derived(g.career.track === 'school' && g.career.clubId ? schoolInfo(g.career.clubId) : null);
+  const statusText = $derived(g.career.track === 'school' ? (g.career.youthStage === 'HS' ? '고교 축구부' : '대학 축구부') : g.career.signed ? '프로 계약' : g.career.scholar === 1 ? '장학 계약' : '계약 없음');
   const tone = (v: number, inv = false) => ((inv ? 100 - v : v) < 30 ? 'bad' : (inv ? 100 - v : v) < 55 ? 'warn' : '');
   void ranking;
   void getCountry;
@@ -33,6 +45,7 @@
 </script>
 
 <div class="panel">
+  <div class="cap">{captionOf(g)}</div>
   <div class="grid">
     <div class="col" style="gap:5px">
       <div class="h">현재 팀</div>
@@ -44,6 +57,14 @@
       {:else if g.phase === 'coach' && g.coach.role === 'national'}
         <div class="big">{getCountry(g.coach.natCountry).natTeam}</div>
         <div class="muted">국가대표 감독 · 입지 {Math.round(g.coach.standing)}</div>
+      {:else if g.phase === 'youth' && club && yt}
+        <div class="big">{club.name} {STAGE_LABEL[g.career.youthStage]}</div>
+        <div class="muted">{yt.name}{yRank ? ` · ${yRank}위/${yt.ids.length}팀` : ''}</div>
+        <div class="kv"><span>감독</span><span title={g.people.coach.en}>{g.people.coach.name}</span></div>
+        <div class="kv"><span>성향</span><span>{g.people.coach.style}</span></div>
+        <div class="kv"><span>유스 기록</span><span class="mono">{yc.apps}경기 {yc.goals}골 {yc.assists}도움 · 평점 {yAvg}</span></div>
+        {#if sch}<div class="kv"><span>학교 등급</span><span>{['명문', '중위', '약체'][sch.tier]} · 학력 {['중졸', '고졸', '대학 재학', '대졸'][Math.min(3, g.life.eduLevel)]}</span></div>{:else}<div class="kv"><span>1군 진입</span><span>{entryText}</span></div>{/if}
+        {#if g.career.entry.jumps > 0}<div class="kv"><span>월반</span><span class="mono">{g.career.entry.jumps}회</span></div>{/if}
       {:else if club && lg}
         <div class="big">{club.name}</div>
         <div class="muted">{lg.ko}{rank ? ` · ${rank}위/${total}팀` : ''}{g.phase === 'coach' && target ? ` · 목표 ${target}위` : ''}</div>
@@ -106,10 +127,11 @@
         {#if g.life.mil === 'serving'}<div class="tag">병역 이행 중</div>{/if}
         {#if g.ev.flags.wage_unpaid !== undefined}<div class="tag" style="color:var(--down)">임금 체불 중</div>{/if}
       {:else if g.phase === 'youth'}
-        <div class="kv"><span>연령대</span><span>{g.career.youthStage}</span></div>
-        <div class="kv"><span>신분</span><span>{g.career.scholar === 1 ? '장학 계약' : g.career.scholar === 2 ? '유스 계약 (장학 미선발)' : '유스 계약'}</span></div>
-        {#if g.career.scholar === 1 && con}<div class="kv"><span>장학 수당</span><span class="mono">{formatKRW(con.wage)}</span></div>{/if}
-        <div class="mini-hint">시즌 말마다 승급·잔류·방출 심사를 받고, 16세에 장학 계약, 17~19세에 1군 계약 여부가 판정돼요.</div>
+        <div class="kv"><span>소속 단계</span><span>{STAGE_LABEL[g.career.youthStage]}</span></div>
+        <div class="kv"><span>계약</span><span>{statusText}</span></div>
+        {#if (g.career.scholar === 1 || g.career.signed) && con && con.wage > 0}<div class="kv"><span>{g.career.signed ? '연봉' : '장학 수당'}</span><span class="mono">{formatKRW(con.wage)}</span></div>{/if}
+        {#if g.career.signed && con}<div class="kv"><span>남은 기간</span><span class="mono">{Math.floor(weeksLeft / 52)}년 {Math.round((weeksLeft % 52) / 4.3)}개월</span></div>{/if}
+        <div class="mini-hint">시즌 말마다 승급·잔류·방출 심사를 받아요. 1군 훈련 합류 → 명단 등록 → 프로 계약 후 데뷔 순서로 1군에 다가가요.{g.career.track === 'school' ? ' 학교 경로에서는 시즌 말 프로 입단 제안으로 프로에 합류해요.' : ''}</div>
       {:else}
         <div class="muted">계약 없음</div>
       {/if}
@@ -122,6 +144,7 @@
 
 <style>
   .grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1fr; gap: 16px; padding: 12px 14px; }
+  .cap { padding: 8px 14px 0; font-size: 12.5px; color: var(--muted); }
   .h { font-size: 11px; font-weight: 800; color: var(--faint); letter-spacing: 0.05em; }
   .big { font-size: 17px; font-weight: 800; line-height: 1.2; }
   .gr { display: grid; grid-template-columns: 56px 1fr 30px; gap: 8px; align-items: center; font-size: 12px; }

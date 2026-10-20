@@ -509,10 +509,6 @@ class Store {
     this.screen = 'menu';
   }
 
-  dayPhase(): number {
-    return (performance.now() / 1000 / 30) % 1;
-  }
-
   seasonSw(): number {
     return this.game ? swOf(this.game.week) : 0;
   }

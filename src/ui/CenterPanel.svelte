@@ -1,5 +1,4 @@
 <script lang="ts">
-  import PixelScene from './PixelScene.svelte';
   import TeamBox from './TeamBox.svelte';
   import FocusBox from './FocusBox.svelte';
   import DecisionCard from './DecisionCard.svelte';
@@ -7,7 +6,6 @@
 </script>
 
 <div class="center scroll">
-  <PixelScene />
   <TeamBox />
   <FocusBox />
   <DecisionCard />

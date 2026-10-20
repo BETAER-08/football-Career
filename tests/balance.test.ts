@@ -61,6 +61,27 @@ describe('확률 보정 목표', () => {
   });
 });
 
+describe('유스 단계 지표 (헤드리스 2,000 커리어)', () => {
+  it('시즌 중 월반 15~25%, 두 단계 월반 2% 이하, 데뷔 나이 중앙값 19~20세·17세 이하 8~12%·16세 이하 1~3%', async () => {
+    const specs: Spec[] = Array.from({ length: 2000 }, (_, i) => mixedSpec(i, 'ys-'));
+    const rs = await pool.run(specs, calibration);
+    const jump = rs.filter((r) => r.jumped).length / rs.length;
+    const dbl = rs.filter((r) => r.doubleJump).length / rs.length;
+    const ages = rs.filter((r) => r.debuted && r.debutAge > 0).map((r) => r.debutAge).sort((a, b) => a - b);
+    const med = ages[Math.floor(ages.length / 2)];
+    const le = (a: number) => ages.filter((x) => x <= a).length / ages.length;
+    expect(jump).toBeGreaterThanOrEqual(0.15);
+    expect(jump).toBeLessThanOrEqual(0.25);
+    expect(dbl).toBeLessThanOrEqual(0.02);
+    expect(med).toBeGreaterThanOrEqual(19);
+    expect(med).toBeLessThanOrEqual(20);
+    expect(le(17)).toBeGreaterThanOrEqual(0.08);
+    expect(le(17)).toBeLessThanOrEqual(0.12);
+    expect(le(16)).toBeGreaterThanOrEqual(0.01);
+    expect(le(16)).toBeLessThanOrEqual(0.03);
+  });
+});
+
 describe('지도자 밸런스 (66세까지 그만두지 않고 제안을 받는 봇)', () => {
   it('감독 데뷔 90% 이상, 수준 5 이상 감독·대표팀 감독 15~25%, 대표팀 감독 5~10%, 평균 경질 1~2회', async () => {
     const specs: Spec[] = Array.from({ length: 400 }, (_, i) => ({ ...mixedSpec(i, 'cs-'), mode: 'coach' as const }));

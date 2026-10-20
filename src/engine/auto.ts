@@ -87,7 +87,7 @@ export function autoFocus(s: GameState, rng: Rng): string {
     if (s.st.fatigue > 78 && has('recover')) return 'recover';
     if (s.st.injury && has('recover')) return 'recover';
     const r = rng.next();
-    if (age < 16) return r < 0.5 ? 'tech' : r < 0.72 ? 'phys' : r < 0.82 ? 'tactic' : r < 0.92 ? 'study' : 'family';
+    if (age < 16) return r < 0.5 ? 'tech' : r < 0.72 ? 'phys' : r < 0.82 ? 'tactic' : 'family';
     if (age <= 28) return r < 0.4 ? 'tech' : r < 0.65 ? 'phys' : r < 0.8 ? 'tactic' : r < 0.86 ? 'social' : r < 0.92 ? 'money' : 'family';
     return r < 0.3 ? 'recover' : r < 0.5 ? 'tech' : r < 0.65 ? 'tactic' : r < 0.8 ? 'family' : 'money';
   }

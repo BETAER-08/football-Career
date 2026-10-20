@@ -33,7 +33,7 @@ export const SCALAR_LABEL: Record<string, string> = {
 };
 
 export const REL_LABEL: Record<string, string> = {
-  coach: '감독', captain: '주장', mate1: '동료', mate2: '동료', mate3: '동료', rival: '라이벌', agent: '에이전트', father: '아버지', mother: '어머니',
+  coach: '감독', fcoach: '1군 감독', captain: '주장', mate1: '동료', mate2: '동료', mate3: '동료', rival: '라이벌', agent: '에이전트', father: '아버지', mother: '어머니',
   partner: '연인', fans: '팬', media: '언론', natcoach: '대표팀 감독', director: '단장', owner: '구단주', mates: '동료', family: '가족', sibling1: '형제자매', all: '주변'
 };
 
@@ -478,6 +478,17 @@ const getters: Record<string, Getter> = {
   squadStrength: (s) => s.coach.squad.length,
   roleRank: (s) => ({ starter: 3, rotation: 2, prospect: 1, backup: 0 })[s.career.contract?.role ?? 'backup'],
   youth: (s) => (s.phase === 'youth' ? 1 : 0),
+  stageIdx: (s) => ['U15', 'U17', 'U19', 'RES'].indexOf(s.career.youthStage),
+  signed: (s) => (s.career.signed ? 1 : 0),
+  school: (s) => (s.career.track === 'school' ? 1 : 0),
+  schoolUni: (s) => (s.career.youthStage === 'UNI' ? 1 : 0),
+  ftTrain: (s) => (s.career.entry.step >= 1 ? 1 : 0),
+  ftSquad: (s) => (s.career.entry.step >= 2 ? 1 : 0),
+  jumps: (s) => s.career.entry.jumps,
+  ytRank: (s) => (s.yt && s.career.clubId && s.yt.table[s.career.clubId] ? [...s.yt.ids].sort((a, b) => s.yt!.table[b][0] - s.yt!.table[a][0]).indexOf(s.career.clubId) + 1 : 99),
+  ytFrac: (s) => (s.yt ? s.yt.round / Math.max(1, s.yt.games) : 0),
+  ytShare: (s) => (s.yt && s.career.yCur.avail >= 6 ? s.career.yCur.apps / s.career.yCur.avail : 1),
+  bteam: (s) => (s.yt && s.yt.adult ? 1 : 0),
   licenseAge: (s) => (s.phase === 'youth' || s.phase === 'pro' ? ageAt(s.p.birth, s.week) : 99),
   studying: (s) => (s.coach.studying ? 1 : 0)
 };

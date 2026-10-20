@@ -68,6 +68,8 @@
         <div class="kv"><span>경기</span><span class="mono">{d.apps}</span></div>
         <div class="kv"><span>골 · 도움</span><span class="mono">{d.goals} · {d.assists}</span></div>
         <div class="kv"><span>평균 평점</span><span class="mono">{d.avg ? d.avg.toFixed(2) : '-'}</span></div>
+        {#if d.youth && d.youth.apps > 0}<div class="kv"><span>유스·리저브</span><span class="mono">{d.youth.apps}경기 {d.youth.goals}골 {d.youth.assists}도움{d.youth.avg ? ` · 평점 ${d.youth.avg.toFixed(1)}` : ''}</span></div>{/if}
+        {#if d.ballons || d.podiums}<div class="kv"><span>발롱도르</span><span class="mono">수상 {d.ballons}회 · 포디움 {d.podiums ?? d.ballons}회</span></div>{/if}
         <div class="kv"><span>A매치</span><span class="mono">{d.caps}경기 {d.natGoals}골</span></div>
         <div class="kv"><span>최종 순자산</span><span class="mono up">{formatKRW(d.netWorth)}</span></div>
         <div class="kv"><span>선수 시절 최고 시장가치</span><span class="mono">{formatKRW(d.peakValue)}</span></div>
@@ -76,13 +78,28 @@
         {#each d.trophies as t}<div>🏆 {t.year} {t.name} <span class="faint">· {t.club}</span></div>{/each}
         {#each d.coachTrophies as t}<div>🏆 {t.year} {t.name} <span class="faint">· 감독 · {t.club}</span></div>{/each}
         {#each d.awards as a}<div>🏅 {a.year} {a.name}</div>{/each}
-        {#if !d.trophies.length && !d.awards.length && !d.coachTrophies.length}<div class="muted">기록된 트로피와 개인상이 없어요.</div>{/if}
+        {#if d.youth}
+          {#each d.youth.trophies as t}<div>🥉 유스 트로피 {t.year} {t.name} <span class="faint">· {t.club}</span></div>{/each}
+          {#each d.youth.awards as a}<div>🥉 유스 개인상 {a.year} {a.name}</div>{/each}
+        {/if}
+        {#if !d.trophies.length && !d.awards.length && !d.coachTrophies.length && !(d.youth && (d.youth.trophies.length || d.youth.awards.length))}<div class="muted">기록된 트로피와 개인상이 없어요.</div>{/if}
       </div></div>
       <div class="panel"><div class="panel-h">거쳐 간 구단</div><div class="panel-b col" style="gap:3px;max-height:220px;overflow:auto">
         {#each d.clubs as h}<div>{h.name} <span class="faint">· {h.from}{h.to >= 0 ? '~' + h.to : ''}</span></div>{/each}
         {#each d.coachRecs.filter((r) => !r.clubId.startsWith('NAT')) as r}<div>{r.clubName} <span class="faint">· 지도자 {r.year} · {r.role}</span></div>{/each}
       </div></div>
     </div>
+
+    {#if d.ageRecs && d.ageRecs.length}
+      <div class="panel"><div class="panel-h">연령별 국제대회 기록</div>
+        <div class="panel-b">
+          <table class="ag">
+            <thead><tr><th>연도</th><th>대회</th><th>성적</th><th>경기</th><th>골</th><th>도움</th><th>개인상</th></tr></thead>
+            <tbody>{#each d.ageRecs as r}<tr><td class="mono">{r.year}</td><td>{r.name}</td><td>{r.result}</td><td class="mono">{r.apps}</td><td class="mono">{r.goals}</td><td class="mono">{r.assists}</td><td>{r.awards.join(', ') || '-'}</td></tr>{/each}</tbody>
+          </table>
+        </div>
+      </div>
+    {/if}
 
     {#if d.epilogue}
       <div class="panel"><div class="panel-h">은퇴 후의 삶</div>
@@ -131,6 +148,9 @@
 </div>
 
 <style>
+  .ag { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .ag th { text-align: left; color: var(--faint); font-weight: 600; padding: 3px 6px; border-bottom: 1px solid var(--line); }
+  .ag td { padding: 3px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
   .end { height: 100%; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px; display: flex; flex-direction: column; gap: 14px; }
   .head { display: flex; gap: 24px; align-items: center; padding: 18px 22px; border-radius: 14px; border: 1px solid var(--line); background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 14%, var(--panel)), var(--panel)); }

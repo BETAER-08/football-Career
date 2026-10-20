@@ -61,7 +61,7 @@
 
   function caption(i: number): string {
     if (!origin) return '';
-    if (i === 0) return `현역 프로 100명 중 ${origin.countryPct.toFixed(1)}명이 이 나라 국적`;
+    if (i === 0) return `현재 전 세계 U15 유스 선수 100명 중 ${origin.countryPct.toFixed(1)}명이 이 나라 국적`;
     if (i === 1) return `이 나라 U15 선수 100명 중 약 ${origin.leaguePct.toFixed(origin.leaguePct < 1 ? 2 : 1)}명이 이 리그 구단 소속`;
     const c = getClub(origin.clubId);
     return `${c.city} · 아카데미 ${academyGrade(c.acad)}등급 · 시설 ${c.facil}점 · 이 리그 U15 선수 100명 중 약 ${origin.clubPct.toFixed(origin.clubPct < 1 ? 2 : 1)}명이 이 구단`;

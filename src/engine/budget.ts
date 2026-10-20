@@ -24,7 +24,7 @@ export function budgetBonus(s: GameState): number {
   const left = con ? con.endW - s.week : 0;
   let v = 0;
   if (s.phase === 'youth' && age >= 17) v += 1;
-  if (s.phase === 'pro' && s.career.debutW >= 0 && seasonOf(s.career.debutW) === season) v += 1;
+  if ((s.phase === 'pro' || s.phase === 'youth') && s.career.debutW >= 0 && seasonOf(s.career.debutW) === season) v += 1;
   if (s.phase === 'pro' && con && !con.youth && left > 0 && left <= 52) v += 1;
   if ((s.phase === 'youth' || s.phase === 'pro') && s.st.injury && s.st.injury.weeksLeft >= 8) v += 1;
   const ab = s.ev.flags.abroad;

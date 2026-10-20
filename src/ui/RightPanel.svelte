@@ -16,7 +16,12 @@
   const g = $derived(store.game!);
   const age = $derived(ageAt(g.p.birth, g.week));
   const curSeason = $derived(seasonOf(g.week));
-  const all = $derived<SeasonRec[]>([...g.career.seasons, ...(g.career.cur.done || (!g.career.cur.apps && !g.career.cur.mins) ? [] : [g.career.cur])]);
+  const first = $derived<SeasonRec[]>([...g.career.seasons, ...(g.career.cur.done || (!g.career.cur.apps && !g.career.cur.mins) ? [] : [g.career.cur])]);
+  const youthRecs = $derived<SeasonRec[]>([...g.career.ySeasons, ...(g.career.yCur.done || (!g.career.yCur.apps && !g.career.yCur.mins) ? [] : [g.career.yCur])]);
+  let tabSel = $state<'f' | 'y' | ''>('');
+  const tab = $derived<'f' | 'y'>(tabSel || (first.length || !youthRecs.length ? 'f' : 'y'));
+  const all = $derived(tab === 'f' ? first : youthRecs);
+  const everything = $derived<SeasonRec[]>([...youthRecs, ...first]);
   const tot = $derived.by(() => {
     let apps = 0, goals = 0, ast = 0, rs = 0, rn = 0, cs = 0;
     for (const r of all) { apps += r.apps; goals += r.goals; ast += r.assists; rs += r.ratingSum; rn += r.ratingN; cs += r.cs; }
@@ -49,7 +54,7 @@
     const first = 0;
     const last = Math.max(curSeason, 0);
     for (let s = first; s <= last; s++) {
-      const recs = all.filter((r) => r.s === s);
+      const recs = everything.filter((r) => r.s === s);
       const rec = recs[recs.length - 1];
       let mark = '';
       if (recs.some((r) => r.trophies.length)) mark += '★';
@@ -74,7 +79,7 @@
 
 <div class="right scroll col" style="gap:10px">
   <div class="panel">
-    <div class="panel-h"><span>커리어 스탯 · 평점</span><span class="spacer"></span><button class="btn sm" onclick={() => (store.tableOpen = true)}>리그 순위</button></div>
+    <div class="panel-h"><span>커리어 스탯 · 평점</span><span class="spacer"></span><button class="btn sm" class:on={tab === 'f'} onclick={() => (tabSel = 'f')}>1군</button><button class="btn sm" class:on={tab === 'y'} onclick={() => (tabSel = 'y')}>유스·리저브</button><button class="btn sm" onclick={() => (store.tableOpen = true)}>리그 순위</button></div>
     <div class="panel-b col" style="gap:8px">
       <div class="sum">
         <div><b class="mono">{tot.apps}</b><span>경기</span></div>
@@ -82,17 +87,23 @@
         <div><b class="mono">{tot.ast}</b><span>도움</span></div>
         <div><b class="mono">{tot.avg ? tot.avg.toFixed(2) : '-'}</b><span>평균 평점</span></div>
         <div><b class="mono">{tot.cs}</b><span>클린시트</span></div>
-        <div><b class="mono">{g.career.trophies.length}</b><span>트로피</span></div>
-        <div><b class="mono">{g.career.awards.length}</b><span>개인상</span></div>
-        <div><b class="mono">{g.nat.caps}</b><span>A매치</span></div>
+        {#if tab === 'f'}
+          <div><b class="mono">{g.career.trophies.length}</b><span>트로피</span></div>
+          <div><b class="mono">{g.career.awards.length}</b><span>개인상</span></div>
+          <div><b class="mono">{g.nat.caps}</b><span>A매치</span></div>
+        {:else}
+          <div><b class="mono">{g.career.yTrophies.length}</b><span>유스 트로피</span></div>
+          <div><b class="mono">{g.career.yAwards.length}</b><span>유스 개인상</span></div>
+          <div><b class="mono">{g.career.entry.jumps}</b><span>월반</span></div>
+        {/if}
       </div>
       <table>
-        <thead><tr><th>시즌</th><th>구단</th><th>리그</th><th>경기</th><th>골</th><th>도움</th><th>평점</th></tr></thead>
+        <thead><tr><th>시즌</th><th>{tab === 'y' ? '팀' : '구단'}</th><th>리그</th><th>경기</th><th>골</th><th>도움</th><th>평점</th></tr></thead>
         <tbody>
           {#each rows as r}
             <tr class:clk={hasReview(r.s, 'player')} onclick={() => openReview(r.s, 'player')} title={hasReview(r.s, 'player') ? '눌러서 시즌 결산 다시 보기' : ''}><td class="mono">{r.year % 100}/{(r.year + 1) % 100}</td><td class="cl" title={r.clubName}>{r.clubName}</td><td class="lg">{r.leagueName}</td><td class="mono">{r.apps}</td><td class="mono">{r.goals}</td><td class="mono">{r.assists}</td><td class="mono">{r.ratingN ? (r.ratingSum / r.ratingN).toFixed(1) : '-'}</td></tr>
           {:else}
-            <tr><td colspan="7" class="muted">아직 시즌 기록이 없어요.</td></tr>
+            <tr><td colspan="7" class="muted">{tab === 'f' ? '아직 1군 공식 경기 기록이 없어요.' : '아직 시즌 기록이 없어요.'}</td></tr>
           {/each}
         </tbody>
       </table>

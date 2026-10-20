@@ -10,11 +10,14 @@ import { isCosmetic } from './flags';
 import { leaveToFree, genOffers, joinClub, makeOfferFor, buildClubPeople, setupClubSeason, fallbackOffer } from './transfer';
 import { presentOffers, hasPendingOffer } from './offers';
 import { playIntl } from './season';
-import { clubLvl } from './world';
+import { clubLvl, clubSt } from './world';
 import { getClub, getCountry, leaguesOf } from './data';
 import type { GameState, PersonKind } from './types';
 import { TRAIT_LABEL } from './player';
 import { scholarWage } from './youth';
+import { dualRegister, enterSchool } from './school';
+import { AGE_TOURNAMENTS } from '../data/competitions';
+import { applyJump, changeYouthClub } from './yleague';
 
 function afterInjury(s: GameState, rng: import('./rng').Rng, id: string): void {
   const age = ageAt(s.p.birth, s.week);
@@ -199,7 +202,11 @@ registerFx('youthMove', (s, { rng }, arg) => {
   const lvl = clamp(arg === 'up' ? cur + 1 : arg === 'down' ? cur - 1 : arg === 'low' ? 2 : cur, 2, top);
   const lgs = leaguesOf(s.p.country);
   const cands: string[] = [];
-  for (const l of lgs) for (const id of l.clubIds) if (clubLvl(s, id) === lvl && id !== s.career.clubId) cands.push(id);
+  if (arg === 'top') {
+    const top = lgs[0].clubIds.slice().sort((a, b) => clubSt(s, b) - clubSt(s, a))  .filter((id) => id !== s.career.clubId).slice(0, 10);
+    cands.push(...top);
+  }
+  if (arg !== 'top') for (const l of lgs) for (const id of l.clubIds) if (clubLvl(s, id) === lvl && id !== s.career.clubId) cands.push(id);
   if (!cands.length) for (const l of lgs) for (const id of l.clubIds) if (clubLvl(s, id) <= cur && id !== s.career.clubId) cands.push(id);
   if (!cands.length) return;
   const id = rng.pick(cands);
@@ -209,13 +216,14 @@ registerFx('youthMove', (s, { rng }, arg) => {
   s.career.clubsHist.push({ clubId: id, fromS: seasonOf(s.week), toS: -1 });
   if (s.career.contract) { s.career.contract.clubId = id; }
   buildClubPeople(s, rng, id, false);
-  setupClubSeason(s, rng, id, true);
+  setupClubSeason(s, id, true);
+  if (s.phase === 'youth') changeYouthClub(s);
   s.career.cur.clubId = id;
   s.career.cur.clubName = cs.name;
   s.p.dorm = true;
   s.fin.housing = 'dorm';
   if (s.career.scholar === 1 && s.career.contract) s.career.contract.wage = scholarWage(s, false);
-  addLog(s, 'milestone', '유스 이적', `${cs.name} ${s.career.youthStage} 팀으로 옮겼다.`, [], { star: true });
+  addLog(s, 'milestone', '유스 이적', arg === 'top' ? `리그 최상위 구단 ${cs.name}의 ${s.career.youthStage} 팀으로 이적했다!` : `${cs.name} ${s.career.youthStage} 팀으로 옮겼다.`, [], { star: true });
 });
 registerFx('scholar', (s, _c, arg) => {
   const con = s.career.contract;
@@ -227,6 +235,23 @@ registerFx('scholar', (s, _c, arg) => {
   if (con) con.wage = scholarWage(s, arg === 'high');
   addLog(s, 'milestone', '장학 계약', `${getClub(s.career.clubId).name}와(과) 유스 장학 계약을 맺었다.`, [], { star: true });
   return [{ k: '장학 수당', d: con ? con.wage : 0, u: '만' }];
+});
+registerFx('school', (s, { rng }, arg) => {
+  enterSchool(s, rng, arg === 'UNI' ? 'UNI' : 'HS');
+});
+registerFx('dualReg', (s, { rng }) => {
+  dualRegister(s, rng);
+});
+registerFx('ageSquad', (s, _c, arg) => {
+  const code = s.ev.flags.ageRefuseKey;
+  if (code === undefined) return;
+  const t = AGE_TOURNAMENTS[Math.floor(code / 10000)];
+  if (!t) return;
+  s.ev.flags[`A:${t.id}:${code % 10000}:squad`] = arg === '1' ? 1 : 0;
+  delete s.ev.flags.ageRefuseKey;
+});
+registerFx('jump', (s, { rng }, arg) => {
+  applyJump(s, rng, arg === '2' ? 2 : 1);
 });
 registerFx('youthCap', (s) => {
   s.nat.youthCaps += 1;

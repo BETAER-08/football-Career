@@ -5,6 +5,7 @@
   import { getClub, getCountry } from '../engine/data';
   import { academyGrade } from '../engine/data';
   import { drawAvatar } from './pixel/avatar';
+  import { posPercent } from '../engine/relations';
   import { mrz, seed32, ageOf } from './format';
   import { DREAM_LABEL } from '../engine/goals';
   import type { DreamId } from '../engine/types';
@@ -38,7 +39,7 @@
         <div class="name">{s.p.name} <span class="en" title="원어 표기">{s.p.en}</span></div>
         <div class="muted">{s.p.birth.y}.{String(s.p.birth.m).padStart(2, '0')}.{String(s.p.birth.d).padStart(2, '0')}생 · {ageOf(s)}세 · {country.flag} {country.ko}</div>
         <div class="muted">고향 {s.p.hometown}{s.p.dorm ? ' · 유스 숙소 생활' : ' · 집에서 통학'}</div>
-        <div class="muted">{POS_LABEL[s.ab.pos]} · {footLabel[s.p.foot]}잡이 · {growLabel[s.p.growth]} · {s.p.build} 체형</div>
+        <div class="muted">{POS_LABEL[s.ab.pos]} (U15 선수 100명 중 약 {posPercent(s.ab.pos).toFixed(0)}명) · {footLabel[s.p.foot]}잡이 · {growLabel[s.p.growth]} · {s.p.build} 체형</div>
       </div>
     </div>
     {#if revealStep >= 1}

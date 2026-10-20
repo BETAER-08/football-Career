@@ -2,14 +2,16 @@ import { Rng, clamp } from './rng';
 import { addLog, toast } from './log';
 import { ageAt, seasonOf, swOf } from './time';
 import { windowNow } from './calendar';
-import { curOvr } from './attributes';
-import { clubLvl, clubStd } from './world';
-import { getClub } from './data';
+import { curOvr, shownOvr } from './attributes';
+import { clubLvl, clubSt, clubStd } from './world';
+import { getClub, getCountry, leaguesOf } from './data';
 import { genOffers, genYouthJudgement, joinClub, leaveToFree, fallbackOffer, makeOfferFor, roleLabel, closeCurrent } from './transfer';
 import { presentOffers, hasPendingOffer } from './offers';
 import { fireEvent, getEvent, pushDecision } from './events';
 import { getCal } from './calibration';
-import { scholarshipStep } from './youth';
+import { releaseEvent, scholarshipStep } from './youth';
+import { minProAge } from './stages';
+import { closeYouthCurrent } from './yleague';
 import type { Decision, GameState } from './types';
 
 export function endGame(s: GameState, reason: string): void {
@@ -30,11 +32,13 @@ export function retirePlayer(s: GameState, rng: Rng, reason: string, byInjury = 
   if (byInjury) s.career.endedByInjury = true;
   if (s.career.clubId) {
     s.career.clubsHist[s.career.clubsHist.length - 1].toS = seasonOf(s.week);
+    if (s.phase === 'youth') closeYouthCurrent(s);
     closeCurrent(s);
     s.career.contract = null;
     s.career.clubId = '';
   }
   s.career.fixtures.length = 0;
+  s.yt = null;
   s.phase = 'postcareer';
   s.focus = 'study';
   s.post.enteredW = s.week;
@@ -93,15 +97,16 @@ export function weeklyUnattached(s: GameState, rng: Rng): void {
   if (s.decision && s.decision.kind === 'offer') return;
   const waited = s.week - s.career.freeAgentW;
   const age = ageAt(s.p.birth, s.week);
-  if (waited > 0 && waited % 3 === 0 && rng.next() < 0.7) {
+  const youthFree = !s.career.signed && s.phase === 'youth';
+  if (waited > 0 && (youthFree ? waited === 3 || waited === 12 : waited % 3 === 0) && rng.next() < 0.7) {
     let offers = genOffers(s, rng, 'free', 3);
-    if (!offers.length && waited >= 9) {
+    if (!offers.length && waited >= 9 && (s.phase !== 'youth' || rng.chance(0.4))) {
       const fb = fallbackOffer(s, rng, 'free');
       if (fb) offers = [fb];
     }
     if (offers.length) presentOffers(s, offers, 'free', '새 팀의 제안', '무적 신분인 당신에게 몇몇 구단이 관심을 보였다.', true);
   }
-  if (waited >= 78 || (age >= 37 && waited >= 26)) retirePlayer(s, rng, '새로운 소속 팀을 끝내 찾지 못했다.');
+  if (waited >= (s.career.signed ? 78 : 30) || (age >= 37 && waited >= 26)) retirePlayer(s, rng, '새로운 소속 팀을 끝내 찾지 못했다.');
 }
 
 export function windowOffers(s: GameState, rng: Rng): void {
@@ -136,18 +141,20 @@ export function upBiasUpdate(s: GameState): void {
 export function youthStep(s: GameState, rng: Rng, age: number): void {
   const sw = swOf(s.week);
   scholarshipStep(s, rng, age);
-  if (s.phase !== 'youth' || s.career.debuted || s.career.retired) return;
-  if (age >= 17 && sw === 30 && s.career.clubId) {
+  if (s.phase !== 'youth' || s.career.signed || s.career.retired || s.career.track !== 'pro') return;
+  topClubScout(s, rng, age);
+  const e = s.career.entry;
+  const early = age < 17 && age >= minProAge(s.career.clubId ? getClub(s.career.clubId).country : s.p.country) && (e.jumps > 0 || e.step >= 1);
+  if ((age >= 17 ? sw === 30 : early && (sw === 30 || sw === 10)) && s.career.clubId) {
     const j = genYouthJudgement(s, rng);
     if (j.pass) {
-      addLog(s, 'milestone', '1군 계약 판정', `${getClub(s.career.clubId).name} 코칭스태프가 프로 계약을 검토한다. 여러 구단이 관심을 보인다.`, [], { star: true });
+      if (early) fireEvent(s, rng, getEvent('ys_early_pro'));
+      addLog(s, 'milestone', '프로 계약 판정', `${getClub(s.career.clubId).name} 코칭스태프가 프로 계약을 검토한다. 여러 구단이 관심을 보인다.`, [], { star: true });
       presentOffers(s, j.offers, 'first', '프로 계약 제안', '유스 생활의 결실로 프로 계약 제안이 도착했다.', age < 19 && s.career.rejectCount < 2);
     } else if (age >= 19) {
-      s.career.youthJudged = true;
-      const def = getEvent('youth_final_release');
-      fireEvent(s, rng, def);
-    } else {
-      toast(s, '아직 1군 문은 열리지 않았다. 한 시즌 더 증명해야 한다.');
+      releaseEvent(s, rng, true);
+    } else if (!early) {
+      toast(s, '아직 프로 계약의 문은 열리지 않았다. 한 시즌 더 증명해야 한다.');
     }
   }
   if (age >= 20 && !s.career.clubId && !s.career.retired && s.week - s.career.freeAgentW > 60) {
@@ -173,4 +180,29 @@ export function retirePressure(s: GameState, rng: Rng, age: number): void {
   if (rng.next() >= p) return;
   const def = getEvent('retire_nudge');
   fireEvent(s, rng, def);
+}
+
+export function scoutThreshold(country: string): number {
+  return { 6: 70, 5: 64, 4: 58, 3: 52, 2: 52 }[getCountry(country).top] ?? 60;
+}
+
+export function topClubScout(s: GameState, rng: Rng, age: number): void {
+  const sw = swOf(s.week);
+  const season = seasonOf(s.week);
+  if (sw < 6 || sw > 40 || !s.career.clubId || s.decision || s.decQueue.length || s.ev.flags.topScoutS === season) return;
+  const country = getClub(s.career.clubId).country;
+  if (shownOvr(s.ab, age) < scoutThreshold(country)) return;
+  const top = leaguesOf(country)[0];
+  const ranked = top.clubIds.slice().sort((a, b) => clubSt(s, b) - clubSt(s, a))  .filter((id) => id !== s.career.clubId).slice(0, 10);
+  if (!ranked.length || !rng.chance(0.3)) return;
+  s.ev.flags.topScoutS = season;
+  if (age >= 16) {
+    const offers = rng.shuffle(ranked.slice()).slice(0, 3).map((id) => makeOfferFor(s, rng, id, 'first', { first: true })).filter((o): o is NonNullable<typeof o> => !!o);
+    if (offers.length) {
+      addLog(s, 'milestone', '명문 구단의 러브콜', `${s.p.name}의 활약에 리그 최상위 구단들이 프로 계약을 제안했다.`, [], { star: true });
+      presentOffers(s, offers, 'first', '명문 구단의 제안', '리그 최상위 구단들이 앞다투어 영입 제안을 보내왔다.', true);
+      return;
+    }
+  }
+  fireEvent(s, rng, getEvent('ys_top_scout'));
 }

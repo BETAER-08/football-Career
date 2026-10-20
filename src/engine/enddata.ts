@@ -5,7 +5,7 @@ import { getClub, getLeague } from './data';
 import { netWorth } from './finance';
 import { MILESTONES, isEpiPath } from './postcareer';
 import { START_YEAR } from './time';
-import type { AwardRec, CoachRec, GameState, LogEntry, Pos, TrophyRec } from './types';
+import type { AgeRec, AwardRec, CoachRec, GameState, LogEntry, Pos, TrophyRec } from './types';
 
 export const ARCHIVE_VERSION = 3;
 
@@ -51,6 +51,9 @@ export interface EndData {
   dream: { id: string; label: string; achieved: boolean };
   epilogue: { path: string; ms: number; milestones: string[]; years: number; text: string } | null;
   ballons: number;
+  podiums?: number;
+  ageRecs?: AgeRec[];
+  youth?: { apps: number; goals: number; assists: number; avg: number; trophies: TrophyRec[]; awards: AwardRec[]; jumps: number; stage: string };
 }
 
 export function epilogueText(s: GameState): EndData['epilogue'] {
@@ -64,6 +67,13 @@ export function epilogueText(s: GameState): EndData['epilogue'] {
   const last = names.length ? names[names.length - 1] : '';
   const text = `${s.p.name}은(는) 은퇴 후 ${label}의 길에서 ${years}년을 보냈다. ${names.length ? `${names.join(', ')}의 이정표를 지나 ${last}에 이르렀다.` : '뚜렷한 이정표를 남기지는 못했지만 자신의 속도로 일상을 지켰다.'} ${n >= 4 ? '네 개의 이정표를 모두 지난 뒤 조용히 축구 인생을 마무리했다.' : '그렇게 축구와 함께한 인생이 천천히 저물었다.'}`;
   return { path: endedPath, ms: n, milestones: names, years, text };
+}
+
+function youthSummary(s: GameState): NonNullable<EndData['youth']> {
+  let apps = 0, goals = 0, assists = 0, rs = 0, rn = 0;
+  const recs = [...s.career.ySeasons, ...(s.career.yCur.done ? [] : [s.career.yCur])];
+  for (const r of recs) { apps += r.apps; goals += r.goals; assists += r.assists; rs += r.ratingSum; rn += r.ratingN; }
+  return { apps, goals, assists, avg: rn ? rs / rn : 0, trophies: s.career.yTrophies, awards: s.career.yAwards, jumps: s.career.entry.jumps, stage: s.career.youthStage };
 }
 
 export function buildEndData(s: GameState, grade: string, percentile: number, baseline: number[]): EndData {
@@ -81,6 +91,6 @@ export function buildEndData(s: GameState, grade: string, percentile: number, ba
     debuted: s.career.debuted, grade, percentile, coachGrade: s.coach.entered && s.coach.recs.length ? coachGrade(s.coach.peakFame) : '', peakFame: Math.round(s.coach.peakFame),
     apps, goals, assists, avg: rn ? rs / rn : 0, caps: s.nat.caps, natGoals: s.nat.goals, netWorth: netWorth(s), peakValue: s.fame.peakValue, trophies: s.career.trophies, coachTrophies: s.coach.trophies,
     awards: s.career.awards, clubs, clubNames: names, seasons, coachRecs: s.coach.recs.map((r) => ({ ...r })), logs: keyLogs, baseline: baseline.map((v) => Math.round(v * 10) / 10),
-    dream: { id: s.dream, label: s.dream ? DREAM_LABEL[s.dream] : '', achieved: s.dream ? dreamAchieved(s, s.dream) : false }, epilogue: epilogueText(s), ballons: s.extra.ballon
+    dream: { id: s.dream, label: s.dream ? DREAM_LABEL[s.dream] : '', achieved: s.dream ? dreamAchieved(s, s.dream) : false }, epilogue: epilogueText(s), ballons: s.extra.ballon, podiums: s.extra.podium, ageRecs: s.nat.ageRecs, youth: youthSummary(s)
   };
 }

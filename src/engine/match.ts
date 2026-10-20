@@ -1,10 +1,13 @@
 import { Rng, clamp } from './rng';
 import { curOvr } from './attributes';
-import { clubSt, clubStd, dyn, simScore, record, positionOf } from './world';
-import { getClub, getCountry } from './data';
+import { clubSt, clubStd, dyn, simScore, record, positionOf, clubLeagueId } from './world';
 import { ageAt } from './time';
+import { getClub, getCountry, getLeague } from './data';
 import { recordWhy } from './why';
-import type { Fixture, GameState, Pos, Role } from './types';
+import { STAGE_AGE, STAGE_REF } from './stages';
+import type { Fixture, GameState, Pos, Role, YouthStage } from './types';
+
+export const STAGE_TAG: Record<YouthStage, string> = { U15: 'U15', U17: 'U17', U19: 'U19', RES: '리저브', HS: '고교', UNI: '대학' };
 
 export const ROLE_BONUS: Record<Role, number> = { starter: 1.4, rotation: 0.2, prospect: -0.9, backup: -2 };
 
@@ -52,11 +55,28 @@ export function youthStd(s: GameState, clubId: string, age: number): number {
   return std * 0.86 * f + 6;
 }
 
+export function stageStd(s: GameState, clubId: string, stage: YouthStage): number {
+  return youthStd(s, clubId, STAGE_AGE[stage]) - STAGE_REF;
+}
+
+export function jumpDrag(s: GameState): number {
+  const left = s.career.entry.boostEnd - s.week;
+  return left > 0 ? 1.6 * Math.min(1, left / 16) : 0;
+}
+
+export interface PlayOpts {
+  pre?: { hg: number; ag: number; penWin?: boolean };
+  bench?: boolean;
+  mySt?: number;
+  stage?: YouthStage;
+  std?: number;
+}
+
 export function selectionX(s: GameState, margin: number, role: Role, youth: boolean): number {
   const coachRel = s.people.coach ? s.people.coach.rel : 0;
   const fit = s.people.coach ? s.people.coach.traitVal : 0;
   const frm = s.st.form.length ? s.st.form.reduce((a, b) => a + b, 0) / s.st.form.length - 6.5 : 0;
-  let x = margin / 3.4 + (youth ? 0.8 : ROLE_BONUS[role]) + coachRel / 70 + fit + frm * 0.5;
+  let x = margin / 3.4 + (youth ? 0.8 - jumpDrag(s) : ROLE_BONUS[role]) + coachRel / 70 + fit + frm * 0.5;
   if (s.st.fatigue > 60) x -= (s.st.fatigue - 60) / 40;
   x += (s.st.sharp - 60) / 80;
   return x;
@@ -68,6 +88,16 @@ function logistic(x: number): number {
 
 export function momentTrigger(s: GameState, fx: Fixture, out: MatchOut, clubId: string): string {
   if (!out.played || out.mins < 12) return '';
+  if (fx.kind === 'ycup' || fx.kind === 'ycont') return fx.final ? 'yfinal' : '';
+  if (fx.kind === 'yleague') {
+    const yt = s.yt;
+    if (yt && fx.big) return 'yderby';
+    if (yt && yt.round >= yt.games - 6 && yt.round < yt.games) {
+      const rank = Object.keys(yt.table).sort((a, b) => yt.table[b][0] - yt.table[a][0]).indexOf(clubId) + 1;
+      if (rank >= 1 && rank <= 2) return 'ytitle';
+    }
+    return '';
+  }
   if (out.pens && out.started) return 'shootout';
   if (fx.final && fx.kind !== 'league') return 'final';
   if (out.firstPro) return 'debut';
@@ -90,39 +120,39 @@ export function isDerby(s: GameState, a: string, b: string): boolean {
   return ca.city === cb.city && ca.country === cb.country;
 }
 
-export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: boolean): MatchOut {
+export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: boolean, opts: PlayOpts = {}): MatchOut {
   const clubId = s.career.clubId;
   const myClub = getClub(clubId);
-  const mySt = fx.kind === 'intl' ? natTeamBase(s.p.country) : clubSt(s, clubId) + (youth ? -2 : 0);
-  const [hg, ag] = fx.home ? simScore(rng, mySt, fx.oppSt) : simScore(rng, fx.oppSt, mySt);
+  const mySt = opts.mySt ?? (fx.kind === 'intl' ? natTeamBase(s.p.country) : clubSt(s, clubId) + (youth ? -2 : 0));
+  const [hg, ag] = opts.pre ? [opts.pre.hg, opts.pre.ag] : fx.home ? simScore(rng, mySt, fx.oppSt) : simScore(rng, fx.oppSt, mySt);
   const myG = fx.home ? hg : ag;
   const opG = fx.home ? ag : hg;
   let pens = false;
   let penWin = false;
   if (fx.ko && myG === opG) {
     pens = true;
-    penWin = rng.chance(0.5 + (mySt - fx.oppSt) / 200);
+    penWin = opts.pre?.penWin ?? rng.chance(0.5 + (mySt - fx.oppSt) / 200);
   }
   const result: 'W' | 'D' | 'L' = myG > opG ? 'W' : myG < opG ? 'L' : pens ? (penWin ? 'W' : 'L') : 'D';
   const out: MatchOut = {
     fx, hg, ag, myGoals: myG, oppGoals: opG, result, played: false, started: false, mins: 0, goals: 0, assists: 0, rating: 0, cs: false, yc: 0, rc: 0,
     pens, penWin, homeName: '', awayName: '', line: '', moment: '', firstPro: false, advance: result === 'W'
   };
-  const myName = fx.kind === 'intl' ? '대표팀' : myClub.name;
+  const myName = fx.kind === 'intl' ? '대표팀' : youth ? `${myClub.name} ${STAGE_TAG[opts.stage ?? s.career.youthStage]}` : myClub.name;
   out.homeName = fx.home ? myName : fx.opp;
   out.awayName = fx.home ? fx.opp : myName;
-  const age = ageAt(s.p.birth, s.week);
   if (s.st.injury || s.phase === 'coach' || s.phase === 'postcareer' || (fx.kind === 'friendly' && false)) return out;
   const role = s.career.contract?.role ?? 'prospect';
   const pos = s.ab.pos;
   let margin: number;
-  if (fx.kind === 'intl') margin = effOvr(s) - natStd(s);
-  else if (youth) margin = effOvr(s) - youthStd(s, clubId, age);
+  if (fx.kind === 'intl') margin = effOvr(s) - (opts.std ?? natStd(s));
+  else if (youth) margin = effOvr(s) - stageStd(s, clubId, opts.stage ?? s.career.youthStage);
   else margin = effOvr(s) - clubStd(s, clubId);
   if (fx.kind === 'cup' || fx.kind === 'friendly') margin += 1.5;
-  const x = selectionX(s, margin, fx.kind === 'intl' ? 'rotation' : role, youth);
-  const pStart = logistic(x);
-  const pSub = logistic(x + 1.3) * 0.85;
+  let x = selectionX(s, margin, fx.kind === 'intl' ? 'rotation' : role, youth);
+  if (!youth && fx.kind !== 'intl' && myClub.country === 'KR' && ageAt(s.p.birth, s.week) <= 22 && getLeague(clubLeagueId(s, clubId)).tier === 1) x += 0.55;
+  const pStart = opts.bench ? 0 : logistic(x);
+  const pSub = opts.bench ? clamp(logistic((margin + 4) / 3.4) * 0.9, 0.03, 0.85) : logistic(x + 1.3) * 0.85;
   const u = rng.next();
   let started = false;
   let mins = 0;
@@ -134,7 +164,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   }
   if (fx.kind === 'friendly' && started) mins = Math.min(mins, rng.int(45, 75));
   if (mins === 0) {
-    s.career.seasonAvailAcc += 1;
+    if (!youth) s.career.seasonAvailAcc += 1;
     return out;
   }
   out.played = true;
@@ -159,7 +189,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   if (rng.next() < (0.006 + s.hid.temper / 9000) * mf) rc = 1;
   else if (yc && rng.next() < 0.05) rc = 1;
   const cs = opG === 0 && mins >= 60 && (pos === 'GK' || pos === 'CB' || pos === 'LB' || pos === 'RB' || pos === 'DM');
-  let rating = 6.1 + 0.85 * Math.tanh(margin / 9) + rng.normal(0, 0.52) + (result === 'W' ? 0.28 : result === 'L' ? -0.22 : 0) + goals * 0.9 + assists * 0.55 + (cs ? 0.35 : 0) - yc * 0.2 - rc * 0.9;
+  let rating = 6.1 + (youth ? 1.6 : 0.85) * Math.tanh(margin / 9) + rng.normal(0, 0.52) + (result === 'W' ? 0.28 : result === 'L' ? -0.22 : 0) + goals * 0.9 + assists * 0.55 + (cs ? 0.35 : 0) - yc * 0.2 - rc * 0.9;
   if (mins < 60) rating = 6 + (rating - 6) * (0.45 + mins / 140);
   rating = clamp(Math.round(rating * 10) / 10, 3, 10);
   out.goals = goals;
@@ -168,9 +198,13 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   out.cs = cs;
   out.yc = yc;
   out.rc = rc;
-  const cur = s.career.cur;
-  const first = s.career.debuted && s.ev.flags.pro_debut === undefined && !youth && fx.kind !== 'friendly';
+  const cur = youth ? s.career.yCur : s.career.cur;
+  const first = !s.career.debuted && !youth && (fx.kind === 'league' || fx.kind === 'cup' || fx.kind === 'cont');
   out.firstPro = first;
+  if (first) {
+    s.career.debuted = true;
+    s.career.debutW = s.week;
+  }
   if (fx.kind !== 'friendly') {
     cur.apps += 1;
     if (started) cur.starts += 1;
@@ -186,8 +220,10 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
       cur.intApps += 1;
       cur.intGoals += goals;
     }
-    s.career.seasonMinsAcc += mins;
-    s.career.seasonAvailAcc += 1;
+    if (!youth) {
+      s.career.seasonMinsAcc += mins;
+      s.career.seasonAvailAcc += 1;
+    }
     s.st.form.push(rating);
     if (s.st.form.length > 5) s.st.form.shift();
   }
@@ -202,7 +238,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   recordWhy(s, 'st.fatigue', '경기 출전', s.st.fatigue - fat0);
   if (rc && fx.kind === 'league') s.ev.flags.suspended = s.week;
   const con = s.career.contract;
-  if (con && fx.kind !== 'friendly') {
+  if (con && !youth && fx.kind !== 'friendly') {
     const bonus = (started || mins > 20 ? con.appBonus : 0) + goals * con.goalBonus;
     if (bonus > 0) {
       s.fin.cash += bonus * (1 - 0.3);
@@ -215,7 +251,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   if (s.people.coach && fx.kind !== 'friendly') {
     s.people.coach.rel = clamp(s.people.coach.rel + (rating >= 7.2 ? 0.35 : rating < 5.4 ? -0.35 : 0) + (rc ? -2 : 0), -100, 100);
   }
-  s.fame.dom = clamp(s.fame.dom + (fx.kind === 'intl' ? 0.2 : 0.02) * (0.4 + clubLevelFame(s) / 6) * (goals + 0.3 * assists + (rating > 7.5 ? 0.5 : 0)), 0, 100);
+  s.fame.dom = clamp(s.fame.dom + (fx.kind === 'intl' ? 0.2 : youth ? 0.006 : 0.02) * (0.4 + clubLevelFame(s) / 6) * (goals + 0.3 * assists + (rating > 7.5 ? 0.5 : 0)), 0, 100);
   out.moment = momentTrigger(s, fx, out, clubId);
   out.line = `${out.homeName} ${hg}-${ag} ${out.awayName}${pens ? (penWin ? ' (승부차기 승)' : ' (승부차기 패)') : ''}`;
   return out;
@@ -233,15 +269,15 @@ export function natStd(s: GameState): number {
   return natTeamBase(s.p.country) - 3;
 }
 
-export function playTeamOnly(s: GameState, rng: Rng, fx: Fixture, mySt: number): MatchOut {
-  const [hg, ag] = fx.home ? simScore(rng, mySt, fx.oppSt) : simScore(rng, fx.oppSt, mySt);
+export function playTeamOnly(s: GameState, rng: Rng, fx: Fixture, mySt: number, pre?: { hg: number; ag: number; penWin?: boolean }): MatchOut {
+  const [hg, ag] = pre ? [pre.hg, pre.ag] : fx.home ? simScore(rng, mySt, fx.oppSt) : simScore(rng, fx.oppSt, mySt);
   const myG = fx.home ? hg : ag;
   const opG = fx.home ? ag : hg;
   let pens = false;
   let penWin = false;
   if (fx.ko && myG === opG) {
     pens = true;
-    penWin = rng.chance(0.5 + (mySt - fx.oppSt) / 200);
+    penWin = pre?.penWin ?? rng.chance(0.5 + (mySt - fx.oppSt) / 200);
   }
   const result: 'W' | 'D' | 'L' = myG > opG ? 'W' : myG < opG ? 'L' : pens ? (penWin ? 'W' : 'L') : 'D';
   return {

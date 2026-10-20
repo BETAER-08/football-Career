@@ -1,7 +1,7 @@
 import { Rng, seedState } from './rng';
 import { getCal, setCal, type Calibration } from './calibration';
 import { allCountries, getCountry } from './data';
-import { originIn, type RouletteResult } from './roulette';
+import { youthCount, originIn, type RouletteResult } from './roulette';
 import { runBot, newGame, autoStep, autoWeek, tickState } from './game';
 import { botPolicy } from './auto';
 import { setFast } from './log';
@@ -32,6 +32,12 @@ export interface CareerResult {
   fired: number;
   coachAge: number;
   seasonsPlayed: number;
+  debutAge: number;
+  jumped: boolean;
+  doubleJump: boolean;
+  signed: boolean;
+  school: boolean;
+  schoolPro: boolean;
 }
 
 export function forcedOrigin(rng: Rng, country: string, level?: number): RouletteResult {
@@ -81,7 +87,13 @@ export function runOne(spec: Spec): CareerResult {
     everNat: s.coach.everNat,
     fired: s.coach.fired,
     coachAge: ageAt(s.p.birth, s.week),
-    seasonsPlayed: s.career.seasons.length
+    seasonsPlayed: s.career.seasons.length,
+    debutAge: s.career.debuted ? ageAt(s.p.birth, s.career.debutW) : -1,
+    jumped: s.career.entry.jumps > 0,
+    doubleJump: s.career.entry.doubleJump,
+    signed: s.career.signed,
+    school: s.ev.flags.schoolEntered !== undefined,
+    schoolPro: s.ev.flags.schoolPro !== undefined
   };
 }
 
@@ -106,6 +118,6 @@ export function targetShare(code: string): number {
 export function mixedSpec(i: number, prefix: string): Spec {
   const rng = new Rng(seedState(prefix + i + '|mix'));
   const cs = allCountries();
-  const c = cs[rng.weightedIndex(cs.map((x) => x.pros))];
+  const c = cs[rng.weightedIndex(cs.map((x) => youthCount(x.code)))];
   return { seed: `${prefix}${i}`, country: c.code, level: 0, pos: 'random', mode: 'player' };
 }

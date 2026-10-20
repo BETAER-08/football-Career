@@ -1,7 +1,7 @@
 import { Rng, hashString } from './rng';
 import { rngOf } from './world';
 import { ageAt, swOf } from './time';
-import { windowNow, isPreseason, isOffseason, isSeasonEnd, hasWinterBreak, calKindOf } from './calendar';
+import { windowNow, isPreseason, isOffseason, isSeasonEnd, hasWinterBreak, calKindOf, calOf } from './calendar';
 import { createState, originFromSeed } from './player';
 import { ensureContent } from './content';
 import { growWeek } from './growth';
@@ -16,9 +16,11 @@ import { rollWeekly, resolveEventChoice, applyMomentContext, pushDecision, getEv
 import { resolveOffer } from './offers';
 import { coachWeekly, coachSeasonEnd, acceptCoachJob } from './coach';
 import { postWeekly, setPath, type PathId } from './postcareer';
+import { ageTournamentWeek } from './agecomp';
 import { youthSeasonReview } from './youth';
+import { entryWeekly, listedThisWeek, midSeasonJump, settleCheck, youthToday } from './yleague';
 import { midSeasonSummary } from './summary';
-import { buildCoachReview, patchCoachReview } from './review';
+import { buildCoachReview, patchCoachReview, patchYouthReview } from './review';
 import { ceremonyWeek, worldSeasonEnd } from './worldsim';
 import { makeGoals } from './goals';
 import { runAction } from './actions';
@@ -97,7 +99,7 @@ function playerWeek(s: GameState, rng: Rng): void {
   const sw = swOf(s.week);
   const age = ageAt(s.p.birth, s.week);
   if (sw === 0 && s.week > 0) {
-    openSeason(s, rng);
+    openSeason(s);
     if (s.life.mil === 'serving' && s.week >= s.life.milEnd) returnFromMilitary(s, rng);
   }
   if (age >= 18 && s.life.studying && s.life.eduLevel === 0) {
@@ -111,8 +113,9 @@ function playerWeek(s: GameState, rng: Rng): void {
   trainingWeekLoad(s);
   growWeek(s, rng, age);
   weeklyFinance(s, rng);
-  const beforeMins = s.career.cur.mins;
+  const beforeMins = s.career.cur.mins + s.career.yCur.mins;
   if (s.career.clubId) {
+    ageTournamentWeek(s, rng, sw);
     const todays = matchesThisWeek(s, sw);
     const suspended = s.ev.flags.suspended !== undefined && s.week - s.ev.flags.suspended <= 1;
     for (const fx of todays) {
@@ -123,10 +126,11 @@ function playerWeek(s: GameState, rng: Rng): void {
       playFixtureToday(s, rng, fx, s.phase === 'youth');
     }
     delete s.ev.flags.suspended;
+    if (s.phase === 'youth') youthToday(s, rng, sw, listedThisWeek(s) || s.ev.flags.intlAway === s.week);
   } else {
     s.st.sharp = clamp(s.st.sharp - 1, 20, 100);
   }
-  if (!s.career.retired) injuryWeek(s, rng, age, s.career.cur.mins - beforeMins);
+  if (!s.career.retired) injuryWeek(s, rng, age, s.career.cur.mins + s.career.yCur.mins - beforeMins);
   if (s.career.retired) return;
   if (s.career.clubId) {
     windowOffers(s, rng);
@@ -135,6 +139,14 @@ function playerWeek(s: GameState, rng: Rng): void {
   } else weeklyUnattached(s, rng);
   youthStep(s, rng, age);
   if (s.career.retired) return;
+  if (s.phase === 'youth') {
+    settleCheck(s, rng);
+    if (s.phase === 'youth') {
+      entryWeekly(s, rng, age);
+      const mid = calOf(s).midSeason;
+      if (sw > mid && sw <= mid + 5) midSeasonJump(s, rng);
+    }
+  }
   militaryWeek(s, rng);
   if (sw === 25) ceremonyWeek(s);
   midSeasonSummary(s, rng);
@@ -143,6 +155,7 @@ function playerWeek(s: GameState, rng: Rng): void {
     upBiasUpdate(s);
     endSeason(s, rng);
     youthSeasonReview(s, rng);
+    patchYouthReview(s);
     retirePressure(s, rng, age + 0);
     expireContracts(s, rng);
     forceRetireCheck(s, rng, age + 0);

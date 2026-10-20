@@ -1,6 +1,8 @@
 import { CONT_SLOTS } from '../data/competitions';
+import { isSchoolId } from '../data/schools';
 import { getClub, getLeague, leaguesOf, getCountry, type ClubStatic } from './data';
 import { Rng } from './rng';
+import { stream } from './streams';
 import { seasonOf } from './time';
 import type { ClubDyn, CountryRT, GameState } from './types';
 
@@ -13,9 +15,8 @@ export function ensureCountry(s: GameState, code: string): CountryRT {
   let c = s.world.countries[code];
   if (c) {
     if (c.initS < cur) {
-      const rng = rngOf(s);
       while (c.initS < cur) {
-        endSeasonCountry(s, rng, code, '', null);
+        endSeasonCountry(s, code, '', null);
         c.initS++;
       }
     }
@@ -31,9 +32,8 @@ export function ensureCountry(s: GameState, code: string): CountryRT {
   c = { initS: 0, clubs, qual: {} };
   s.world.countries[code] = c;
   initQual(c, code);
-  const rng = rngOf(s);
   while (c.initS < cur) {
-    endSeasonCountry(s, rng, code, '', null);
+    endSeasonCountry(s, code, '', null);
     c.initS++;
   }
   return c;
@@ -63,6 +63,7 @@ function initQual(c: CountryRT, code: string): void {
 
 export function dyn(s: GameState, id: string): ClubDyn {
   const cs = getClub(id);
+  if (isSchoolId(id)) return { lg: cs.lg0, st: cs.st0, fin: cs.fin0 };
   return ensureCountry(s, cs.country).clubs[id];
 }
 
@@ -85,9 +86,12 @@ export function clubStd(s: GameState, id: string): number {
   const cs: ClubStatic = getClub(id);
   const d = dyn(s, id);
   const lg = getLeague(d.lg);
-  if (cs.elite && d.lg === cs.lg0 && lg.elite > 0) return cs.std0 + (d.st - cs.st0) * 0.35;
-  return stdFromLevel(lg.lvl) + (d.st - (lg.top + lg.bottom) / 2) * 0.4;
+  const ease = EASE[cs.country] ?? 0;
+  if (cs.elite && d.lg === cs.lg0 && lg.elite > 0) return cs.std0 + (d.st - cs.st0) * 0.35 - ease;
+  return stdFromLevel(lg.lvl) + (d.st - (lg.top + lg.bottom) / 2) * 0.4 - ease;
 }
+
+const EASE: Record<string, number> = { US: 4.5, MX: 4.5, JP: 4.5, CO: 4.5, MA: 4.5, SA: 4.5, HR: 4.5, UY: 4.5, KR: 4.5, BR: 8, TR: 8, AR: 8, NL: 8, PT: 8 };
 
 const STD: Record<number, number> = { 2: 47, 3: 56, 4: 64, 5: 72, 6: 79 };
 function stdFromLevel(l: number): number {
@@ -136,7 +140,8 @@ export function gamesOf(s: GameState, lgId: string): number {
   return (n % 2 === 0 ? n - 1 : n) * 2;
 }
 
-export function startLeagueSeason(s: GameState, rng: Rng, lgId: string): void {
+export function startLeagueSeason(s: GameState, lgId: string): void {
+  const rng = stream(s.cfg.seed, `lgs:${lgId}`, seasonOf(s.week));
   const ids = membersOf(s, lgId).sort();
   rng.shuffle(ids);
   const table: Record<string, [number, number, number, number]> = {};
@@ -164,16 +169,21 @@ export function record(s: GameState, lgId: string, h: string, a: string, hg: num
   else { th[0]++; ta[0]++; }
 }
 
-export function playRoundOthers(s: GameState, rng: Rng, lgId: string, round: number, skip: string): [string, string] | null {
+export function roundRng(s: GameState, tag: string, n: number): Rng {
+  return stream(s.cfg.seed, `${tag}:${seasonOf(s.week)}`, n);
+}
+
+export function playRoundOthers(s: GameState, lgId: string, round: number, skip: string): [string, string, number, number] | null {
   const rt = s.world.leagues[lgId];
   if (!rt) return null;
   const rounds = buildRounds(rt.order);
   const rd = rounds[round];
   if (!rd) return null;
-  let mine: [string, string] | null = null;
+  const rng = roundRng(s, `lr:${lgId}`, round);
+  let mine: [string, string, number, number] | null = null;
   for (const [h, a] of rd) {
-    if (h === skip || a === skip) { mine = [h, a]; continue; }
     const [hg, ag] = simScore(rng, dyn(s, h).st, dyn(s, a).st);
+    if (h === skip || a === skip) { mine = [h, a, hg, ag]; continue; }
     record(s, lgId, h, a, hg, ag);
   }
   return mine;
@@ -216,8 +226,9 @@ export interface SeasonEndInfo {
   relegated: string[];
 }
 
-export function endSeasonCountry(s: GameState, rng: Rng, code: string, playerLg: string, finalRank: string[] | null): SeasonEndInfo {
+export function endSeasonCountry(s: GameState, code: string, playerLg: string, finalRank: string[] | null): SeasonEndInfo {
   const c = s.world.countries[code];
+  const rng = stream(s.cfg.seed, `cend:${code}`, c.initS);
   const lgs = leaguesOf(code);
   const ranks: Record<string, string[]> = {};
   for (const l of lgs) ranks[l.id] = l.id === playerLg && finalRank ? finalRank : quickRank(s, rng, l.id);

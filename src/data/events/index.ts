@@ -3,6 +3,8 @@ import { engineEvents } from './pro/engine';
 import { youthPassive } from './youth/passive';
 import { youthChoice } from './youth/choice';
 import { youthStages } from './youth/stages';
+import { youthLeague } from './youth/league';
+import { youthSchool } from './youth/school';
 import { lowerLeague } from './pro/lower';
 import { faceEvents } from './pro/faces';
 import { followups } from './followups';
@@ -22,6 +24,6 @@ import { postChoice } from './postcareer/choice';
 import { milestoneEvents } from './postcareer/milestones';
 
 export const ALL_EVENTS: RawEvent[] = [
-  ...engineEvents, ...youthPassive, ...youthChoice, ...youthStages, ...lowerLeague, ...faceEvents, ...followups, ...flavorEvents, ...proPassive, ...proChoice1, ...proChoice2, ...chains1, ...chains2, ...moments, ...lifestyleEvents,
+  ...engineEvents, ...youthPassive, ...youthChoice, ...youthStages, ...youthLeague, ...youthSchool, ...lowerLeague, ...faceEvents, ...followups, ...flavorEvents, ...proPassive, ...proChoice1, ...proChoice2, ...chains1, ...chains2, ...moments, ...lifestyleEvents,
   ...coachPassive, ...coachChoice, ...coachNonManager, ...postPassive, ...postChoice, ...milestoneEvents
 ];

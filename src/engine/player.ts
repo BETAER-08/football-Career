@@ -1,6 +1,7 @@
+import { openYouthSeason } from './yleague';
 import { Rng, seedState, clamp, hashString } from './rng';
 import { ALL_ATTRS, ATTR_GROUP, HIDDEN_KEYS, type AttrKey, type GameConfig, type GameState, type HiddenKey, type Person, type Pos } from './types';
-import { ageProgress, curOvr, makeCeil } from './attributes';
+import { ageProgress, curOvr, makeCeil, ovrOf, YOUTH_BONUS, START_MIN, rawForAnchored } from './attributes';
 import { initWorld } from './worldsim';
 import { STATE_VERSION } from './migrate';
 import { getClub, getCountry, citiesOf } from './data';
@@ -143,6 +144,10 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     else a[k] = clamp(ceil[k] * ageProgress(g, START_AGE, growth) + rng.normal(0, 0.5), 1, 20);
     prev[k] = a[k];
   }
+  for (const k of ALL_ATTRS) ceil[k] = Math.min(20, ceil[k] * 1.14);
+  const start0 = ovrOf(a, pos);
+  const floor = rawForAnchored((START_MIN[origin.level] ?? 40) - YOUTH_BONUS);
+  if (start0 < floor) for (const k of ALL_ATTRS) a[k] = clamp(a[k] * (floor / Math.max(1, start0)), 1, 20);
   const hid = hiddenInit(rng, incomeTier, supportive);
   const refYear = START_YEAR;
   const st0 = { nextId: 1 };
@@ -177,8 +182,9 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   const lgStat = getClub(origin.clubId).lg0;
   const ab = {
     a, ceil, prev, height, weight, bodyFat: Math.round(clamp(rng.normal(14, 2.5), 8, 24) * 10) / 10, pos, sec: secondaryFor(rng, pos),
-    traits: [] as string[], pot, playShare: 0.6, growthMul: 1
+    traits: [] as string[], pot: Math.min(95, Math.round(pot * 1.12 * 10) / 10), playShare: 0.6, growthMul: 1, dispAdj: 0, hFrac0: height / finalHeight, bmi0: weight / ((height / 100) * (height / 100))
   };
+  ab.dispAdj = YOUTH_BONUS;
   const rumor = rumorText(pot, rng);
   const state: GameState = {
     v: STATE_VERSION,
@@ -208,7 +214,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
       eduLevel: 0, eduProgress: 0, studying: true, lang: { [country.lang]: 100 }, romance: 'single', romanceW: 0, children: 0, divorced: false,
       mil: country.mil ? 'pending' : 'none', milEnd: 0, habit: 0, vacationW: -99
     },
-    nat: { caps: 0, goals: 0, youthCaps: 0, status: 'none', declined: 0, lastCallW: -99, tournaments: [], wcCount: 0, debut: false },
+    nat: { ageRecs: [], caps: 0, goals: 0, youthCaps: 0, status: 'none', declined: 0, lastCallW: -99, tournaments: [], wcCount: 0, debut: false },
     career: {
       clubId: club.id, contract: {
         clubId: club.id, role: 'prospect', wage: 0, startW: 0, endW: 52 * 6, signing: 0, appBonus: 0, goalBonus: 0, titleBonus: 0, buyout: 0, loanFrom: '', youth: true
@@ -217,6 +223,8 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
       clubsHist: [{ clubId: club.id, fromS: 0, toS: -1 }], maxLvl: origin.level, playedLvl5: false, lvl5Apps: 0, bigClub: false, retired: false, retireAge: 0, retireReason: '',
       freeAgentW: -1, lastOfferW: -99, upBias: 0, rejectCount: 0, endedByInjury: false, fixtures: [], cupAlive: true, cupRound: 0, contAlive: false,
       contStage: 0, contComp: '', contQualified: '', contPts: 0, contGames: 0, seasonMinsAcc: 0, seasonAvailAcc: 0, lastSeasonPos: 0, youthJudged: false, youthFailW: -1, youthStage: 'U15', stageSeasons: 0, scholar: 0,
+      signed: false, track: 'pro', yCur: emptyRec(0, club.id, `${club.name} U15`, '', '', origin.level), ySeasons: [], yTrophies: [], yAwards: [],
+      entry: { step: 0, trainW: -1, squadW: -1, squadN: 0, jumps: 0, jumpW: -1, boostEnd: -1, callups: 0, callupSeason: -1, doubleJump: false, midChecked: -1 },
       promisedRole: 'prospect', loanOut: false, nextLoanClub: ''
     },
     coach: {
@@ -238,7 +246,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     auto: false,
     inputs: [],
     score: 0,
-    extra: { champs: 0, ballon: 0, lastSwitch: 0 },
+    extra: { champs: 0, ballon: 0, podium: 0, lastSwitch: 0 },
     decCtx: {},
     hist: [],
     wld: initWorld(cfg.seed, people, club.id, country.code, origin.level, START_YEAR),
@@ -250,12 +258,14 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     snap: { ovr: 0, val: 0, wage: 0, fame: 0, standing: 60 },
     cues: [],
     why: {},
-    recent: []
+    recent: [],
+    yt: null
   };
   state.snap = { ovr: curOvr(state.ab), val: state.fame.value, wage: 0, fame: 0, standing: 60 };
   state.rng = seedState(cfg.seed + '|sim');
   state.p.story = storyLines(rng, state, origin, famExp);
   ensureCountry(state, country.code);
-  setupClubSeason(state, new Rng(state.rng), club.id, false);
+  setupClubSeason(state, club.id, false);
+  openYouthSeason(state);
   return { state, origin };
 }

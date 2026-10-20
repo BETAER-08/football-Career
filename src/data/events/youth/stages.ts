@@ -94,12 +94,12 @@ export const youthStages: RawEvent[] = [
     '1군 감독이 유스 선수 몇 명을 훈련에 불렀다. 그 안에 {name}도 있다. 라커룸에서 처음 보는 선수들이 눈인사를 건넸다.',
     '내일 1군 오전 훈련에 합류하라는 지시가 내려왔다. TV에서만 보던 얼굴들이 같은 운동장에 서 있다.'
   ], [
-    cc('주눅 들지 않고 부딪혀 본다', ['공을 받는 순간 템포가 달랐지만 물러서지 않았다. 훈련 말미에 한 선수가 어깨를 두드렸다.', 'attr.firstTouch+0.2 sharp+4 rel.coach+3 flag:first_team_train morale+4'], {
+    cc('주눅 들지 않고 부딪혀 본다', ['공을 받는 순간 템포가 달랐지만 물러서지 않았다. 훈련 말미에 한 선수가 어깨를 두드렸다.', 'attr.firstTouch+0.2 sharp+4 rel.fcoach+3 flag:first_team_train morale+4'], {
       chk: '55 ovr*0.3 hid.bigGame*0.15 attr.composure*1', pv: '성장↑ 감독 관계↑ 위축 위험',
       bad: ['속도에 압도당했다. 두 번의 패스 미스 뒤 목소리가 작아졌다.', 'morale-6 stress+5 flag:first_team_train rel.captain-2']
     }),
     cc('구경한다는 마음으로 한 발 물러선다', ['기본적인 움직임만 하며 조용히 훈련을 마쳤다. 기회는 지나갔다.', 'morale-2 attr.composure+0.05 flag:first_team_train rel.coach-2'], { pv: '위험 회피 인상 약화' })
-  ], { cond: ['ovr>=40', '!flag:first_team_train'], cd: 100, max: 1, xg: 'first_team', tier: 'minor' }),
+  ], { sched: true, cd: 0, max: 1, xg: 'first_team', tier: 'major' }),
   ch('ys_growth_body', Y, 3, [
     '몇 달 사이 키가 훌쩍 컸다. 무릎이 쑤시고 몸이 마음을 따라오지 못한다. 트레이너가 부하 조절을 권했다.',
     '성장통이 시작됐다. 정강이와 무릎 주변이 욱신거린다. 훈련 도중 자꾸 균형을 잃는다.'

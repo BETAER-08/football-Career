@@ -69,9 +69,6 @@ export function secPerYear(lengthMin: 30 | 60 | 90): number {
   return lengthMin === 30 ? 75 : lengthMin === 60 ? 150 : 225;
 }
 
-export function monthOfSw(sw: number): number {
-  return weekOfSeasonDate(sw).m;
-}
 
 export function seasonOfSeasonStartYear(y: number): number {
   return y - START_YEAR;

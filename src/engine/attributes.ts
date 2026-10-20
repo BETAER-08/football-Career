@@ -56,6 +56,46 @@ export function ovrAt(ab: Abilities, pos: Pos): number {
   return base * (0.72 + 0.28 * (prof / 100));
 }
 
+const ANCHORS: [number, number][] = [[26, 22], [52, 50], [57, 60], [61.5, 70], [73, 80], [79, 90], [88, 100]];
+
+export function anchored(raw: number): number {
+  const A = ANCHORS;
+  if (raw >= A[A.length - 1][0]) return 100;
+  if (raw <= A[0][0]) return Math.max(0, A[0][1] - (A[0][0] - raw) * ((A[1][1] - A[0][1]) / (A[1][0] - A[0][0])));
+  for (let i = 1; i < A.length; i++) {
+    if (raw <= A[i][0]) {
+      const [x0, y0] = A[i - 1];
+      const [x1, y1] = A[i];
+      return y0 + ((raw - x0) / (x1 - x0)) * (y1 - y0);
+    }
+  }
+  return 100;
+}
+
+export const YOUTH_BONUS = 10;
+
+export function rawForAnchored(d: number): number {
+  let lo = 0;
+  let hi = 100;
+  for (let i = 0; i < 40; i++) {
+    const m = (lo + hi) / 2;
+    if (anchored(m) < d) lo = m;
+    else hi = m;
+  }
+  return (lo + hi) / 2;
+}
+
+export const START_MIN: Record<number, number> = { 6: 50, 5: 47, 4: 44, 3: 42, 2: 40 };
+
+export function shownRaw(raw: number, adj: number, age: number): number {
+  const t = Math.min(1, Math.max(0, (24 - age) / 7));
+  return Math.min(100, Math.max(0, anchored(raw) + adj * t));
+}
+
+export function shownOvr(ab: Abilities, age: number): number {
+  return shownRaw(ovrOf(ab.a, ab.pos), ab.dispAdj ?? 0, age);
+}
+
 export function curOvr(ab: Abilities): number {
   return ovrOf(ab.a, ab.pos);
 }
@@ -105,10 +145,10 @@ export function makeCeil(pos: Pos, pot: number, nz: () => number): Record<AttrKe
 
 export function ageProgress(group: 'tech' | 'phys' | 'mental' | 'gk', age: number, growth: 'early' | 'normal' | 'late'): number {
   const shift = growth === 'early' ? -1.6 : growth === 'late' ? 2 : 0;
-  const peak = (group === 'phys' ? 23.5 : group === 'mental' ? 27 : 25) + shift;
+  const peak = (group === 'phys' ? 22 : group === 'mental' ? 25.5 : 23.5) + shift;
   const g0 = growth === 'early' ? 0.62 : growth === 'late' ? 0.5 : 0.56;
   const p = clamp((age - 12) / (peak - 12), 0, 1);
-  const f = g0 + (1 - g0) * Math.pow(p, 0.9);
+  const f = g0 + (1 - g0) * Math.pow(p, 0.7);
   let dec = 1;
   if (group === 'phys') {
     const d = (growth === 'early' ? 28 : growth === 'late' ? 30 : 29) + 0;

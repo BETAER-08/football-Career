@@ -39,7 +39,7 @@ export const HIDDEN_LABEL: Record<HiddenKey, string> = {
 };
 
 export type Phase = 'youth' | 'pro' | 'coach' | 'postcareer';
-export type YouthStage = 'U15' | 'U17' | 'U19';
+export type YouthStage = 'U15' | 'U17' | 'U19' | 'RES' | 'HS' | 'UNI';
 export type Role = 'starter' | 'rotation' | 'prospect' | 'backup';
 export const ROLE_LABEL: Record<Role, string> = { starter: '주전', rotation: '로테이션', prospect: '유망주', backup: '백업' };
 
@@ -92,11 +92,12 @@ export interface LogEntry {
   from?: number;
   quote?: string;
   dream?: boolean;
+  tier?: 'y' | 'r' | 'f';
 }
 
 export interface BestMatch { w: number; rating: number; line: string; comp: string; goals: number; assists: number; mins: number; result: string; momentText?: string }
 
-export interface MatchLine { w: number; comp: string; stage: string; line: string; report: string; result: 'W' | 'D' | 'L' | '-' }
+export interface MatchLine { w: number; comp: string; stage: string; line: string; report: string; result: 'W' | 'D' | 'L' | '-'; t?: 'y' | 'r' | 'f' }
 
 export interface Star {
   id: number;
@@ -155,7 +156,7 @@ export interface WorldInfo {
   youthCoach: { name: string; retireS: number };
 }
 
-export interface GoalDef { id: string; label: string; metric: 'apps' | 'starts' | 'goals' | 'cs' | 'rating' | 'promo'; target: number; done?: boolean }
+export interface GoalDef { id: string; label: string; metric: 'apps' | 'starts' | 'goals' | 'assists' | 'cs' | 'rating' | 'promo' | 'scholar' | 'train' | 'squad' | 'debut'; target: number; done?: boolean }
 export interface SeasonGoals { s: number; club: GoalDef; personal: GoalDef; settled: boolean }
 
 export type DreamId = 'legend' | 'bigstarter' | 'national' | 'ballon' | 'rich';
@@ -186,6 +187,7 @@ export interface SeasonReview {
   goals: { label: string; done: boolean; reward: string }[];
   next: { club: string; personal: string };
   coach?: { target: number; pts: number; mvp: string; standing: number; standingDelta: number };
+  youth?: { stage: YouthStage; result: 'promote' | 'stay' | 'release' | 'pro' | 'none'; next: string; entry: string; jumps: number; cupResult: string };
 }
 
 export interface Contract {
@@ -231,9 +233,10 @@ export interface SeasonRec {
   avail: number;
   done: boolean;
   best?: BestMatch;
+  stage?: YouthStage;
 }
 
-export interface TrophyRec { year: number; name: string; club: string }
+export interface TrophyRec { year: number; name: string; club: string; stage?: YouthStage }
 export interface AwardRec { year: number; name: string }
 
 export interface Injury {
@@ -269,7 +272,7 @@ export interface Offer {
 export interface Fixture {
   w: number;
   comp: string;
-  kind: 'league' | 'cup' | 'cont' | 'friendly' | 'intl';
+  kind: 'league' | 'cup' | 'cont' | 'friendly' | 'intl' | 'yleague' | 'ycup' | 'ycont';
   opp: string;
   oppSt: number;
   ko: boolean;
@@ -326,6 +329,9 @@ export interface Abilities {
   pot: number;
   playShare: number;
   growthMul: number;
+  dispAdj: number;
+  hFrac0: number;
+  bmi0: number;
 }
 
 export interface Status {
@@ -392,7 +398,10 @@ export interface Life {
   vacationW: number;
 }
 
+export interface AgeRec { year: number; id: string; name: string; result: string; apps: number; goals: number; assists: number; awards: string[] }
+
 export interface NatState {
+  ageRecs: AgeRec[];
   caps: number;
   goals: number;
   youthCaps: number;
@@ -402,6 +411,42 @@ export interface NatState {
   tournaments: string[];
   wcCount: number;
   debut: boolean;
+}
+
+export interface EntryState {
+  step: 0 | 1 | 2;
+  trainW: number;
+  squadW: number;
+  squadN: number;
+  jumps: number;
+  jumpW: number;
+  boostEnd: number;
+  callups: number;
+  callupSeason: number;
+  doubleJump: boolean;
+  midChecked: number;
+}
+
+export interface YouthRT {
+  s: number;
+  stage: YouthStage;
+  name: string;
+  cupName: string;
+  contName: string;
+  key: string;
+  ids: string[];
+  st: Record<string, number>;
+  table: Record<string, [number, number, number, number]>;
+  round: number;
+  games: number;
+  fixtures: Fixture[];
+  cupAlive: boolean;
+  cupRound: number;
+  contAlive: boolean;
+  contRound: number;
+  adult: boolean;
+  group: number;
+  groups: number;
 }
 
 export interface CareerState {
@@ -442,6 +487,13 @@ export interface CareerState {
   youthFailW: number;
   youthStage: YouthStage;
   stageSeasons: number;
+  signed: boolean;
+  track: 'pro' | 'school';
+  yCur: SeasonRec;
+  ySeasons: SeasonRec[];
+  yTrophies: TrophyRec[];
+  yAwards: AwardRec[];
+  entry: EntryState;
   scholar: 0 | 1 | 2;
   promisedRole: Role;
   loanOut: boolean;
@@ -636,7 +688,7 @@ export interface GameState {
   auto: boolean;
   inputs: InputRec[];
   score: number;
-  extra: { champs: number; ballon: number; lastSwitch: number };
+  extra: { champs: number; ballon: number; podium: number; lastSwitch: number };
   decCtx: Record<string, string>;
   hist: { s: number; age: number; ovr: number; val: number; fame: number }[];
   wld: WorldInfo;
@@ -649,4 +701,5 @@ export interface GameState {
   cues: string[];
   why: Record<string, WhyEntry[]>;
   recent: MatchLine[];
+  yt: YouthRT | null;
 }

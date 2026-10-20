@@ -4,8 +4,26 @@ import { ageProgress } from './attributes';
 import { focusDef } from './lifestyle';
 import { getClub } from './data';
 
+function heightFrac(f0: number, age: number, growth: 'early' | 'normal' | 'late'): number {
+  const end = growth === 'early' ? 17.5 : growth === 'late' ? 19.8 : 18.6;
+  const x = clamp((age - 14) / (end - 14), 0, 1);
+  return f0 + (1 - f0) * (1 - (1 - x) * (1 - x));
+}
+
+export function bodyWeek(s: GameState, age: number): void {
+  const ab = s.ab;
+  if (age >= 26 && s.week % 13 !== 0) return;
+  const h = Math.max(ab.height, Math.round(s.p.finalHeight * heightFrac(ab.hFrac0, age, s.p.growth)));
+  ab.height = h;
+  const mus = (ab.a.strength - 9) * 0.05;
+  const target = ab.bmi0 + clamp((age - 14) * 0.34, 0, 3.4) + mus - (age > 32 ? (age - 32) * -0.05 : 0) - (s.st.burnout > 70 ? 0.3 : 0);
+  const wt = target * (h / 100) * (h / 100);
+  ab.weight = Math.round((ab.weight + (wt - ab.weight) * 0.06) * 10) / 10;
+}
+
 export function growWeek(s: GameState, rng: Rng, age: number): void {
   const ab = s.ab;
+  bodyWeek(s, age);
   const f = focusDef(s);
   const club = s.career.clubId ? getClub(s.career.clubId) : null;
   const share = clamp(ab.playShare, 0, 1);
@@ -17,9 +35,12 @@ export function growWeek(s: GameState, rng: Rng, age: number): void {
   const pro = 0.9 + 0.2 * (s.hid.pro / 100);
   const state = (s.st.fatigue > 85 ? 0.82 : 1) * (s.st.injury ? 0.6 : 1) * (1 - Math.min(0.15, s.st.burnout / 600));
   const ageBoost = age <= 16 ? 1.08 : 1;
-  const mul = playF * facil * acad * life * staff * pro * state * f.growth * ab.growthMul * ageBoost;
+  const ent = s.career.entry;
+  const jump = s.week < ent.boostEnd ? 1.1 : 1;
+  const train = (s.phase === 'youth' && ent.step >= 1 ? 1.04 : 1) * (s.yt && s.yt.adult ? 1.03 : 1);
+  const mul = playF * facil * acad * life * staff * pro * state * f.growth * ab.growthMul * ageBoost * jump * train;
   const noise = [0.8 + rng.next() * 0.4, 0.8 + rng.next() * 0.4, 0.8 + rng.next() * 0.4, 0.8 + rng.next() * 0.4];
-  const r = 0.026 * mul;
+  const r = 0.042 * mul;
   const g = s.p.growth;
   const prog = {
     tech: ageProgress('tech', age, g),

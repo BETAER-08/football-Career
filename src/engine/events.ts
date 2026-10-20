@@ -117,7 +117,8 @@ export function render(s: GameState, tpl: string): string {
       case 'star': return s.coach.squad.length ? s.coach.squad[s.week % s.coach.squad.length].name : mate;
       case 'cash': return formatKRW(s.fin.cash);
       case 'year': return String(2026 + seasonOf(s.week));
-      case 'stage': return s.career.youthStage;
+      case 'stage': return s.career.youthStage === 'RES' ? '리저브' : s.career.youthStage;
+      case 'fcoach': return s.people.fcoach?.name ?? '1군 감독';
       default: return `{${k}}`;
     }
   });
@@ -349,9 +350,10 @@ export function applyMomentContext(s: GameState): { goals: number; assists: numb
   const a = Number(s.decCtx['m.assist'] ?? 0);
   const r = Number(s.decCtx['m.rating'] ?? 0);
   if (g || a || r) {
-    s.career.cur.goals += Math.max(0, g);
-    s.career.cur.assists += Math.max(0, a);
-    if (s.career.cur.ratingN > 0) s.career.cur.ratingSum += r;
+    const rec = s.decCtx.tier === 'y' ? s.career.yCur : s.career.cur;
+    rec.goals += Math.max(0, g);
+    rec.assists += Math.max(0, a);
+    if (rec.ratingN > 0) rec.ratingSum += r;
     if (s.st.form.length) s.st.form[s.st.form.length - 1] = Math.min(10, Math.max(3, s.st.form[s.st.form.length - 1] + r));
   }
   return { goals: g, assists: a, rating: r };

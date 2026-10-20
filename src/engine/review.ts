@@ -1,5 +1,5 @@
 import { CONT_SLOTS } from '../data/competitions';
-import { curOvr } from './attributes';
+import { curOvr, shownRaw } from './attributes';
 import { getClub, getLeague } from './data';
 import { isCosmetic } from './flags';
 import { currentWage } from './finance';
@@ -10,7 +10,9 @@ import { stream } from './streams';
 import { awardPrize } from './season';
 import { seasonOf, yearOf } from './time';
 import { clubLeagueId, ranking } from './world';
-import type { GameState, LeaderRow, ReviewAward, SeasonReview, TableRow } from './types';
+import { youthLeaders, youthRanking } from './yleague';
+import { STAGE_LABEL } from './stages';
+import type { BestMatch, GameState, LeaderRow, ReviewAward, SeasonReview, TableRow } from './types';
 
 export interface ClubAwardCalc { mates: { r: number; young: boolean }[]; poy: boolean; young: boolean }
 
@@ -110,14 +112,7 @@ export function progressLeaders(s: GameState, lgId: string): { scorers: LeaderRo
 }
 
 function bestParagraph(s: GameState): string {
-  const b = s.career.cur.best;
-  if (!b) return '이번 시즌에는 기억에 남을 만한 장면이 많지 않았다. 다음 시즌을 기약한다.';
-  if (b.momentText) return b.momentText;
-  const bits: string[] = [];
-  if (b.goals) bits.push(`${b.goals}골`);
-  if (b.assists) bits.push(`${b.assists}도움`);
-  const contrib = bits.length ? `${bits.join(' ')}을(를) 기록하며 ` : '';
-  return `${b.comp}에서 ${b.line}. ${b.mins}분을 뛰며 ${contrib}평점 ${b.rating.toFixed(1)}으로 시즌 최고의 경기를 만들었다.`;
+  return bestParagraphOf(s.career.cur.best);
 }
 
 export function buildPlayerReview(s: GameState): void {
@@ -149,7 +144,7 @@ export function buildPlayerReview(s: GameState): void {
     s: season, year: cur.year, role: 'player', clubName, leagueName: lg.ko, pos: cur.pos, n: rows.length,
     rec: { apps: cur.apps, starts: cur.starts, mins: cur.mins, goals: cur.goals, assists: cur.assists, cs: cur.cs, avg, yc: cur.yc, rc: cur.rc, injDays: cur.injDays },
     table: rows, myIdx: idx, scorers: lead.scorers, assisters: lead.assisters, awards, clubPoy: poy.slice(0, 5), best: bestParagraph(s),
-    change: { ovr: curOvr(s.ab) - s.snap.ovr, val: s.fame.value - s.snap.val, wage: currentWage(s) - s.snap.wage, fame: s.fame.dom - s.snap.fame },
+    change: { ovr: ovrDelta(s), val: s.fame.value - s.snap.val, wage: currentWage(s) - s.snap.wage, fame: s.fame.dom - s.snap.fame },
     trophies: cur.trophies.slice(), goals: goalsOut, next: { club: '', personal: '' }
   };
   const nx = makeGoals(s);
@@ -157,6 +152,67 @@ export function buildPlayerReview(s: GameState): void {
   s.reviews.push(rev);
   if (s.reviews.length > 30) s.reviews.shift();
   s.pendingReview = season;
+}
+
+function ovrDelta(s: GameState): number {
+  const age = yearOf(s.week) - s.p.birth.y;
+  return shownRaw(curOvr(s.ab), s.ab.dispAdj ?? 0, age) - shownRaw(s.snap.ovr, s.ab.dispAdj ?? 0, age - 1);
+}
+
+export function buildYouthReview(s: GameState): void {
+  if (!isCosmetic()) return;
+  const yt = s.yt;
+  const clubId = s.career.clubId;
+  if (!yt || !clubId) return;
+  const cur = s.career.yCur;
+  const season = seasonOf(s.week);
+  const rank = youthRanking(yt);
+  const rows: TableRow[] = rank.map((id, i) => {
+    const t = yt.table[id];
+    return { id, name: `${getClub(id).name} ${STAGE_LABEL[yt.stage]}`, pts: t[0], gf: t[1], ga: t[2], zone: i === 0 ? 'champ' : '' };
+  });
+  const idx = rank.indexOf(clubId);
+  const lead = youthLeaders(s) ?? { scorers: [], assisters: [] };
+  const avg = cur.ratingN ? cur.ratingSum / cur.ratingN : 0;
+  const goalsOut = s.goals && s.goals.settled
+    ? [s.goals.club, s.goals.personal].map((d, i) => ({ label: `${i === 0 ? '구단 기대' : '개인'}: ${d.label}`, done: !!d.done, reward: d.done ? '사기·감독 관계·명성 상승' : '사기 하락' }))
+    : [];
+  const awards: ReviewAward[] = cur.awards.map((name) => ({ name, scope: 'league', mine: true }));
+  const clubName = `${getClub(clubId).name} ${STAGE_LABEL[yt.stage]}`;
+  const rev: SeasonReview = {
+    s: season, year: cur.year, role: 'player', clubName, leagueName: yt.name, pos: cur.pos, n: rows.length,
+    rec: { apps: cur.apps, starts: cur.starts, mins: cur.mins, goals: cur.goals, assists: cur.assists, cs: cur.cs, avg, yc: cur.yc, rc: cur.rc, injDays: cur.injDays },
+    table: rows, myIdx: idx, scorers: lead.scorers, assisters: lead.assisters, awards, clubPoy: [], best: bestParagraphOf(cur.best),
+    change: { ovr: ovrDelta(s), val: s.fame.value - s.snap.val, wage: currentWage(s) - s.snap.wage, fame: s.fame.dom - s.snap.fame },
+    trophies: cur.trophies.slice(), goals: goalsOut, next: { club: '', personal: '' },
+    youth: { stage: yt.stage, result: 'none', next: '', entry: '', jumps: s.career.entry.jumps, cupResult: yt.cupName ? (cur.trophies.some((x) => x.includes(yt.cupName)) ? '우승' : '') : '' }
+  };
+  s.reviews.push(rev);
+  if (s.reviews.length > 30) s.reviews.shift();
+  s.pendingReview = season;
+}
+
+export function patchYouthReview(s: GameState): void {
+  const last = s.reviews[s.reviews.length - 1];
+  if (!last || !last.youth || last.s !== seasonOf(s.week)) return;
+  const r = s.ev.flags['yr:result'];
+  const settled = s.phase === 'pro';
+  last.youth.result = settled ? 'pro' : r === 1 ? 'promote' : r === 2 ? 'release' : 'stay';
+  last.youth.next = settled ? '1군 정착' : r === 2 ? '방출' : STAGE_LABEL[s.career.youthStage];
+  const e = s.career.entry;
+  last.youth.entry = s.career.debuted ? '1군 데뷔 완료' : e.step >= 2 ? `1군 명단 ${e.squadN}회` : e.step === 1 ? '1군 훈련 합류' : '아직 1군 접점 없음';
+  const nx = makeGoals(s);
+  if (nx) last.next = { club: nx.club.label, personal: nx.personal.label };
+}
+
+function bestParagraphOf(b: BestMatch | undefined): string {
+  if (!b) return '이번 시즌에는 기억에 남을 만한 장면이 많지 않았다. 다음 시즌을 기약한다.';
+  if (b.momentText) return b.momentText;
+  const bits: string[] = [];
+  if (b.goals) bits.push(`${b.goals}골`);
+  if (b.assists) bits.push(`${b.assists}도움`);
+  const contrib = bits.length ? `${bits.join(' ')}을(를) 기록하며 ` : '';
+  return `${b.comp}에서 ${b.line}. ${b.mins}분을 뛰며 ${contrib}평점 ${b.rating.toFixed(1)}으로 시즌 최고의 경기를 만들었다.`;
 }
 
 export function buildCoachReview(s: GameState): void {

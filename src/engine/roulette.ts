@@ -67,12 +67,17 @@ export function originIn(rng: Rng, country: string, level?: number): RouletteRes
   return { country, countryPct: 0, leagueId, leaguePct, level: lv, clubId: inLeague[idx].id, clubPct: (weights[idx] / wTotal) * 100 };
 }
 
+export function youthCount(code: string): number {
+  return Object.values(levelWeights(code)).reduce((a, b) => a + b, 0);
+}
+
 export function rollOrigin(rng: Rng): RouletteResult {
-  const totalPros = COUNTRIES.reduce((s, c) => s + c.pros, 0);
-  const ci = rng.weightedIndex(COUNTRIES.map((c) => c.pros));
+  const counts = COUNTRIES.map((c) => youthCount(c.code));
+  const totalPros = counts.reduce((s, v) => s + v, 0);
+  const ci = rng.weightedIndex(counts);
   const country = COUNTRIES[ci].code;
   const o = originIn(rng, country);
-  return { ...o, countryPct: (COUNTRIES[ci].pros / totalPros) * 100 };
+  return { ...o, countryPct: (counts[ci] / totalPros) * 100 };
 }
 
 export function potentialMean(level: number, infra: number): number {

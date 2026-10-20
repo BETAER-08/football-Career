@@ -202,7 +202,7 @@ export function acceptCoachJob(s: GameState, rng: Rng, o: Offer): void {
     const lvl = clubLvl(s, o.clubId);
     if (role === 'manager') { c.everManager = true; if (lvl >= 5) c.everBig = true; }
     s.career.clubId = '';
-    setupClubSeason(s, rng, o.clubId, true);
+    setupClubSeason(s, o.clubId, true);
     const lgId = clubLeagueId(s, o.clubId);
     const rank = ranking2(s, lgId);
     c.tableTarget = Math.max(1, Math.min(rank.length, rank.indexOf(o.clubId) + 1));
@@ -321,10 +321,10 @@ export function targetFor(s: GameState): number {
   return s.coach.tableTarget;
 }
 
-export function openCoachSeason(s: GameState, rng: Rng): void {
+export function openCoachSeason(s: GameState): void {
   const c = s.coach;
   if (c.role === 'none' || !c.clubId) return;
-  setupClubSeason(s, rng, c.clubId, false);
+  setupClubSeason(s, c.clubId, false);
   const lgId = clubLeagueId(s, c.clubId);
   const rank = ranking2(s, lgId);
   c.tableTarget = Math.max(1, Math.min(rank.length, rank.indexOf(c.clubId) + 1));
@@ -354,7 +354,7 @@ function playCoachFixture(s: GameState, rng: Rng, fx: Fixture, mySt: number): vo
   if (fx.kind === 'league') {
     const rt = s.world.leagues[lgId];
     if (rt) {
-      playRoundOthers(s, rng, lgId, fx.round, c.clubId);
+      playRoundOthers(s, lgId, fx.round, c.clubId);
       rt.round = fx.round + 1;
     }
   }
@@ -373,7 +373,7 @@ function playCoachFixture(s: GameState, rng: Rng, fx: Fixture, mySt: number): vo
       c.standing = clamp(c.standing + clamp((ppg - expected) * 22, -11, 11), 0, 100);
     }
   }
-  if (fx.kind === 'cup' || fx.kind === 'cont') nextCupOrCont(s, rng, fx, out, c.clubId);
+  if (fx.kind === 'cup' || fx.kind === 'cont') nextCupOrCont(s, fx, out, c.clubId);
   if (out.result === 'W') s.st.morale = clamp(s.st.morale + 0.8, 0, 100);
   else if (out.result === 'L') s.st.morale = clamp(s.st.morale - 0.8, 0, 100);
   s.fame.dom += 0;
@@ -446,7 +446,7 @@ export function coachSeasonEnd(s: GameState, rng: Rng): void {
     const lgId = s.career.cur.leagueId;
     const rank = s.world.leagues[lgId] ? ranking(s, lgId) : null;
     const cc = getClub(c.clubId).country;
-    endSeasonCountry(s, rng, cc, lgId, rank);
+    endSeasonCountry(s, cc, lgId, rank);
     s.world.countries[cc].initS = seasonOf(s.week) + 1;
   }
 }
@@ -516,7 +516,7 @@ function developSquad(s: GameState, rng: Rng): void {
 export function coachWeekly(s: GameState, rng: Rng): void {
   const c = s.coach;
   const sw = swOf(s.week);
-  if (sw === 0 && s.week > 0 && c.role !== 'none') openCoachSeason(s, rng);
+  if (sw === 0 && s.week > 0 && c.role !== 'none') openCoachSeason(s);
   studyWeekly(s, rng);
   if (c.role === 'none') {
     c.jobless += 1;

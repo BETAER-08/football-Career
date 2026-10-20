@@ -1,6 +1,7 @@
 import { COUNTRIES, COUNTRY_BY_CODE } from '../data/countries';
 import { LEAGUES_BY_COUNTRY } from '../data/leagues';
 import { CITIES } from '../data/cities';
+import { SCHOOLS } from '../data/schools';
 import { NAME_POOLS } from '../data/names';
 import type { Country, League, City } from '../data/schema';
 import { hashString, lerp } from './rng';
@@ -74,9 +75,33 @@ function build(): void {
   }
 }
 
+const schoolClubs: Record<string, ClubStatic> = {};
+const schoolLeagues: Record<string, LeagueStatic> = {};
+
+function schoolClub(id: string): ClubStatic | undefined {
+  const hit = schoolClubs[id];
+  if (hit) return hit;
+  const d = SCHOOLS.find((x) => x.id === id);
+  if (!d) return undefined;
+  const lg0 = `${d.country}-${d.kind}`;
+  const tier = d.tier;
+  if (!schoolLeagues[lg0]) {
+    schoolLeagues[lg0] = {
+      id: lg0, ko: d.kind === 'HS' ? '고교 축구부' : '대학 축구부', en: d.kind === 'HS' ? 'High school' : 'College', tier: 9, lvl: 2, top: 70, bottom: 30, up: 0, down: 0, elite: 0, cal: 'aw', winterBreak: false, cup: '',
+      clubs: '', country: d.country, clubIds: []
+    };
+  }
+  const c: ClubStatic = {
+    id, name: d.ko, city: d.city, country: d.country, lg0, idx: 0, st0: d.st0, std0: 40 + d.st0 * 0.2, lvl0: 2, elite: false, acad: tier === 0 ? 40 : tier === 1 ? 28 : 18,
+    facil: tier === 0 ? 42 : tier === 1 ? 30 : 20, fin0: 30, color: hashString(d.ko) % 360, tier0: 9
+  };
+  schoolClubs[id] = c;
+  return c;
+}
+
 export function getClub(id: string): ClubStatic {
   build();
-  const c = clubs[id];
+  const c = clubs[id] ?? schoolClub(id);
   if (!c) throw new Error(`club ${id}`);
   return c;
 }
@@ -86,7 +111,7 @@ export function hasClub(id: string): boolean {
 }
 export function getLeague(id: string): LeagueStatic {
   build();
-  const l = leagues[id];
+  const l = leagues[id] ?? schoolLeagues[id];
   if (!l) throw new Error(`league ${id}`);
   return l;
 }

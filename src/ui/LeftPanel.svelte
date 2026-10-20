@@ -5,7 +5,7 @@
   import { ageAt, yearOf } from '../engine/time';
   import { getClub, getCountry } from '../engine/data';
   import { POS_LABEL, ATTR_LABEL, TECH_KEYS, GK_KEYS, PHYS_KEYS, MENTAL_KEYS, HIDDEN_KEYS, type AttrKey } from '../engine/types';
-  import { curOvr } from '../engine/attributes';
+  import { anchored, shownOvr } from '../engine/attributes';
   import { TRAIT_LABEL } from '../engine/player';
   import { mrz, seed32, whyText } from './format';
   import { licenseLabel, licenseLevel, LICENSE_NAME } from '../engine/coach';
@@ -22,9 +22,9 @@
   const header = $derived(g.phase === 'coach' || (g.phase === 'postcareer' && g.coach.entered && g.post.path === 'none') ? '지도자 기록' : g.phase === 'postcareer' ? '은퇴 선수 기록' : '선수 기록');
   const isGk = $derived(g.ab.pos === 'GK');
   const keys = $derived<readonly AttrKey[]>(tab === 'tech' ? (isGk ? [...GK_KEYS, ...TECH_KEYS.slice(0, 3)] : TECH_KEYS) : tab === 'phys' ? PHYS_KEYS : MENTAL_KEYS);
-  const ovr = $derived(curOvr(g.ab));
+  const ovr = $derived(shownOvr(g.ab, age));
   const width = $derived(Math.max(2, Math.round(14 - (age - 14) * 1.5)));
-  const potMid = $derived(g.ab.pot + ((hashString(g.cfg.seed + 'scout') % 7) - 3) * Math.max(0.2, width / 12));
+  const potMid = $derived(anchored(g.ab.pot) + ((hashString(g.cfg.seed + 'scout') % 7) - 3) * Math.max(0.2, width / 12));
   const lo = $derived(Math.max(Math.round(ovr), Math.round(potMid - width)));
   const hi = $derived(Math.min(99, Math.round(potMid + width)));
   const club = $derived(clubId ? getClub(clubId) : null);

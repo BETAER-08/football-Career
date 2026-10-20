@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newGame, tickState, autoStep, autoWeek, stateHash, replay, resolveDecision, actionInput, setFocusInput } from '../src/engine/game';
 import { Rng, seedState } from '../src/engine/rng';
-import { rollOrigin, levelWeights, candidateClubs, u15Rate, U15_RATE, U15_SQUAD } from '../src/engine/roulette';
+import { rollOrigin, youthCount, levelWeights, candidateClubs, u15Rate, U15_RATE, U15_SQUAD } from '../src/engine/roulette';
 import { COUNTRIES } from '../src/data/countries';
 import { checkPct, parseCheck, parseFx, applyFx } from '../src/engine/fx';
 import { eligible, markFired, getEvent, fireEvent, rollWeekly } from '../src/engine/events';
@@ -62,7 +62,7 @@ describe('결정론', () => {
 });
 
 describe('룰렛 3단 추첨', () => {
-  it('국가는 현역 프로 선수 수에 비례해 뽑힌다', () => {
+  it('국가는 U15 유스 선수 수에 비례해 뽑힌다', () => {
     const rng = new Rng(seedState('roulette-test'));
     const n = 6000;
     const counts: Record<string, number> = {};
@@ -72,9 +72,9 @@ describe('룰렛 3단 추첨', () => {
       expect(getClub(r.clubId).country).toBe(r.country);
       expect(getClub(r.clubId).lg0).toBe(r.leagueId);
     }
-    const total = COUNTRIES.reduce((a, c) => a + c.pros, 0);
+    const total = COUNTRIES.reduce((a, c) => a + youthCount(c.code), 0);
     for (const code of ['BR', 'MX', 'ES']) {
-      const expected = COUNTRIES.find((c) => c.code === code)!.pros / total;
+      const expected = youthCount(code) / total;
       expect(Math.abs((counts[code] ?? 0) / n - expected)).toBeLessThan(0.02);
     }
   });
@@ -232,9 +232,8 @@ describe('부상과 리그 구조', () => {
     const s = newGame(cfg('promo-1'));
     ensureCountry(s, 'GB');
     const [pl, ch] = leaguesOf('GB');
-    const rng = rngOf(s);
-    startLeagueSeason(s, rng, pl.id);
-    const info = endSeasonCountry(s, rng, 'GB', '', null);
+    startLeagueSeason(s, pl.id);
+    const info = endSeasonCountry(s, 'GB', '', null);
     expect(info.relegated.length).toBeGreaterThanOrEqual(Math.min(pl.down, ch.up));
     expect(info.promoted.length).toBe(info.relegated.length);
     const members = membersOf(s, pl.id);
@@ -281,7 +280,7 @@ describe('지도자 시스템', () => {
     s.coach.role = 'manager';
     s.coach.clubId = clubId;
     s.coach.contract = { clubId, role: 'starter', wage: 5000, startW: s.week, endW: s.week + 200, signing: 0, appBonus: 0, goalBonus: 0, titleBonus: 0, buyout: 0, loanFrom: '', youth: false };
-    startLeagueSeason(s, rng, getClub(clubId).lg0);
+    startLeagueSeason(s, getClub(clubId).lg0);
     s.career.cur.leagueId = getClub(clubId).lg0;
     s.coach.standing = 20;
     coachSeasonEnd(s, rng);
@@ -361,20 +360,20 @@ describe('유스 연령대 심사와 장학 계약', () => {
   }
   it('승급은 최소 기간 뒤에만, 방출은 점수가 크게 낮을 때만 나온다', () => {
     const s = youthState('rev-1');
-    expect(reviewOutcome(s, 5)).toBe('promote');
-    expect(reviewOutcome(s, -20)).toBe('release');
+    expect(reviewOutcome(s, 5, 16)).toBe('promote');
+    expect(reviewOutcome(s, -20, 16)).toBe('release');
     s.career.youthStage = 'U17';
     s.career.stageSeasons = 0;
-    expect(reviewOutcome(s, 5)).toBe('stay');
+    expect(reviewOutcome(s, 5, 16)).toBe('stay');
     s.career.stageSeasons = 1;
-    expect(reviewOutcome(s, 5)).toBe('promote');
+    expect(reviewOutcome(s, 5, 16)).toBe('promote');
     s.career.youthStage = 'U19';
-    expect(reviewOutcome(s, 50)).toBe('stay');
+    expect(reviewOutcome(s, 50, 16)).toBe('stay');
     s.career.youthStage = 'U15';
     s.career.stageSeasons = 0;
-    expect(reviewOutcome(s, -5)).toBe('stay');
+    expect(reviewOutcome(s, -5, 16)).toBe('stay');
     s.career.stageSeasons = 1;
-    expect(reviewOutcome(s, -5)).toBe('promote');
+    expect(reviewOutcome(s, -5, 16)).toBe('promote');
   });
   it('장학 계약을 받으면 수당과 소속 안정이, 못 받으면 방출 위험이 커진다', () => {
     const a = youthState('sch-1');

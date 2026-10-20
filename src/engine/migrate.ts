@@ -1,9 +1,11 @@
 import { START_YEAR } from './time';
 import { curOvr } from './attributes';
 import { initWorld } from './worldsim';
+import { emptyRec } from './records';
+import { openYouthRec, setupYouthSeason } from './yleague';
 import type { GameState } from './types';
 
-export const STATE_VERSION = 3;
+export const STATE_VERSION = 4;
 
 export type Migrated = { ok: true; state: GameState } | { ok: false; reason: string };
 
@@ -18,6 +20,14 @@ export function migrateState(raw: unknown): Migrated {
   if (c.youthStage === undefined) c.youthStage = 'U17';
   if (c.stageSeasons === undefined) c.stageSeasons = 0;
   if (c.scholar === undefined) c.scholar = 0;
+  if (c.track === undefined) c.track = 'pro';
+  if (c.signed === undefined) c.signed = !!c.debuted;
+  if (!c.entry) c.entry = { step: 0, trainW: -1, squadW: -1, squadN: 0, jumps: 0, jumpW: -1, boostEnd: -1, callups: 0, callupSeason: -1, doubleJump: false, midChecked: -1 };
+  if (!c.ySeasons) c.ySeasons = [];
+  if (!c.yTrophies) c.yTrophies = [];
+  if (!c.yAwards) c.yAwards = [];
+  if (!c.yCur) c.yCur = emptyRec(0, st.career.clubId, '', '', '', 2);
+  if (st.yt === undefined) st.yt = null;
   const ev = st.ev as unknown as Record<string, unknown>;
   if (!ev.actUse) ev.actUse = {};
   if (!ev.pendSrc) ev.pendSrc = {};
@@ -39,8 +49,17 @@ export function migrateState(raw: unknown): Migrated {
   if (!st.dreamHits) st.dreamHits = [];
   if (!st.snap) st.snap = { ovr: curOvr(st.ab), val: st.fame.value, wage: 0, fame: 0, standing: st.coach.standing };
   if (!st.cues) st.cues = [];
+  if (st.ab.dispAdj === undefined) st.ab.dispAdj = 10;
+  if (st.ab.hFrac0 === undefined) st.ab.hFrac0 = Math.min(1, st.ab.height / st.p.finalHeight);
+  if (st.ab.bmi0 === undefined) st.ab.bmi0 = st.ab.weight / ((st.ab.height / 100) * (st.ab.height / 100));
+  if (!st.nat.ageRecs) st.nat.ageRecs = [];
+  if (st.extra.podium === undefined) st.extra.podium = 0;
   if (!st.why) st.why = {};
   if (!st.recent) st.recent = [];
   st.v = STATE_VERSION;
+  if (st.phase === 'youth' && st.career.clubId && !st.yt) {
+    setupYouthSeason(st, true);
+    openYouthRec(st);
+  }
   return { ok: true, state: st };
 }

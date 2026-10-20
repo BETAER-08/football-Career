@@ -78,6 +78,13 @@ export function mediaPerson(rng: Rng, st: { nextId: number }, country: string, r
   return makePerson(rng, st, 'media', country, { age: rng.int(32, 55), refYear, job: rng.pick(MEDIA_FIRST), rel: 0 });
 }
 
+export const POS_LIST: Pos[] = ['GK', 'CB', 'LB', 'RB', 'DM', 'CM', 'AM', 'LW', 'RW', 'ST'];
+export const POS_W = [8, 16, 8, 8, 10, 14, 8, 7, 7, 14];
+
+export function posPercent(pos: Pos): number {
+  return (POS_W[POS_LIST.indexOf(pos)] / POS_W.reduce((a, b) => a + b, 0)) * 100;
+}
+
 export function randomPos(rng: Rng): Pos {
-  return rng.weighted<Pos>(['GK', 'CB', 'LB', 'RB', 'DM', 'CM', 'AM', 'LW', 'RW', 'ST'], [8, 16, 8, 8, 10, 14, 8, 7, 7, 14]);
+  return rng.weighted<Pos>(POS_LIST, POS_W);
 }

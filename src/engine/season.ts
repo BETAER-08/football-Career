@@ -1,4 +1,5 @@
 import { AWARDS } from '../data/awards';
+import { isSchoolId } from '../data/schools';
 import { clubAwards, buildPlayerReview } from './review';
 import { settleGoals, makeGoals } from './goals';
 import { worldSeasonEnd } from './worldsim';
@@ -12,9 +13,11 @@ import { Rng, clamp } from './rng';
 import { curOvr } from './attributes';
 import { addLog, toast } from './log';
 import { ageAt, seasonOf, swOf, START_YEAR, yearOf } from './time';
-import { clubLvl, clubSt, clubStd, endSeasonCountry, playRoundOthers, ranking, ensureCountry } from './world';
+import { clubLvl, clubSt, clubStd, endSeasonCountry, playRoundOthers, ranking, ensureCountry, roundRng, simScore } from './world';
 import { getClub, getCountry, getLeague } from './data';
 import { playPlayerMatch, playTeamOnly, recordLeagueResult, natTeamBase, type MatchOut } from './match';
+import { finishYouthSeason, openYouthSeason, rollListing } from './yleague';
+import { buildYouthReview } from './review';
 import { setupClubSeason, scheduleCup, updateRole } from './transfer';
 import { yearEndFinance, marketValue } from './finance';
 import { seasonEndGrowth } from './growth';
@@ -24,13 +27,15 @@ import { calcSeasonScore } from './scoring';
 import type { Fixture, GameState } from './types';
 import { TRAIT_LABEL } from './player';
 
-export function openSeason(s: GameState, rng: Rng): void {
+export function openSeason(s: GameState): void {
   s.career.seasonMinsAcc = 0;
   s.career.seasonAvailAcc = 0;
   if (s.career.clubId) {
     const club = getClub(s.career.clubId);
     s.career.cur = emptyRec(seasonOf(s.week), s.career.clubId, club.name, '', '', 2, !!s.career.contract?.loanFrom);
-    setupClubSeason(s, rng, s.career.clubId, false);
+    if (isSchoolId(s.career.clubId)) s.career.fixtures.length = 0;
+    else setupClubSeason(s, s.career.clubId, false);
+    openYouthSeason(s);
     const lvl = clubLvl(s, s.career.clubId);
     s.career.cur.lvl = lvl;
     s.career.maxLvl = Math.max(s.career.maxLvl, lvl);
@@ -53,7 +58,8 @@ function gamesOfLeague(s: GameState, lg: string): number {
 
 export interface MatchSummary { out: MatchOut; clubId: string }
 
-export function nextCupOrCont(s: GameState, rng: Rng, fx: Fixture, out: MatchOut, clubId: string): void {
+export function nextCupOrCont(s: GameState, fx: Fixture, out: MatchOut, clubId: string): void {
+  const rng = roundRng(s, `cupn:${clubId}:${fx.kind}`, fx.round + 1);
   const lgId = s.career.cur.leagueId;
   if (fx.kind === 'cup') {
     if (out.result === 'W') {
@@ -114,7 +120,6 @@ export function awardTrophy(s: GameState, name: string, clubId: string): void {
   s.st.morale = clamp(s.st.morale + 8, 0, 100);
   s.st.happy = clamp(s.st.happy + 6, 0, 100);
   s.extra.champs += 1;
-  s.ev.flags.trophyW = s.week;
   if (isCosmetic()) s.cues.push('trophy');
   addLog(s, 'milestone', '트로피', `${club}에서 ${name}을(를) 들어 올렸다!`, [], { star: true });
   toast(s, `🏆 ${name}`);
@@ -132,33 +137,25 @@ export function awardPrize(s: GameState, name: string, pts = 0): void {
   toast(s, `🏅 ${name}`);
 }
 
-function trigMoment(s: GameState, rng: Rng, out: MatchOut): void {
+export function trigMoment(s: GameState, rng: Rng, out: MatchOut, tier = 'f'): void {
   if (!out.moment) return;
   const def = momentFor(s, out.moment);
   if (!def) return;
   markFired(s, def);
-  s.decCtx = { opp: out.fx.opp };
+  s.decCtx = { opp: out.fx.opp, tier };
   const d = buildDecision(s, rng, def);
   d.ctx = isCosmetic() ? commentary(s, out) : out.line;
   pushDecision(s, d);
 }
 
-export function playFixtureToday(s: GameState, rng: Rng, fx: Fixture, youth: boolean): void {
-  const clubId = s.career.clubId;
-  const lgId = s.career.cur.leagueId;
-  if (fx.kind === 'league') {
-    const rt = s.world.leagues[lgId];
-    if (rt) {
-      playRoundOthers(s, rng, lgId, fx.round, clubId);
-      rt.round = fx.round + 1;
-    }
-  }
-  let out: MatchOut;
-  if (s.phase === 'coach') out = playTeamOnly(s, rng, fx, clubSt(s, clubId));
-  else out = playPlayerMatch(s, rng, fx, youth);
-  if (fx.kind === 'league') recordLeagueResult(s, lgId, clubId, fx, out);
-  if (fx.kind === 'cup' || fx.kind === 'cont') nextCupOrCont(s, rng, fx, out, clubId);
-  s.career.cur.avail += fx.kind === 'friendly' ? 0 : 1;
+function namesFor(s: GameState, fx: Fixture, out: MatchOut): void {
+  const me = getClub(s.career.clubId).name;
+  out.homeName = fx.home ? me : fx.opp;
+  out.awayName = fx.home ? fx.opp : me;
+  out.line = `${out.homeName} ${out.hg}-${out.ag} ${out.awayName}${out.pens ? (out.penWin ? ' (승부차기 승)' : ' (승부차기 패)') : ''}`;
+}
+
+function afterPlayed(s: GameState, rng: Rng, fx: Fixture, out: MatchOut): void {
   if (out.played && fx.kind !== 'friendly') {
     const bm = s.career.cur.best;
     if (!bm || out.rating > bm.rating) s.career.cur.best = { w: s.week, rating: out.rating, line: out.line, comp: `${fx.comp} ${fx.stage}`, goals: out.goals, assists: out.assists, mins: out.mins, result: out.result, momentText: bm ? bm.momentText : undefined };
@@ -169,28 +166,73 @@ export function playFixtureToday(s: GameState, rng: Rng, fx: Fixture, youth: boo
     const notable = out.firstPro || out.goals >= 2 || out.rc > 0 || out.rating >= 9 || fx.final || (out.goals >= 1 && s.career.cur.goals === 1) || (out.started && s.career.cur.starts === 1);
     if (notable) {
       const bits: string[] = [];
-      if (out.firstPro) bits.push('프로 데뷔전');
+      if (out.firstPro) bits.push('1군 데뷔전');
       if (out.goals >= 3) bits.push('해트트릭');
       else if (out.goals === 2) bits.push('멀티골');
       else if (out.goals === 1 && s.career.cur.goals === 1) bits.push('시즌 첫 골');
       if (out.rc > 0) bits.push('퇴장');
       if (fx.final) bits.push(`${fx.stage}`);
       if (out.rating >= 9) bits.push(`평점 ${out.rating.toFixed(1)}`);
-      addLog(s, 'match', `${fx.comp} ${fx.stage}`, `${out.line}. ${bits.join(' · ')}. ${out.mins}분 출전, ${out.goals}골 ${out.assists}도움.`, [], { star: out.firstPro || out.goals >= 3 });
+      addLog(s, 'match', `${fx.comp} ${fx.stage}`, `${out.line}. ${bits.join(' · ')}. ${out.mins}분 출전, ${out.goals}골 ${out.assists}도움.`, [], { star: out.firstPro || out.goals >= 3, tier: 'f' });
     }
   }
-  if (out.firstPro && out.played) {
-    s.ev.flags.pro_debut = s.week;
-  }
-  if (out.goals > 0 && !s.ev.flags.first_goal && !youth) {
+  if (out.firstPro && out.played) s.ev.flags.pro_debut = s.week;
+  if (out.goals > 0 && !s.ev.flags.first_goal && s.phase !== 'youth' && out.played) {
     s.ev.flags.first_goal = s.week;
     addLog(s, 'milestone', '프로 데뷔골', `${out.line}. 데뷔골을 터뜨렸다!`, [], { star: true });
   }
-  if (out.played && s.career.bigClub && s.career.cur.lvl >= 5 && (fx.kind === 'league' || fx.kind === 'cup' || fx.kind === 'cont') && !youth) {
+  if (out.played && s.career.bigClub && s.career.cur.lvl >= 5 && (fx.kind === 'league' || fx.kind === 'cup' || fx.kind === 'cont')) {
     s.career.lvl5Apps += 1;
     if (s.career.lvl5Apps >= 5) s.career.playedLvl5 = true;
   }
   trigMoment(s, rng, out);
+}
+
+function playFirstTeamAsYouth(s: GameState, rng: Rng, fx: Fixture, pre: { hg: number; ag: number } | undefined): void {
+  const clubId = s.career.clubId;
+  const lgId = s.career.cur.leagueId;
+  if (fx.kind === 'friendly' || fx.kind === 'intl') return;
+  const mySt = clubSt(s, clubId);
+  let p: { hg: number; ag: number; penWin?: boolean } | undefined = pre;
+  if (fx.kind !== 'league') {
+    const rr = roundRng(s, `fc:${fx.kind}:${clubId}`, fx.round * 3 + (fx.kind === 'cont' ? 1 : 0));
+    const [hg, ag] = fx.home ? simScore(rr, mySt, fx.oppSt) : simScore(rr, fx.oppSt, mySt);
+    p = { hg, ag, penWin: rr.chance(0.5 + (mySt - fx.oppSt) / 200) };
+  }
+  const listed = s.ev.flags.intlAway === s.week ? false : rollListing(s, rng);
+  const out = listed && s.career.signed ? playPlayerMatch(s, rng, fx, false, { pre: p, bench: true, mySt }) : playTeamOnly(s, rng, fx, mySt, p);
+  if (!out.played) namesFor(s, fx, out);
+  if (fx.kind === 'league') recordLeagueResult(s, lgId, clubId, fx, out);
+  else nextCupOrCont(s, fx, out, clubId);
+  s.career.cur.avail += 1;
+  if (!listed) return;
+  afterPlayed(s, rng, fx, out);
+}
+
+export function playFixtureToday(s: GameState, rng: Rng, fx: Fixture, youth: boolean): void {
+  const clubId = s.career.clubId;
+  const lgId = s.career.cur.leagueId;
+  let mine: [string, string, number, number] | null = null;
+  if (fx.kind === 'league') {
+    const rt = s.world.leagues[lgId];
+    if (rt) {
+      mine = playRoundOthers(s, lgId, fx.round, clubId);
+      rt.round = fx.round + 1;
+    }
+  }
+  const pre = mine ? { hg: mine[2], ag: mine[3] } : undefined;
+  if (youth) {
+    playFirstTeamAsYouth(s, rng, fx, pre);
+    return;
+  }
+  let out: MatchOut;
+  if (s.phase === 'coach' || s.ev.flags.intlAway === s.week) out = playTeamOnly(s, rng, fx, clubSt(s, clubId), pre);
+  else out = playPlayerMatch(s, rng, fx, false, pre ? { pre } : {});
+  if (fx.kind === 'league') recordLeagueResult(s, lgId, clubId, fx, out);
+  if (fx.kind === 'cup' || fx.kind === 'cont') nextCupOrCont(s, fx, out, clubId);
+  s.career.cur.avail += fx.kind === 'friendly' ? 0 : 1;
+  if (s.ev.flags.intlAway === s.week) return;
+  afterPlayed(s, rng, fx, out);
 }
 
 export function matchesThisWeek(s: GameState, sw: number): Fixture[] {
@@ -383,7 +425,11 @@ export function endSeason(s: GameState, rng: Rng): void {
     if (cur.pos === 1 && s.phase !== 'youth') awardTrophy(s, `${getLeague(lgId).ko} 우승`, clubId);
   }
   const games = clubId ? gamesOfLeague(s, lgId) : 0;
-  s.ab.playShare = clamp(0.6 * s.ab.playShare + 0.4 * (games > 0 ? cur.mins / (games * 90) : 0), 0, 1);
+  const yth = s.phase === 'youth' && !!s.yt;
+  if (yth) finishYouthSeason(s, rng);
+  const shareGames = yth && s.yt ? s.yt.games : games;
+  const shareMins = yth ? s.career.yCur.mins + cur.mins : cur.mins;
+  s.ab.playShare = clamp(0.6 * s.ab.playShare + 0.4 * (shareGames > 0 ? shareMins / (shareGames * 90) : 0), 0, 1);
   if (clubId && cur.apps > 0 && s.phase !== 'youth') seasonAwards(s, rng, cur.pos, games, age);
   clubAwards(s);
   const goalRes = settleGoals(s, rng);
@@ -391,7 +437,7 @@ export function endSeason(s: GameState, rng: Rng): void {
   worldSeasonEnd(s);
   cur.avail = Math.max(cur.avail, cur.apps);
   if (clubId) {
-    if (!cur.done) {
+    if (!cur.done && !(s.phase === 'youth' && cur.apps === 0)) {
       s.career.seasons.push({ ...cur, done: true });
       s.score += calcSeasonScore(s, cur, games);
     }
@@ -400,7 +446,7 @@ export function endSeason(s: GameState, rng: Rng): void {
   if (clubId) {
     const rankSet = finalRank;
     ensureCountry(s, country);
-    const info = endSeasonCountry(s, rng, country, lgId, rankSet);
+    const info = endSeasonCountry(s, country, lgId, rankSet);
     s.world.countries[country].initS = season + 1;
     if (info.promoted.includes(clubId)) addLog(s, 'milestone', '승격', `${getClub(clubId).name}이(가) 상위 리그로 승격했다!`, [], { star: true });
     if (info.relegated.includes(clubId)) addLog(s, 'milestone', '강등', `${getClub(clubId).name}이(가) 강등됐다.`, [], { star: true });
@@ -421,7 +467,8 @@ export function endSeason(s: GameState, rng: Rng): void {
   agePeople(s, rng);
   s.st.chronic = Object.fromEntries(Object.entries(s.st.chronic).map(([k, v]) => [k, Math.max(0, v - 0.25)]).filter(([, v]) => (v as number) > 0));
   checkDreamSeason(s);
-  buildPlayerReview(s);
+  if (yth) buildYouthReview(s);
+  else buildPlayerReview(s);
 }
 
 export function snapSeason(s: GameState): void {

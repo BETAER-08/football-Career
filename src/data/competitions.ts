@@ -78,3 +78,71 @@ export const TOURNAMENTS: Tournament[] = [
 ];
 
 export const COMPETITIONS_META = { note: '대회 명칭과 주기는 실제를 근사하며 세부 방식은 단순화했습니다.', estimate: true };
+
+export type AgeLevel = 'u17' | 'u20' | 'u23';
+export type AgeKind = 'wc' | 'cont' | 'multi';
+
+export interface AgeTournament {
+  id: string;
+  ko: string;
+  confed: 'ALL' | 'UEFA' | 'CONMEBOL' | 'AFC' | 'CAF' | 'CONCACAF';
+  level: AgeLevel;
+  kind: AgeKind;
+  ageMax: number;
+  wild: number;
+  sw: number;
+  firstYear: number;
+  every: number;
+  teams: number;
+  stages: string[];
+}
+
+const S16 = ['조별리그', '8강', '4강', '결승'];
+const S24 = ['조별리그', '16강', '8강', '4강', '결승'];
+const S48 = ['조별리그', '32강', '16강', '8강', '4강', '결승'];
+
+const CONT: [AgeTournament['confed'], string, string, string, number, number][] = [
+  ['UEFA', 'UEFA U-17 유로', 'UEFA U-19 유로', 'UEFA', 1, 19],
+  ['CONMEBOL', '남미 U-17 선수권', '남미 U-20 선수권', 'CONMEBOL', 2, 20],
+  ['AFC', 'AFC U-17 아시안컵', 'AFC U-20 아시안컵', 'AFC', 2, 20],
+  ['CAF', 'CAF U-17 네이션스컵', 'CAF U-20 네이션스컵', 'CAF', 2, 20],
+  ['CONCACAF', 'CONCACAF U-17 선수권', 'CONCACAF U-20 선수권', 'CONCACAF', 2, 20]
+];
+
+export const AGE_TOURNAMENTS: AgeTournament[] = [
+  { id: 'U17WC', ko: 'FIFA U-17 월드컵', confed: 'ALL', level: 'u17', kind: 'wc', ageMax: 17, wild: 0, sw: 18, firstYear: 2026, every: 1, teams: 48, stages: S48 },
+  { id: 'U20WC', ko: 'FIFA U-20 월드컵', confed: 'ALL', level: 'u20', kind: 'wc', ageMax: 20, wild: 0, sw: 10, firstYear: 2027, every: 2, teams: 24, stages: S24 },
+  { id: 'OLY', ko: '올림픽 남자 축구', confed: 'ALL', level: 'u23', kind: 'multi', ageMax: 23, wild: 3, sw: 3, firstYear: 2028, every: 4, teams: 16, stages: S16 },
+  { id: 'ASIAD', ko: '아시안게임 남자 축구', confed: 'AFC', level: 'u23', kind: 'multi', ageMax: 23, wild: 3, sw: 10, firstYear: 2026, every: 4, teams: 24, stages: S24 },
+  ...CONT.flatMap(([confed, k17, k20, , every17, age20]): AgeTournament[] => [
+    { id: `${confed}_U17`, ko: k17, confed, level: 'u17', kind: 'cont', ageMax: 17, wild: 0, sw: 40, firstYear: 2027, every: every17, teams: 16, stages: S16 },
+    { id: `${confed}_U20`, ko: k20, confed, level: 'u20', kind: 'cont', ageMax: age20, wild: 0, sw: 28, firstYear: 2027, every: 2, teams: 16, stages: S16 }
+  ])
+];
+
+export const AGE_META = { note: '연령별 대회의 주기·출생 연도 기준은 실제 규정을 근사했습니다. 대륙 대회는 예선을 겸하며 8강 이상이 월드컵 본선 진출로 이어집니다.', estimate: true };
+
+export function ageHeld(t: AgeTournament, year: number): boolean {
+  return year >= t.firstYear && (year - t.firstYear) % t.every === 0;
+}
+
+export function ageEligible(t: AgeTournament, birthYear: number, year: number): boolean {
+  return birthYear >= year - t.ageMax;
+}
+
+export function ageEligibleYears(birthYear: number, confed: string, from: number, to: number): Record<string, number[]> {
+  const out: Record<string, number[]> = {};
+  for (const t of AGE_TOURNAMENTS) {
+    if (t.confed !== 'ALL' && t.confed !== confed) continue;
+    const ys: number[] = [];
+    for (let y = from; y <= to; y++) if (ageHeld(t, y) && ageEligible(t, birthYear, y)) ys.push(y);
+    out[t.id] = ys;
+  }
+  return out;
+}
+
+export function ageSchedule(from: number, to: number): { year: number; id: string; ko: string }[] {
+  const rows: { year: number; id: string; ko: string }[] = [];
+  for (let y = from; y <= to; y++) for (const t of AGE_TOURNAMENTS) if (ageHeld(t, y) && t.kind !== 'cont') rows.push({ year: y, id: t.id, ko: t.ko });
+  return rows;
+}

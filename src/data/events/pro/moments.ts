@@ -3,22 +3,27 @@ import { cc, mo } from '../helpers';
 
 const YP: ('youth' | 'pro')[] = ['youth', 'pro'];
 const P: ('pro')[] = ['pro'];
+const D: ('youth' | 'pro')[] = ['youth', 'pro'];
 
 export const moments: RawEvent[] = [
-  mo('m_debut_att', 'debut', P, ['프로 데뷔전. 후반 교체 투입 직후 단독 돌파 기회가 왔다. 골키퍼와 1대1이다. 모든 시선이 {name}에게 쏠렸다.', '떨리는 데뷔전. 수비 뒤 공간으로 침투 패스가 정확히 떨어졌다. 골문 앞에는 골키퍼뿐이다.'], [
+  mo('m_debut_att', 'debut', D, ['프로 데뷔전. 후반 교체 투입 직후 단독 돌파 기회가 왔다. 골키퍼와 1대1이다. 모든 시선이 {name}에게 쏠렸다.', '떨리는 데뷔전. 수비 뒤 공간으로 침투 패스가 정확히 떨어졌다. 골문 앞에는 골키퍼뿐이다.'], [
     cc('직접 슈팅한다', ['호흡을 가다듬고 오른발을 힘껏 휘둘렀다.', 'rating+0.2'], { chk: '48 attr.finishing*3 attr.composure*2 hid.bigGame*0.15', great: ['공이 골망을 흔들었다! 데뷔전 데뷔골이다. 경기장이 터져 나갈 듯 환호했다.', 'goal+1 rating+1.1 fameD+1 morale+8'], bad: ['슛은 골키퍼 정면으로 향했다. 아쉬움이 컸다.', 'rating-0.3 morale-3'], worst: ['긴장한 발끝이 공을 헛맞혔다. 관중석에서 탄식이 터졌다.', 'rating-0.8 morale-7'] }),
     cc('동료에게 패스한다', ['한 박자 늦게 옆으로 밀어 주었다. 동료가 침착하게 마무리했다.', 'assist+1 rating+0.6 rel.mates+3'], { chk: '65 attr.vision*2 attr.passing*1 hid.bigGame*0.1', bad: ['패스가 수비에 차단됐다. 기회가 사라졌다.', 'rating-0.3'] }),
     cc('칩슛으로 골키퍼를 넘긴다', ['공을 살짝 띄웠다. 골키퍼 머리 위로 포물선이 그려졌다.', 'rating+0.2'], { chk: '36 attr.finishing*2 attr.composure*2.5 hid.bigGame*0.2', great: ['공이 골대 안으로 사뿐히 떨어졌다. 짜릿한 데뷔골!', 'goal+1 rating+1.2 fameD+1.2 morale+9'], bad: ['공이 골대를 넘어갔다. 하늘만 쳐다봤다.', 'rating-0.4 morale-4'] })
   ], { cond: ['pos:ST|LW|RW|AM'], max: 5 }),
-  mo('m_debut_mid', 'debut', P, ['프로 데뷔전. 중원에서 공을 잡았다. 앞에는 수비 한 명, 측면에는 동료가 열려 있다. 빠르게 판단해야 한다.', '교체로 투입되자마자 공이 {name}에게 흘러왔다. 경기 템포가 아마추어와는 다르다.'], [
+  mo('m_debut_mid', 'debut', D, ['프로 데뷔전. 중원에서 공을 잡았다. 앞에는 수비 한 명, 측면에는 동료가 열려 있다. 빠르게 판단해야 한다.', '교체로 투입되자마자 공이 {name}에게 흘러왔다. 경기 템포가 아마추어와는 다르다.'], [
     cc('날카로운 전진 패스를 시도한다', ['수비 사이를 가르는 패스를 시도했다.', 'rating+0.2'], { chk: '48 attr.vision*2.5 attr.passing*2 hid.bigGame*0.1', great: ['패스가 수비 사이를 가르고 동료에게 정확히 연결됐다. 슈팅까지 이어진 어시스트!', 'assist+1 rating+1 morale+7 fameD+0.6'], bad: ['패스가 길었다. 상대의 역습이 시작됐다.', 'rating-0.4 morale-3'] }),
     cc('안전하게 횡패스로 연결한다', ['안정적인 패스로 경기 템포를 조절했다.', 'rating+0.3 morale+2'], { chk: '75 attr.passing*1.5 attr.composure*1', bad: ['사소한 패스 미스로 공을 빼앗겼다.', 'rating-0.2'] }),
     cc('드리블로 직접 전진한다', ['몸을 틀어 수비를 제치고 공간을 만들었다.', 'rating+0.2'], { chk: '40 attr.dribbling*2.5 attr.agility*1 attr.balance*1', bad: ['드리블이 막혀 공을 빼앗겼다.', 'rating-0.4'] })
   ], { cond: ['pos:CM|DM|LB|RB'], max: 5 }),
-  mo('m_debut_def', 'debut', P, ['프로 데뷔전. 상대 에이스가 {name}에게 돌진한다. 한 번의 판단이 실점으로 이어질 수 있다.', '교체 투입되자마자 상대의 빠른 역습이 시작됐다. 최종 수비 라인에 {name}밖에 없다.'], [
+  mo('m_debut_def', 'debut', D, ['프로 데뷔전. 상대 에이스가 {name}에게 돌진한다. 한 번의 판단이 실점으로 이어질 수 있다.', '교체 투입되자마자 상대의 빠른 역습이 시작됐다. 최종 수비 라인에 {name}밖에 없다.'], [
     cc('몸을 던져 태클한다', ['타이밍을 재고 발을 뻗었다.', 'rating+0.2'], { chk: '45 attr.tackling*3 attr.positioning*1.5 hid.bigGame*0.1', great: ['정확한 태클로 공을 걷어내고 역습을 끊었다. 관중석이 박수를 보냈다.', 'rating+1 morale+7 fameD+0.4'], bad: ['타이밍이 늦었다. 반칙으로 경고를 받았다.', 'rating-0.5 morale-3'] }),
     cc('거리를 두고 지연시킨다', ['섣불리 태클하지 않고 동료들이 돌아올 시간을 벌었다.', 'rating+0.4'], { chk: '65 attr.positioning*2 attr.concentration*1', bad: ['지연 과정에서 슈팅 기회를 내줬다.', 'rating-0.2'] })
-  ], { cond: ['pos:CB|GK'], max: 5 }),
+  ], { cond: ['pos:CB'], max: 5 }),
+  mo('m_debut_gk', 'debut', D, ['프로 데뷔전. 교체로 장갑을 끼자마자 상대 에이스의 날카로운 슈팅이 날아왔다. 골문 앞의 {name}에게 모든 시선이 쏠렸다.', '떨리는 데뷔전. 상대가 문전에서 단독 찬스를 잡았다. 골키퍼 {name}이(가) 나서야 한다.'], [
+    cc('각을 좁히며 몸을 던진다', ['타이밍을 재고 앞으로 나와 몸을 날렸다.', 'rating+0.2'], { chk: '48 attr.oneOnOne*3 attr.reflexes*2 hid.bigGame*0.15', great: ['공을 정확히 걷어냈다. 데뷔전 슈퍼세이브에 관중석이 박수를 보냈다.', 'rating+1.1 morale+8 fameD+0.5'], bad: ['타이밍이 늦었다. 공이 골망을 흔들었다.', 'rating-0.5 morale-4'] }),
+    cc('제자리를 지키며 반응한다', ['침착하게 슈팅 방향을 읽었다.', 'rating+0.3'], { chk: '55 attr.reflexes*2.5 attr.concentration*1', bad: ['공은 손끝을 스치고 골대 안으로 들어갔다.', 'rating-0.3'] })
+  ], { cond: ['pos:GK'], max: 5 }),
   mo('m_derby_a', 'derby', P, ['지역 더비. 팽팽한 0-0 상황, 경기장 분위기는 터질 듯하다. 후반 막판 역습 기회에서 공이 {name}에게 흘렀다.', '더비 매치 후반 추가시간. 상대 문전 앞에서 공이 {name}의 발끝에 닿았다.'], [
     cc('과감한 슈팅을 한다', ['모든 것을 걸고 슈팅했다.', 'rating+0.1'], { chk: '40 attr.shooting*2 attr.composure*2 hid.bigGame*0.25', great: ['공이 골망을 갈랐다! 더비의 영웅이 탄생했다. 경기장이 흔들렸다.', 'goal+1 rating+1.3 fameD+2 rel.fans+10 morale+10'], bad: ['슛이 막혔다. 더비의 아쉬움이 오래갔다.', 'rating-0.3 morale-4'] }),
     cc('안정적인 패스로 기회를 이어 간다', ['동료에게 연결하며 공격 흐름을 이었다.', 'rating+0.3'], { chk: '65 attr.passing*1.5 attr.vision*1', great: ['동료가 마무리해 어시스트가 기록됐다.', 'assist+1 rating+0.8 rel.mates+3'] })
@@ -26,7 +31,7 @@ export const moments: RawEvent[] = [
   mo('m_derby_b', 'derby', P, ['더비 매치. 상대 팬들의 야유가 거세다. 이런 분위기에서 한 번의 터치가 승패를 가를 수 있다.', '더비전의 열기가 최고조에 달했다. 상대 에이스를 막아 세워야 하는 순간이 다가왔다.'], [
     cc('몸싸움을 걸어 흐름을 끊는다', ['적극적인 몸싸움으로 상대의 템포를 흔들었다.', 'rating+0.2'], { chk: '45 attr.aggression*1.5 attr.strength*1.5 attr.tackling*1.5', great: ['과감한 압박으로 공을 빼앗아 팀 공격의 기점이 됐다.', 'rating+0.9 rel.fans+4 morale+5'], bad: ['과한 반칙으로 경고를 받았다.', 'rating-0.4 rel.coach-1'] }),
     cc('침착하게 자리를 지킨다', ['규율을 지키며 수비 블록을 유지했다.', 'rating+0.3 rel.coach+1 morale-1 fameD-0.1'])
-  ], { cond: ['pos:CB|DM|LB|RB|GK'], max: 8 }),
+  ], { cond: ['pos:CB|DM|LB|RB'], max: 8 }),
   mo('m_final_att', 'final', P, ['결승전. 한 점 차 승부, 경기 종료 직전 상대 문전에서 기회가 왔다. 마지막 장면이 될지도 모른다.', '결승 연장 후반. 상대 골키퍼와 단둘이 마주했다. 숨소리조차 들리지 않는다.'], [
     cc('강하게 마무리한다', ['모든 힘을 오른발에 실었다.', 'rating+0.1'], { chk: '42 attr.finishing*2.5 attr.composure*2 hid.bigGame*0.35', great: ['공이 그물을 흔들었다! 결승골. 모든 순간이 슬로모션처럼 흘렀다.', 'goal+1 rating+1.4 fameD+3 rel.fans+10 morale+12'], bad: ['슛이 골대를 비껴갔다. 고개를 떨궜다.', 'rating-0.4 morale-6 stress+4'] }),
     cc('동료에게 연결한다', ['더 좋은 위치의 동료에게 정확히 패스했다.', 'rating+0.3'], { chk: '62 attr.vision*2 attr.passing*1.5 hid.bigGame*0.1', great: ['동료가 결승골을 넣었다. 환호 속에서 서로를 끌어안았다.', 'assist+1 rating+0.9 rel.mates+4'] })

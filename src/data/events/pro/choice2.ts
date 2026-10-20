@@ -7,7 +7,7 @@ export const proChoice2: RawEvent[] = [
   ch('kr_mil_notice', P, 6, ['병무청에서 입영 통지서가 도착했다. 축구 인생에서 가장 큰 공백이 될 수 있는 결정의 순간이다. 김천 상무에서 뛰며 복무할 수도, 국제대회 메달로 면제를 노릴 수도 있다.', '대한민국 남자라면 피할 수 없는 문제다. 군 문제를 어떻게 풀지 결정해야 한다.'], [
     cc('김천 상무에 입대한다', ['{name}은(는) 머리를 짧게 깎고 김천 상무 유니폼을 입었다. 78주의 복무가 시작된다.', 'fx:enlist happy-4 stress+4'], { pv: '약 1년 반 복무 출전 기회 유지 행복↓ 스트레스↑' }),
     cc('입대를 연기한다', ['법이 허용하는 범위에서 입대를 미루기로 했다. 시간이 많지는 않다.', 'fx:milDefer fu:kr_mil_notice@40-60 stress+4']),
-    cc('국제대회 메달에 도전한다', ['대표팀 선발과 메달이 필요하다. 쉽지 않은 길이지만 성공하면 커리어에 큰 도움이 된다.', 'fx:milDefer fu:kr_mil_notice@52-80 hid.ambition+2'], { chk: '28 ovr*0.4 fameD*0.3 caps*0.8', great: ['대표팀에서 입상에 성공해 병역 특례를 받았다!', 'fx:exempt'], bad: ['선발에서 밀렸다. 이제는 입대를 준비해야 한다.', 'morale-8 stress+6 fu:kr_mil_force@12-24'] })
+    cc('국제대회 메달에 도전한다', ['대표팀 선발과 메달이 필요하다. 쉽지 않은 길이지만 성공하면 커리어에 큰 도움이 된다.', 'fx:milDefer flag:mil_medal fu:kr_mil_notice@120-156 hid.ambition+2 stress+3'], { chk: '40 ovr*0.3 fameD*0.2', pv: '선발과 입상 필요 실패 시 입대 압박', bad: ['지금은 대표팀 소집이 요원하다. 그래도 다음 대회까지 기다려 보기로 했다.', 'fx:milDefer flag:mil_medal fu:kr_mil_notice@120-156 morale-3'] })
   ], { cond: ['country:KR', 'mil:pending', 'age>=24', 'age<=28', '!flag:mil_defer'], cd: 0, max: 1, xg: 'military', note: 'military', tier: 'major' }),
   pa('kr_mil_force', P, 1, ['더는 연기할 수 없다. 입영 통지서를 받고 짐을 싸야 한다. 김천 상무가 마지막 기회다.', '병역 이행 시기가 다가왔다. 담담히 군복을 받았다.'], 'fx:enlist stress+4', { sched: true, max: 1, cond: ['mil:pending'] }),
   ch('pc_nat_snub', P, 3, ['대표팀 명단에 이름이 없었다. 최근 폼을 생각하면 아쉬운 결과다. 기자가 소감을 묻는다.', '대표팀 소집 명단 발표. {name}의 이름은 끝내 나오지 않았다.'], [

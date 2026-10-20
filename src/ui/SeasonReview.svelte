@@ -85,7 +85,7 @@
               {#if r.clubPoy.length}
                 <div class="mini-hint">구단 평점 순위: {r.clubPoy.map((p, i) => `${i + 1}. ${p.name} ${p.rating.toFixed(2)}`).join(' · ')}</div>
               {/if}
-              {#each r.trophies as t}<div class="award">🏆 {t}</div>{/each}
+              {#each r.trophies as t}<div class="award">{r.youth ? '🏅 유스 트로피 ·' : '🏆'} {t}</div>{/each}
             </div>
             <div class="sec"><b>시즌 베스트 장면</b><div class="best">{r.best}</div></div>
           {:else}
@@ -98,6 +98,12 @@
                 <div><b class="mono" class:up={r.change.fame > 0} class:down={r.change.fame < 0}>{sgn(r.change.fame)}</b><span>명성</span></div>
               </div>
             </div>
+            {#if r.youth}
+              <div class="sec"><b>승급 심사 · 1군 진입</b>
+                <div>{r.clubName} 심사 결과 <b class={r.youth.result === 'release' ? 'down' : 'up'}>{{ none: '심사 중', promote: '승급', stay: '잔류', release: '방출', pro: '1군 정착' }[r.youth.result]}</b>{r.youth.next ? ` → ${r.youth.next}` : ''}</div>
+                <div class="muted">1군 진입 단계 · {r.youth.entry}{r.youth.jumps ? ` · 월반 ${r.youth.jumps}회` : ''}</div>
+              </div>
+            {/if}
             {#if r.goals.length}
               <div class="sec"><b>이번 시즌 목표</b>
                 {#each r.goals as gl}<div class="goal"><span class={gl.done ? 'up' : 'down'}>{gl.done ? '달성 ✓' : '미달 ✗'}</span> {gl.label} <span class="faint">· {gl.reward}</span></div>{/each}

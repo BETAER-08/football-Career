@@ -12,8 +12,17 @@
   const z = $derived(Math.min(1.7, Math.max(0.85, width / 1600)));
   onMount(() => {
     const on = () => (width = window.innerWidth);
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (store.tableOpen) store.tableOpen = false;
+      else if (store.panel) store.panel = '';
+    };
     window.addEventListener('resize', on);
-    return () => window.removeEventListener('resize', on);
+    window.addEventListener('keydown', esc);
+    return () => {
+      window.removeEventListener('resize', on);
+      window.removeEventListener('keydown', esc);
+    };
   });
 </script>
 
@@ -26,7 +35,7 @@
     </div>
   </div>
 {:else}
-  <div class="app" class:compact={width / z < 1500} style="zoom:{z};height:{100 / z}vh">
+  <div class="app" class:compact={width / z < 1500} style="zoom:{z};height:{100 / z}vh;--z:{z}">
     {#if store.screen === 'menu'}
       <Menu />
     {:else if store.screen === 'setup'}

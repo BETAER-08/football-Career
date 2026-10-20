@@ -17,7 +17,7 @@
 <div class="vault">
   <div class="panel box">
     <div class="panel-h">지난 커리어 보관함 <span class="faint" style="font-weight:500">최대 50개 · 항목당 약 30KB 이하</span><span class="spacer"></span><button class="btn sm" onclick={() => (store.screen = 'menu')}>메인 메뉴</button></div>
-    <div class="panel-b scroll col" style="gap:8px;max-height:70vh">
+    <div class="panel-b scroll col" style="gap:8px;max-height:calc(70vh / var(--z, 1))">
       {#each list as e (e.id)}
         <div class="it">
           <div class="gr">{(e.playerGrade ?? '-') === '프로 데뷔 실패' ? '실패' : (e.playerGrade ?? '-')}</div>

@@ -91,6 +91,7 @@
           <div class="row" style="gap:6px">
             {#if isChoice(e)}<span class="badge">내 선택</span>{/if}
             <span class="kind">{kindLabel[e.kind]}</span>
+            {#if e.tier}<span class="tier" class:y={e.tier !== 'f'}>{e.tier === 'f' ? '1군' : e.tier === 'r' ? '리저브' : '유스'}</span>{/if}
             <span class="date mono">{fmtDate(dateOf(e.w))}</span>
             {#if lk}<span class="dot" style="color:{hue(lk)}" title="이어지는 선택과 결과">●</span>{/if}
             {#if e.title && !isChoice(e)}<b class="ttl">{e.title}</b>{/if}
@@ -122,7 +123,7 @@
 
 <style>
   .logs { display: flex; flex-direction: column; }
-  .fullp .logs { max-height: 70vh; }
+  .fullp .logs { max-height: calc(70vh / var(--z, 1)); }
   .sub { display: flex; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
   .own { font-size: 12px; display: inline-flex; gap: 4px; align-items: center; color: var(--muted); cursor: pointer; }
   .entry { display: flex; gap: 10px; padding: 9px 12px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); animation: pop 0.25s ease; }
@@ -131,6 +132,8 @@
   .entry.mine, .entry.fu { background: color-mix(in srgb, var(--band) 9%, transparent); }
   .entry.mine .rail, .entry.fu .rail { width: 4px; background: var(--band); }
   .badge { font-size: 10.5px; font-weight: 800; padding: 0 7px; border-radius: 999px; background: var(--band); color: var(--bg); }
+  .tier { font-size: 10px; font-weight: 800; padding: 0 5px; border-radius: 8px; border: 1px solid var(--line); color: var(--muted); }
+  .tier.y { color: var(--info); border-color: color-mix(in srgb, var(--info) 50%, var(--line)); }
   .kind { font-size: 10.5px; font-weight: 800; color: var(--kc); letter-spacing: 0.04em; }
   .date { font-size: 11px; color: var(--faint); }
   .ttl { font-size: 13px; }

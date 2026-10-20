@@ -3,12 +3,13 @@ import { Rng, clamp } from './rng';
 import { getCal, mFor } from './calibration';
 import { allCountries, getClub, getCountry, getLeague, leaguesOf, type ClubStatic } from './data';
 import { curOvr } from './attributes';
-import { clubLvl, clubStd, clubSt, dyn, ensureCountry, startLeagueSeason, buildRounds, simScore, record, membersOf, clubLeagueId } from './world';
+import { clubLvl, clubStd, clubSt, dyn, ensureCountry, startLeagueSeason, buildRounds, simScore, record, membersOf, clubLeagueId, roundRng } from './world';
 import { ageAt, seasonOf, swOf } from './time';
 import { genName, makePerson, randomPos } from './relations';
 import { marketValue, priceF } from './finance';
 import { addLog, toast } from './log';
 import { isCosmetic } from './flags';
+import { changeYouthClub, closeYouthCurrent, restageYouth } from './yleague';
 import type { Contract, GameState, Offer, Role } from './types';
 import { emptyRec } from './records';
 import { CONT_LP_WEEKS, CONT_COMPS } from '../data/competitions';
@@ -106,6 +107,8 @@ export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string
   return offer;
 }
 
+const FREE_YOUTH = 0.2;
+
 export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count: number): Offer[] {
   const ovr = curOvr(s.ab);
   const age = ageAt(s.p.birth, s.week);
@@ -145,6 +148,7 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
     if (code !== home.code && L >= 4 && rng.next() > Math.min(1, Math.pow(Math.max(mf, 1e-6), 0.6))) continue;
     const club = pickClubIn(s, rng, code, L, ovr, s.career.clubId);
     if (!club || used.has(club.id)) continue;
+    if (s.phase === 'youth' && kind === 'free' && !rng.chance(FREE_YOUTH)) continue;
     const trial = kind === 'trial' || (kind === 'free' && code !== home.code && rng.chance(0.3));
     const offer = makeOfferFor(s, rng, club.id, kind, { trial, first: kind === 'first' });
     if (!offer) continue;
@@ -194,6 +198,8 @@ export function negotiate(s: GameState, rng: Rng, o: Offer, demands: { wage: boo
   return { ok: true, offer: no, text: '협상이 타결됐다. 요구한 조건이 반영됐다.', roll, need };
 }
 
+const TRIAL_YOUTH = 0.2;
+
 export function trialPass(s: GameState, rng: Rng, o: Offer): { ok: boolean; roll: number; need: number } {
   const L = clubLvl(s, o.clubId);
   const std = clubStd(s, o.clubId);
@@ -202,6 +208,7 @@ export function trialPass(s: GameState, rng: Rng, o: Offer): { ok: boolean; roll
   let p = 0.55 + gap / 22 + (foreign ? (s.hid.adapt - 50) / 400 : 0) + s.fame.dom / 400;
   if (L >= 5) p *= mFor(s.p.country);
   else if (foreign && L >= 4) p *= Math.min(1, Math.pow(Math.max(mFor(s.p.country), 1e-6), 0.3));
+  if (s.phase === 'youth') p *= TRIAL_YOUTH;
   p = clamp(p, 0.04, 0.92);
   const roll = rng.next();
   return { ok: roll < p, roll, need: p };
@@ -223,7 +230,7 @@ export function buildClubPeople(s: GameState, rng: Rng, clubId: string, firstJoi
   }
   for (const k of old) delete s.people[k];
   const tmp = { nextId: st.nextId };
-  s.people.coach = makePerson(rng, tmp, 'coach', code, { age: rng.int(38, 62), refYear: year, job: '감독', rel: rng.int(-5, 15), clubId });
+  s.people.coach = makePerson(rng, tmp, 'coach', code, { age: rng.int(38, 62), refYear: year, job: s.phase === 'youth' ? '리저브 감독' : '감독', rel: rng.int(-5, 15), clubId });
   s.people.coach.traitVal = rng.normal(0, 0.45);
   s.people.captain = makePerson(rng, tmp, 'captain', code, { age: rng.int(27, 35), refYear: year, job: '주장', rel: rng.int(-5, 15), pos: randomPos(rng), ovr: Math.round(clubStd(s, clubId) + 2), clubId });
   const age = ageAt(s.p.birth, s.week);
@@ -245,9 +252,9 @@ export function buildClubPeople(s: GameState, rng: Rng, clubId: string, firstJoi
   st.nextId = tmp.nextId;
 }
 
-export function setupClubSeason(s: GameState, rng: Rng, clubId: string, mid: boolean): void {
+export function setupClubSeason(s: GameState, clubId: string, mid: boolean): void {
   const lgId = clubLeagueId(s, clubId);
-  startLeagueSeason(s, rng, lgId);
+  startLeagueSeason(s, lgId);
   const rt = s.world.leagues[lgId];
   const games = (rt.order.length % 2 === 0 ? rt.order.length - 1 : rt.order.length) * 2;
   const sw = swOf(s.week);
@@ -257,8 +264,9 @@ export function setupClubSeason(s: GameState, rng: Rng, clubId: string, mid: boo
   if (mid) {
     while (r0 < games && leagueWeek(cal, r0, games) < sw) r0++;
     for (let r = 0; r < r0; r++) {
+      const rr = roundRng(s, `lr:${lgId}`, r);
       for (const [h, a] of rounds[r]) {
-        const [hg, ag] = simScore(rng, dyn(s, h).st, dyn(s, a).st);
+        const [hg, ag] = simScore(rr, dyn(s, h).st, dyn(s, a).st);
         record(s, lgId, h, a, hg, ag);
       }
     }
@@ -279,29 +287,32 @@ export function setupClubSeason(s: GameState, rng: Rng, clubId: string, mid: boo
   }
   const country = cs.country;
   const cRT = ensureCountry(s, country);
-  for (const w of cal.friendlies) {
-    if (w <= sw) continue;
-    const pool = membersOf(s, lgId).filter((id) => id !== clubId);
-    const oid = rng.pick(pool);
-    fixtures.push({ w, comp: '프리시즌 친선경기', kind: 'friendly', opp: getClub(oid).name, oppSt: dyn(s, oid).st - 3, ko: false, stage: '친선', home: rng.chance(0.5), big: false, final: false, round: -1, oppId: oid });
+  const wr = roundRng(s, `setup:${clubId}`, mid ? 1 : 0);
+  if (s.phase !== 'youth') {
+    for (const w of cal.friendlies) {
+      if (w <= sw) continue;
+      const pool = membersOf(s, lgId).filter((id) => id !== clubId);
+      const oid = wr.pick(pool);
+      fixtures.push({ w, comp: '프리시즌 친선경기', kind: 'friendly', opp: getClub(oid).name, oppSt: dyn(s, oid).st - 3, ko: false, stage: '친선', home: wr.chance(0.5), big: false, final: false, round: -1, oppId: oid });
+    }
   }
   const tier = getLeague(lgId).tier;
   const entry = tier >= 4 ? 0 : tier === 3 ? 1 : tier === 2 ? 2 : 3;
   s.career.cupAlive = !mid || sw < cal.cupWeeks[3] - 3;
   s.career.cupRound = entry;
-  if (s.career.cupAlive) scheduleCup(s, rng, clubId, lgId, entry);
+  if (s.career.cupAlive) scheduleCup(s, wr, clubId, lgId, entry);
   const q = cRT.qual[clubId];
   s.career.contQualified = q ?? '';
   s.career.contAlive = false;
   s.career.contComp = '';
   s.career.contPts = 0;
   s.career.contGames = 0;
-  if (q && !mid && s.phase !== 'youth') {
+  if (q && !mid) {
     s.career.contAlive = true;
     s.career.contComp = q;
     const comp = CONT_COMPS[q];
     CONT_LP_WEEKS.forEach((w, i) => {
-      const oppSt = comp.mean - 3 + rng.normal(0, comp.sd);
+      const oppSt = comp.mean - 3 + wr.normal(0, comp.sd);
       fixtures.push({ w, comp: comp.ko, kind: 'cont', opp: `${comp.ko} 상대 ${i + 1}`, oppSt, ko: false, stage: `리그 페이즈 ${i + 1}`, home: i % 2 === 0, big: false, final: false, round: i, oppId: '' });
     });
   }
@@ -335,7 +346,7 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   const age = ageAt(s.p.birth, s.week);
   const prev = s.career.clubId;
   const cs = getClub(o.clubId);
-  const firstPro = !s.career.debuted && !o.trial && !o.loan ? true : !s.career.debuted;
+  const firstPro = !s.career.signed && !o.loan;
   const hadPrev = !!prev;
   if (hadPrev) {
     s.career.clubsHist[s.career.clubsHist.length - 1].toS = seasonOf(s.week);
@@ -356,19 +367,29 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   s.career.cur = emptyRec(seasonOf(s.week), o.clubId, cs.name, '', '', 2, o.loan);
   s.career.seasonMinsAcc = 0;
   s.career.seasonAvailAcc = 0;
-  if (!s.career.debuted && !o.loan) {
-    s.career.debuted = true;
-    s.career.debutW = s.week;
-    s.phase = 'pro';
-  } else if (s.phase === 'youth') s.phase = 'pro';
+  let restage = false;
+  if (firstPro) {
+    s.career.signed = true;
+    if (s.phase === 'youth' && (s.career.youthStage === 'U15' || s.career.youthStage === 'U17' || s.career.youthStage === 'HS')) {
+      s.career.youthStage = 'U19';
+      restage = true;
+    } else if (s.phase === 'youth' && s.career.youthStage === 'UNI') {
+      s.career.youthStage = 'RES';
+      restage = true;
+    }
+    if (s.career.track === 'school') s.ev.flags.schoolPro = s.week;
+    s.career.track = 'pro';
+  }
   if (o.signing > 0) {
     s.fin.cash += o.signing * 0.7;
     s.fin.yearIncomeAcc += o.signing;
   }
   s.fin.housing = o.loan ? s.fin.housing : s.fin.housing === 'family' && age < 18 ? 'family' : s.fin.housing === 'own' ? 'own' : getClub(prev || o.clubId).city === cs.city && s.fin.housing !== 'dorm' ? s.fin.housing : age < 18 ? 'dorm' : 'rent';
   if (age >= 18 && s.fin.housing === 'dorm') s.fin.housing = 'rent';
-  buildClubPeople(s, rng, o.clubId, !hadPrev);
-  setupClubSeason(s, rng, o.clubId, true);
+  if (!(s.phase === 'youth' && prev === o.clubId)) buildClubPeople(s, rng, o.clubId, !hadPrev);
+  setupClubSeason(s, o.clubId, true);
+  if (s.phase === 'youth' && prev !== o.clubId) changeYouthClub(s);
+  else if (s.phase === 'youth' && restage) restageYouth(s);
   const lvl = clubLvl(s, o.clubId);
   s.career.cur.lvl = lvl;
   s.career.maxLvl = Math.max(s.career.maxLvl, lvl);
@@ -388,7 +409,6 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
     addLog(s, 'milestone', o.loan ? '임대' : '이적', `${cs.name}${o.loan ? '로 임대 이적' : '로 이적'}했다 (${reason}). 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
   }
   toast(s, `${cs.name} 입단 · ${roleLabel(o.role)}`);
-  s.ev.flags.transferW = s.week;
   if (isCosmetic()) s.cues.push('transfer');
   s.fame.value = marketValue(s);
 }
@@ -410,11 +430,14 @@ export function updateRole(s: GameState): void {
 
 export function leaveToFree(s: GameState, reason: string): void {
   if (s.career.clubId) {
+    if (s.phase === 'youth') closeYouthCurrent(s);
     s.career.clubsHist[s.career.clubsHist.length - 1].toS = seasonOf(s.week);
     closeCurrent(s);
     s.career.cur = emptyRec(seasonOf(s.week), '', '', '', '', 2);
   }
   s.career.clubId = '';
+  s.career.track = 'pro';
+  s.yt = null;
   s.career.contract = null;
   s.career.freeAgentW = s.week;
   s.career.fixtures.length = 0;
