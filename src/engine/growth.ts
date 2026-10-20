@@ -1,6 +1,6 @@
 import { ALL_ATTRS, ATTR_GROUP, type GameState } from './types';
 import { Rng, clamp } from './rng';
-import { ageProgress } from './attributes';
+import { ageProgress, ovrOf } from './attributes';
 import { focusDef } from './lifestyle';
 import { getClub } from './data';
 
@@ -64,6 +64,17 @@ export function growWeek(s: GameState, rng: Rng, age: number): void {
 
 export function seasonEndGrowth(s: GameState, age: number): void {
   const ab = s.ab;
+  if (age < 20) {
+    const gain = ovrOf(ab.a, ab.pos) - s.snap.ovr;
+    if (gain < 2) {
+      const d = (2 - gain) / 5;
+      for (const k of ALL_ATTRS) {
+        if (ATTR_GROUP[k] === 'gk' && ab.pos !== 'GK') continue;
+        ab.a[k] = clamp(ab.a[k] + d, 1, 20);
+        ab.ceil[k] = Math.max(ab.ceil[k], ab.a[k]);
+      }
+    }
+  }
   if (age >= 21 && ab.playShare < 0.3) {
     const leak = 0.012 * ((0.3 - ab.playShare) / 0.3);
     for (const k of ALL_ATTRS) ab.ceil[k] = Math.max(1, ab.ceil[k] * (1 - leak));

@@ -152,7 +152,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   let x = selectionX(s, margin, fx.kind === 'intl' ? 'rotation' : role, youth);
   if (!youth && fx.kind !== 'intl' && myClub.country === 'KR' && ageAt(s.p.birth, s.week) <= 22 && getLeague(clubLeagueId(s, clubId)).tier === 1) x += 0.55;
   const pStart = opts.bench ? 0 : logistic(x);
-  const pSub = opts.bench ? clamp(logistic((margin + 4) / 3.4) * 0.9, 0.03, 0.85) : logistic(x + 1.3) * 0.85;
+  const pSub = opts.bench ? clamp(logistic((margin + 1) / 3.4) * 0.9, 0.03, 0.85) : logistic(x + 1.3) * 0.85;
   const u = rng.next();
   let started = false;
   let mins = 0;

@@ -4,7 +4,7 @@ export const STAGE_ORDER: YouthStage[] = ['U15', 'U17', 'U19', 'RES'];
 export const STAGE_TEAMS: Record<YouthStage, number> = { U15: 12, U17: 14, U19: 16, RES: 14, HS: 12, UNI: 12 };
 export const STAGE_AGE: Record<YouthStage, number> = { U15: 14.5, U17: 16, U19: 18, RES: 20, HS: 17, UNI: 20 };
 export const STAGE_EXPECT: Record<YouthStage, number> = { U15: 14, U17: 15.5, U19: 17.5, RES: 19.5, HS: 16.5, UNI: 20 };
-export const STAGE_REF = 6.5;
+export const STAGE_REF = 3.5;
 export const STAGE_LABEL: Record<YouthStage, string> = { U15: 'U15', U17: 'U17', U19: 'U19', RES: '리저브', HS: '고교', UNI: '대학' };
 
 export function nextStage(st: YouthStage): YouthStage | null {

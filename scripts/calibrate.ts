@@ -49,15 +49,15 @@ async function main(): Promise<void> {
   const runMix = async () => stats(await pool.run(mix, cal));
 
   console.log('1/4 youthBoost');
-  cal.youthBoost = await bisect(-12, 40, quick ? 8 : 12, false, async (x) => { cal.youthBoost = x; return (await runMix()).debutRate; }, 0.6);
+  cal.youthBoost = await bisect(-12, 40, quick ? 8 : 10, false, async (x) => { cal.youthBoost = x; return (await runMix()).debutRate; }, 0.6);
   console.log('  youthBoost', cal.youthBoost.toFixed(3));
 
   console.log('2/4 retireScale');
-  cal.retireScale = await bisect(0.2, 6, quick ? 6 : 10, true, async (x) => { cal.retireScale = x; return -(await runMix()).avgRetire; }, -33.5);
+  cal.retireScale = await bisect(0.2, 6, quick ? 6 : 8, true, async (x) => { cal.retireScale = x; return -(await runMix()).avgRetire; }, -33.5);
   console.log('  retireScale', cal.retireScale.toFixed(3));
 
   console.log('3/4 injEndScale');
-  cal.injEndScale = await bisect(0.1, 30, quick ? 6 : 10, true, async (x) => { cal.injEndScale = x; return (await runMix()).injEnd; }, 0.035);
+  cal.injEndScale = await bisect(0.1, 30, quick ? 6 : 8, true, async (x) => { cal.injEndScale = x; return (await runMix()).injEnd; }, 0.035);
   console.log('  injEndScale', cal.injEndScale.toFixed(3));
 
   console.log('4/4 per-country m');
@@ -72,7 +72,7 @@ async function main(): Promise<void> {
     const specs: Spec[] = Array.from({ length: n }, (_, i) => ({ seed: `cal-${code}-${i}`, country: code, level: 0, pos: 'random', mode: 'player' }));
     if (target > 0) {
       const tol = target < 0.001 ? 0.0015 : target * 0.2;
-      cal.m[code] = await bisect(0.0005, 400, quick ? 9 : 14, true, async (x) => {
+      cal.m[code] = await bisect(0.0005, 400, quick ? 9 : 10, true, async (x) => {
         cal.m[code] = x;
         return stats(await pool.run(specs, cal)).bigShare;
       }, target);

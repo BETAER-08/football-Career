@@ -478,7 +478,7 @@ export function entryWeekly(s: GameState, rng: Rng, age: number): void {
   const pot = (s.ab.pot - curOvr(s.ab)) * 0.08;
   if (e.step === 0) {
     if (age < 15 || s.career.youthStage === 'U15') return;
-    const p = 0.045 * logistic((R + 7 + pot + e.jumps * 2) / 3.2);
+    const p = 0.045 * logistic((R + 3 + pot + e.jumps * 2) / 3.2);
     if (rng.next() < p) {
       e.step = 1;
       e.trainW = s.week;
@@ -488,7 +488,7 @@ export function entryWeekly(s: GameState, rng: Rng, age: number): void {
     }
   } else if (e.step === 1) {
     if (age < 16 || s.week - e.trainW < 6) return;
-    const p = 0.05 * logistic((R + 3 + pot) / 3);
+    const p = 0.05 * logistic((R - 1 + pot) / 3);
     if (rng.next() < p) {
       e.step = 2;
       e.squadW = s.week;
@@ -502,7 +502,7 @@ export function rollListing(s: GameState, rng: Rng): boolean {
   const e = s.career.entry;
   if (e.step < 2 || s.st.injury) return false;
   const R = readiness(s);
-  const p = clamp(0.22 + 0.55 * logistic((R + 2) / 3.5), 0.1, 0.9);
+  const p = clamp(0.22 + 0.55 * logistic((R - 2) / 3.5), 0.1, 0.9);
   const ok = rng.next() < p;
   if (ok) {
     s.ev.flags.listedW = s.week;

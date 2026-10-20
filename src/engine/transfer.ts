@@ -17,6 +17,12 @@ import { leagueWeek, profileOf } from './calendar';
 
 export const ROLE_VAL: Record<Role, number> = { starter: 3, rotation: 2, prospect: 1, backup: 0 };
 
+export function clubWageCap(s: GameState, clubId: string): number {
+  const cs = getClub(clubId);
+  const lvl = clubLvl(s, clubId);
+  return Math.round(6000 * LEVEL_WAGE_MULT[lvl] * (0.5 + getCountry(cs.country).econ) * 2.6 / 10) * 10;
+}
+
 export function wageFor(s: GameState, clubId: string, role: Role, ovr: number, age: number): number {
   const cs = getClub(clubId);
   const lvl = clubLvl(s, clubId);
@@ -28,7 +34,7 @@ export function wageFor(s: GameState, clubId: string, role: Role, ovr: number, a
   const ageF = age <= 17 ? 0.28 : age <= 19 ? 0.5 : age <= 21 ? 0.78 : age >= 33 ? 0.85 : 1;
   const fameF = 1 + s.fame.dom / 60 + s.fame.abroad / 45;
   const w = base * spread * roleF * ageF * (0.5 + c.econ) * fameF;
-  return Math.max(300, Math.round(w / 10) * 10);
+  return Math.min(Math.max(300, Math.round(w / 10) * 10), clubWageCap(s, clubId));
 }
 
 export function roleFor(marginRaw: number, age: number, pot: number, std: number): Role | null {
@@ -120,6 +126,7 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
   const fameBoost = 1 + s.fame.dom / 120 + s.fame.abroad / 80;
   const potBoost = age <= 22 ? 1 + Math.max(0, s.ab.pot - ovr) / 40 : 1;
   const levels = [2, 3, 4, 5, 6];
+  const expLvl = levels.reduce((b, L) => (ovr >= LEVEL_STARTER_OVR[L] - 4 ? L : b), 2);
   const home = getCountry(s.p.country);
   for (let i = 0; i < count; i++) {
     const w = levels.map((L) => {
@@ -127,6 +134,7 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
       let v = levelFit(gap) * (L > curLvl ? 1 + s.career.upBias : 1);
       if (L >= 5) v *= mf * fameBoost * potBoost;
       if (L < curLvl - 1 && kind !== 'free' && kind !== 'first' && kind !== 'trial') v *= 0.25;
+      if (kind !== 'first' && gap > 8 && L < expLvl - 1) v *= Math.exp(-(expLvl - 1 - L) * 1.2);
       return Math.max(0, v) + (L === 2 ? 0.02 : 0);
     });
     const L = levels[rng.weightedIndex(w)];
@@ -152,6 +160,7 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
     const trial = kind === 'trial' || (kind === 'free' && code !== home.code && rng.chance(0.3));
     const offer = makeOfferFor(s, rng, club.id, kind, { trial, first: kind === 'first' });
     if (!offer) continue;
+    if ((kind === 'window' || kind === 'free') && s.career.contract && !s.career.contract.youth && s.career.contract.wage > clubWageCap(s, club.id) * 0.9) continue;
     used.add(club.id);
     out.push(offer);
   }
