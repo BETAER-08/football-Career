@@ -23,10 +23,6 @@
   const isGk = $derived(g.ab.pos === 'GK');
   const keys = $derived<readonly AttrKey[]>(tab === 'tech' ? (isGk ? [...GK_KEYS, ...TECH_KEYS.slice(0, 3)] : TECH_KEYS) : tab === 'phys' ? PHYS_KEYS : MENTAL_KEYS);
   const ovr = $derived(shownOvr(g.ab, age));
-  const width = $derived(Math.max(2, Math.round(14 - (age - 14) * 1.5)));
-  const potMid = $derived(anchored(g.ab.pot) + ((hashString(g.cfg.seed + 'scout') % 7) - 3) * Math.max(0.2, width / 12));
-  const lo = $derived(Math.max(Math.round(ovr), Math.round(potMid - width)));
-  const hi = $derived(Math.min(99, Math.round(potMid + width)));
   const club = $derived(clubId ? getClub(clubId) : null);
 
   $effect(() => {
@@ -110,8 +106,7 @@
         <div class="chips">
           {#each g.ab.traits as t}<span class="chip" class:down={t === 'fragile' || t === 'hothead'}>{TRAIT_LABEL[t] ?? t}</span>{:else}<span class="faint">아직 없음</span>{/each}
         </div>
-        <div class="kv" style="margin-top:4px"><span>스카우트 보고서</span><span class="mono">잠재력 {lo}~{hi}</span></div>
-        <div class="mini-hint">나이가 들수록 범위가 좁아져요.</div>
+        <div class="mini-hint" style="margin-top:4px">재능의 한계는 아무도 몰라요. 늦게 꽃피는 선수도 있어요.</div>
         <div class="kv"><span>경기 감각</span><span class="mono">{Math.round(g.st.sharp)}</span></div>
         <div class="kv"><span>평균 출전 비율</span><span class="mono">{Math.round(g.ab.playShare * 100)}%</span></div>
         <div class="sep"></div>

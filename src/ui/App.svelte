@@ -9,9 +9,13 @@
   import Vault from './Vault.svelte';
 
   let width = $state(window.innerWidth);
-  const z = $derived(Math.min(1.7, Math.max(0.85, width / 1600)));
+  let height = $state(window.innerHeight);
+  const z = $derived(Math.min(1.25, Math.max(0.72, Math.min(width / 1800, height / 1000))));
   onMount(() => {
-    const on = () => (width = window.innerWidth);
+    const on = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+    };
     const esc = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (store.tableOpen) store.tableOpen = false;

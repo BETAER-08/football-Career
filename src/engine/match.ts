@@ -172,9 +172,10 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   out.mins = mins;
   const mf = mins / 90;
   const shootQ = clamp(((s.ab.a.finishing + s.ab.a.shooting) / 2) / 11, 0.55, 1.7);
-  const passQ = clamp(((s.ab.a.passing + s.ab.a.vision + s.ab.a.crossing) / 3) / 11, 0.55, 1.7);
+  const at = s.ab.a;
+  const passQ = clamp(((at.passing + at.vision + at.crossing) / 3) / 11, 0.55, 1.7) * (0.88 + at.teamwork * 0.012 + at.creativity * 0.012 + at.longPassing * 0.006);
   const form = Math.exp(clamp(margin, -25, youth ? 30 : 20) / (youth ? 15 : 22));
-  const gShare = clamp(POS_GOAL[pos] * form * shootQ * mf * (s.ab.traits.includes('clutch') ? 1.05 : 1), 0, 0.7);
+  const gShare = clamp(POS_GOAL[pos] * form * shootQ * mf * (s.ab.traits.includes('clutch') ? 1.05 : 1) * (0.94 + at.penalties * 0.006 + (pos === 'LW' || pos === 'RW' ? (at.accel - 10) * 0.01 : 0)), 0, 0.7);
   const aShare = clamp(POS_ASSIST[pos] * form * passQ * mf, 0, 0.6);
   let goals = 0;
   let assists = 0;
@@ -189,7 +190,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   if (rng.next() < (0.006 + s.hid.temper / 9000) * mf) rc = 1;
   else if (yc && rng.next() < 0.05) rc = 1;
   const cs = opG === 0 && mins >= 60 && (pos === 'GK' || pos === 'CB' || pos === 'LB' || pos === 'RB' || pos === 'DM');
-  let rating = 6.1 + (youth ? 1.6 : 0.85) * Math.tanh(margin / 9) + rng.normal(0, 0.52) + (result === 'W' ? 0.28 : result === 'L' ? -0.22 : 0) + goals * 0.9 + assists * 0.55 + (cs ? 0.35 : 0) - yc * 0.2 - rc * 0.9;
+  let rating = 6.1 + (youth ? 1.6 : 0.85) * Math.tanh(margin / 9) + rng.normal(0, clamp(0.78 - at.concentration * 0.026, 0.3, 0.75)) + ((pos === 'CB' || pos === 'LB' || pos === 'RB' || pos === 'DM') ? (at.marking - 10) * 0.03 : 0) + (at.workRate - 10) * 0.02 + (result === 'W' ? 0.28 : result === 'L' ? -0.22 : 0) + goals * 0.9 + assists * 0.55 + (cs ? 0.35 : 0) - yc * 0.2 - rc * 0.9;
   if (mins < 60) rating = 6 + (rating - 6) * (0.45 + mins / 140);
   rating = clamp(Math.round(rating * 10) / 10, 3, 10);
   out.goals = goals;
@@ -230,7 +231,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   const mor0 = s.st.morale;
   const fat0 = s.st.fatigue;
   s.st.sharp = clamp(s.st.sharp + mf * 9, 0, 100);
-  s.st.fatigue = clamp(s.st.fatigue + mf * (fx.kind === 'friendly' ? 4 : 7.5), 0, 100);
+  s.st.fatigue = clamp(s.st.fatigue + mf * (fx.kind === 'friendly' ? 4 : 7.5) * (0.85 + at.workRate * 0.015), 0, 100);
   s.st.morale = clamp(s.st.morale + (result === 'W' ? 2.2 : result === 'L' ? -2 : 0.2) + (rating - 6.5) * 0.7, 0, 100);
   s.st.happy = clamp(s.st.happy + (result === 'W' ? 0.8 : result === 'L' ? -0.6 : 0) + (started ? 0.3 : -0.2), 0, 100);
   s.st.stress = clamp(s.st.stress + (fx.final ? 4 : 0.6) + (rc ? 3 : 0) - (result === 'W' ? 0.7 : 0), 0, 100);

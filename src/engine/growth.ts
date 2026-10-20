@@ -3,6 +3,8 @@ import { Rng, clamp } from './rng';
 import { ageProgress, ovrOf } from './attributes';
 import { focusDef } from './lifestyle';
 import { getClub } from './data';
+import { stream } from './streams';
+import { addLog } from './log';
 
 function heightFrac(f0: number, age: number, growth: 'early' | 'normal' | 'late'): number {
   const end = growth === 'early' ? 17.5 : growth === 'late' ? 19.8 : 18.6;
@@ -62,8 +64,20 @@ export function growWeek(s: GameState, rng: Rng, age: number): void {
   }
 }
 
+function bloom(s: GameState, age: number): void {
+  if (age < 16 || age > 30) return;
+  const r = stream(s.cfg.seed, 'bloom', Math.floor(s.week / 52));
+  const p = 0.045 + (s.hid.pro - 50) / 1500 + (s.ab.playShare > 0.6 ? 0.015 : 0);
+  if (r.next() >= p) return;
+  const f = 1 + r.float(0.05, 0.14);
+  for (const k of ALL_ATTRS) s.ab.ceil[k] = Math.min(20, s.ab.ceil[k] * f);
+  s.ab.pot = Math.min(98, Math.round(s.ab.pot * f * 10) / 10);
+  if (age >= 19) addLog(s, 'milestone', '재능이 꽃피다', `${s.p.name}의 재능이 뒤늦게 만개하기 시작했다. 한계가 어디인지 아무도 모른다.`, [], { star: true });
+}
+
 export function seasonEndGrowth(s: GameState, age: number): void {
   const ab = s.ab;
+  bloom(s, age);
   if (age < 20) {
     const gain = ovrOf(ab.a, ab.pos) - s.snap.ovr;
     if (gain < 2) {

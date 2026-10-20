@@ -10,7 +10,7 @@ import { ALL_ATTRS } from './types';
 import { pushMatchLine, commentary } from './matchtext';
 import { CONT_COMPS, CONT_KO_NAMES, CONT_KO_WEEKS, INTL_WINDOWS, TOURNAMENTS } from '../data/competitions';
 import { Rng, clamp } from './rng';
-import { curOvr } from './attributes';
+import { curOvr, shownOvr, youthCallMin } from './attributes';
 import { addLog, toast } from './log';
 import { ageAt, seasonOf, swOf, START_YEAR, yearOf } from './time';
 import { clubLvl, clubSt, clubStd, endSeasonCountry, playRoundOthers, ranking, ensureCountry, roundRng, simScore } from './world';
@@ -320,7 +320,7 @@ export function intlWindow(s: GameState, rng: Rng, sw: number): void {
     s.decCtx = {};
     pushDecision(s, buildDecision(s, rng, def));
     markFired(s, def);
-  } else if (age >= 15 && age <= 20 && s.nat.status !== 'senior') {
+  } else if (age >= 15 && age <= 20 && s.nat.status !== 'senior' && shownOvr(s.ab, age) >= youthCallMin(natTeamBase(s.p.country))) {
     const ovr = curOvr(s.ab);
     const yb = (ovr - (s.career.clubId ? clubStd(s, s.career.clubId) : 45) + 4) / 5 + s.fame.dom / 100;
     if (rng.next() < 1 / (1 + Math.exp(-yb)) * 0.55) {

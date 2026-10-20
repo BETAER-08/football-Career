@@ -89,7 +89,7 @@ export const youthStages: RawEvent[] = [
       worst: ['대회 중 발목을 접질렸다.', 'fx:inj=ankle rel.coach-3']
     }),
     cc('구단 대회에 집중한다', ['소속 팀과 함께하기로 했다. 감독이 환히 웃었다.', 'rel.coach+3 fameD-0.2 morale-1'], { pv: '감독 관계↑ 명성 기회 상실' })
-  ], { cond: ['ovr>=40'], cd: 52, max: 3, xg: 'national', tier: 'minor' }),
+  ], { cond: ['youthCall'], cd: 52, max: 3, xg: 'national', tier: 'minor' }),
   ch('ys_first_team_first', Y, 3, [
     '1군 감독이 유스 선수 몇 명을 훈련에 불렀다. 그 안에 {name}도 있다. 라커룸에서 처음 보는 선수들이 눈인사를 건넸다.',
     '내일 1군 오전 훈련에 합류하라는 지시가 내려왔다. TV에서만 보던 얼굴들이 같은 운동장에 서 있다.'

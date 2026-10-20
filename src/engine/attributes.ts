@@ -151,11 +151,15 @@ export function ageProgress(group: 'tech' | 'phys' | 'mental' | 'gk', age: numbe
   const f = g0 + (1 - g0) * Math.pow(p, 0.7);
   let dec = 1;
   if (group === 'phys') {
-    const d = (growth === 'early' ? 28 : growth === 'late' ? 30 : 29) + 0;
-    if (age > d) dec = 1 - 0.03 * Math.pow(age - d, 1.15);
+    const d = growth === 'early' ? 26.5 : growth === 'late' ? 28.5 : 27.5;
+    if (age > d) dec = 1 - 0.04 * Math.pow(age - d, 1.15);
   } else if (group === 'tech' || group === 'gk') {
-    const d = 33;
-    if (age > d) dec = 1 - 0.013 * Math.pow(age - d, 1.1);
+    const d = 31;
+    if (age > d) dec = 1 - 0.018 * Math.pow(age - d, 1.1);
   } else if (age > 35) dec = 1 - 0.007 * (age - 35);
   return f * Math.max(0.4, dec);
+}
+
+export function youthCallMin(natBase: number): number {
+  return Math.min(62, Math.max(40, 40 + (natBase - 50) * 0.5));
 }

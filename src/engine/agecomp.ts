@@ -1,6 +1,6 @@
 import { AGE_TOURNAMENTS, ageEligible, ageHeld, type AgeTournament } from '../data/competitions';
 import { Rng, clamp } from './rng';
-import { curOvr } from './attributes';
+import { curOvr, shownOvr, youthCallMin } from './attributes';
 import { getCountry } from './data';
 import { addLog, toast } from './log';
 import { applyFx } from './fx';
@@ -28,6 +28,10 @@ export function tournamentLength(t: AgeTournament): number {
 function stageLabel(t: AgeTournament, idx: number): string {
   if (idx < GROUP_WEEKS) return `${t.ko} 조별리그`;
   return `${t.ko} ${t.stages[Math.min(t.stages.length - 1, idx - GROUP_WEEKS + 1)]}`;
+}
+
+function meetsCall(s: GameState, age: number): boolean {
+  return shownOvr(s.ab, age) >= youthCallMin(natTeamBase(s.p.country));
 }
 
 function callScore(s: GameState, t: AgeTournament): number {
@@ -113,7 +117,7 @@ export function ageTournamentWeek(s: GameState, rng: Rng, sw: number): void {
       const age = year - s.p.birth.y;
       const eligible = ageEligible(t, s.p.birth.y, year);
       const wild = !eligible && t.wild > 0 && age <= t.ageMax + 8 && curOvr(s.ab) >= natTeamBase(s.p.country) - 10 && rng.chance(0.12);
-      const roll = (eligible || wild) && !s.st.injury ? rng.next() < logistic(callScore(s, t) - (wild ? 1.5 : 0)) : false;
+      const roll = (eligible || wild) && !s.st.injury && meetsCall(s, age) ? rng.next() < logistic(callScore(s, t) - (wild ? 1.5 : 0)) : false;
       f[`${key}:squad`] = roll ? 1 : 0;
       if (f[`${key}:q`]) {
         addLog(s, 'world', t.ko, `${year} ${t.ko}이(가) 개막했다. ${c.natTeam}이(가) 출전한다.`, []);

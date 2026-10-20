@@ -39,7 +39,7 @@ export const youthChoice: RawEvent[] = [
     cc('부모님과 먼저 상의한다', ['부모님은 신중했다. 몇 달 뒤 다시 이야기하기로 했다.', 'rel.father+3 rel.mother+2 fu:yc_agent_followup@10-22']),
     cc('정중히 거절한다', ['아직 이르다고 판단했다. 에이전트는 명함만 남겼다.', 'happy+1 val-2'])
   ], { cond: ['age>=15', 'ovr>=45', '!hasAgent'], cd: 104, max: 1, xg: 'agent', note: 'agent_fee', tier: 'major' }),
-  pa('yc_agent_followup', YP, 1, ['몇 달 사이 에이전트가 다시 연락해 왔다. 부모님은 조건을 꼼꼼히 비교해 본 뒤 계약을 허락했다.', '가족회의 끝에 에이전트와 정식 계약을 맺었다. 수수료 조항은 부모님이 직접 고쳤다.'], 'fx:newAgent rel.father+2', { sched: true, max: 3, cond: ['!hasAgent'] }),
+  pa('yc_agent_followup', YP, 1, ['몇 달 사이 에이전트가 다시 연락해 왔다. 부모님은 조건을 꼼꼼히 비교해 본 뒤 계약을 허락했다.', '가족회의 끝에 에이전트와 정식 계약을 맺었다. 수수료 조항은 부모님이 직접 고쳤다.'], 'fx:newAgent rel.father+2', { sched: true, max: 1, cond: ['!hasAgent'] }),
   ch('yc_social_first', YP, 3, ['첫 SNS 계정을 만들었다. 친구들이 팔로우하기 시작했다. 무엇을 올릴까?', '구단 공식 계정에 이름이 태그됐다. 이제 나도 계정을 키워 볼까?'], [
     cc('적극적으로 운영한다', ['훈련 장면과 일상을 올렸다. 팔로워가 눈에 띄게 늘었다.', 'followers+25 fameD+0.4'], { chk: '60 hid.controversy*-0.3 hid.pro*0.1', bad: ['장난으로 올린 사진이 구단 눈에 거슬렸다.', 'rel.coach-3 stress+3 followers+8'], worst: ['부적절한 댓글이 논란이 됐다. 구단이 주의를 주었다.', 'rel.coach-6 rel.media-4 stress+5'] }),
     cc('비공개로 조용히 쓴다', ['친구들과만 소통하는 공간으로 남겨 두었다.', 'stress-2 fameD-0.1 rel.mates-1'])

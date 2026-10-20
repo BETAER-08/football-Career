@@ -143,6 +143,7 @@ export function youthStep(s: GameState, rng: Rng, age: number): void {
   scholarshipStep(s, rng, age);
   if (s.phase !== 'youth' || s.career.signed || s.career.retired || s.career.track !== 'pro') return;
   topClubScout(s, rng, age);
+  abroadScout(s, rng, age);
   const e = s.career.entry;
   const early = age < 17 && age >= minProAge(s.career.clubId ? getClub(s.career.clubId).country : s.p.country) && (e.jumps > 0 || e.step >= 1);
   if ((age >= 17 ? sw === 30 : early && (sw === 30 || sw === 10)) && s.career.clubId) {
@@ -180,6 +181,19 @@ export function retirePressure(s: GameState, rng: Rng, age: number): void {
   if (rng.next() >= p) return;
   const def = getEvent('retire_nudge');
   fireEvent(s, rng, def);
+}
+
+export function abroadScout(s: GameState, rng: Rng, age: number): void {
+  const season = seasonOf(s.week);
+  if (!windowNow(s) || !s.career.clubId || s.career.signed || s.career.track !== 'pro' || age < 16 || age > 18) return;
+  if (s.decision || s.decQueue.length || hasPendingOffer(s) || s.ev.flags.abroadScoutS === season) return;
+  const home = getClub(s.career.clubId).country;
+  if (shownOvr(s.ab, age) < scoutThreshold(home) - 6 || !rng.chance(0.2)) return;
+  s.ev.flags.abroadScoutS = season;
+  const offers = genOffers(s, rng, 'first', 8).filter((o) => getClub(o.clubId).country !== home && clubLvl(s, o.clubId) >= 3).slice(0, 3);
+  if (!offers.length) return;
+  addLog(s, 'milestone', '해외 구단의 제안', `해외 구단들이 ${s.p.name}에게 프로 입단을 제안했다.`, [], { star: true });
+  presentOffers(s, offers, 'first', '해외 구단의 제안', '해외 구단들이 유망주를 영입하고 싶어 한다.', true);
 }
 
 export function scoutThreshold(country: string): number {

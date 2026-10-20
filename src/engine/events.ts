@@ -310,6 +310,21 @@ export function rollWeekly(s: GameState, rng: Rng): void {
   }
 }
 
+function fatigue(s: GameState, def: EventDef): number {
+  const rec = s.ev.recent;
+  let f = 1;
+  const at = rec.lastIndexOf(def.id);
+  if (at >= 0) f *= rec.length - at <= 12 ? 0.25 : 0.6;
+  const g = def.exclusiveGroup ?? def.group;
+  if (g) {
+    for (let i = Math.max(0, rec.length - 6); i < rec.length; i++) {
+      const o = registry.get(rec[i]);
+      if (o && (o.exclusiveGroup ?? o.group) === g) { f *= 0.4; break; }
+    }
+  }
+  return f;
+}
+
 function pickAndFire(s: GameState, rng: Rng, pool: EventDef[], interactive: boolean): boolean {
   const cands: EventDef[] = [];
   const w: number[] = [];
@@ -319,7 +334,7 @@ function pickAndFire(s: GameState, rng: Rng, pool: EventDef[], interactive: bool
     if (isInt && !tierRoom(s, def.tier)) continue;
     if (!eligible(s, def)) continue;
     cands.push(def);
-    w.push(def.weight);
+    w.push(def.weight * fatigue(s, def));
   }
   if (!cands.length) return false;
   const def = cands[rng.weightedIndex(w)];

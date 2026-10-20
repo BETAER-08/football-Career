@@ -3,6 +3,11 @@ import { Rng, clamp } from './rng';
 import { getClub, getCountry } from './data';
 import { ageAt, dateOf, swOf, seasonOf } from './time';
 import { whyNow } from './why';
+import { shownOvr, youthCallMin } from './attributes';
+
+function shownRawOf(s: GameState): number {
+  return shownOvr(s.ab, ageAt(s.p.birth, s.week));
+}
 
 export type Op =
   | { kind: 'var'; t: string; sign: '+' | '-' | '='; v: number }
@@ -479,6 +484,7 @@ const getters: Record<string, Getter> = {
   roleRank: (s) => ({ starter: 3, rotation: 2, prospect: 1, backup: 0 })[s.career.contract?.role ?? 'backup'],
   youth: (s) => (s.phase === 'youth' ? 1 : 0),
   stageIdx: (s) => ['U15', 'U17', 'U19', 'RES'].indexOf(s.career.youthStage),
+  youthCall: (s) => (shownRawOf(s) >= youthCallMin(getCountry(s.p.country).natBase) ? 1 : 0),
   signed: (s) => (s.career.signed ? 1 : 0),
   school: (s) => (s.career.track === 'school' ? 1 : 0),
   schoolUni: (s) => (s.career.youthStage === 'UNI' ? 1 : 0),

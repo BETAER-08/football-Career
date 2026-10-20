@@ -79,7 +79,7 @@ export function mediaPerson(rng: Rng, st: { nextId: number }, country: string, r
 }
 
 export const POS_LIST: Pos[] = ['GK', 'CB', 'LB', 'RB', 'DM', 'CM', 'AM', 'LW', 'RW', 'ST'];
-export const POS_W = [8, 16, 8, 8, 10, 14, 8, 7, 7, 14];
+export const POS_W = [13.6, 18.2, 9.1, 9.1, 9.1, 13.6, 9.1, 9.1, 9.1, 13.6];
 
 export function posPercent(pos: Pos): number {
   return (POS_W[POS_LIST.indexOf(pos)] / POS_W.reduce((a, b) => a + b, 0)) * 100;
