@@ -72,7 +72,7 @@ async function main(): Promise<void> {
     const specs: Spec[] = Array.from({ length: n }, (_, i) => ({ seed: `cal-${code}-${i}`, country: code, level: 0, pos: 'random', mode: 'player' }));
     if (target > 0) {
       const tol = target < 0.001 ? 0.0015 : target * 0.2;
-      cal.m[code] = await bisect(0.0005, 400, quick ? 9 : 10, true, async (x) => {
+      cal.m[code] = await bisect(0.00002, 400, quick ? 9 : 11, true, async (x) => {
         cal.m[code] = x;
         return stats(await pool.run(specs, cal)).bigShare;
       }, target);

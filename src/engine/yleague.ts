@@ -224,13 +224,19 @@ export function youthRank(s: GameState): number {
   return youthRanking(yt).indexOf(s.career.clubId) + 1;
 }
 
+export function starBoost(s: GameState): number {
+  if (!s.career.clubId || s.ab.playShare < 0.35) return 0;
+  return clamp((curOvr(s.ab) - stageStd(s, s.career.clubId, s.career.youthStage)) * 0.3, 0, 9);
+}
+
 function playRound(s: GameState, yt: YouthRT, round: number, own: string): [string, string, number, number] | null {
   const rd = buildRounds(yt.ids)[round];
   if (!rd) return null;
   const rr = roundRng(s, `yl:${yt.key}`, round);
+  const boost = starBoost(s);
   let mine: [string, string, number, number] | null = null;
   for (const [h, a] of rd) {
-    const [hg, ag] = simScore(rr, yt.st[h], yt.st[a]);
+    const [hg, ag] = simScore(rr, yt.st[h] + (h === own ? boost : 0), yt.st[a] + (a === own ? boost : 0));
     if (h === own || a === own) { mine = [h, a, hg, ag]; continue; }
     recordYouth(yt, h, a, hg, ag);
   }
@@ -286,7 +292,7 @@ function playYouthMatch(s: GameState, rng: Rng, fx: Fixture, listed: boolean): v
   const yt = s.yt;
   const clubId = s.career.clubId;
   if (!yt || !clubId) return;
-  const mySt = yt.st[clubId];
+  const mySt = yt.st[clubId] + starBoost(s);
   const e = s.career.entry;
   let pre: { hg: number; ag: number; penWin?: boolean };
   let mine: [string, string, number, number] | null = null;

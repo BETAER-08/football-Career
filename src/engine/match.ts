@@ -173,7 +173,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   const mf = mins / 90;
   const shootQ = clamp(((s.ab.a.finishing + s.ab.a.shooting) / 2) / 11, 0.55, 1.7);
   const passQ = clamp(((s.ab.a.passing + s.ab.a.vision + s.ab.a.crossing) / 3) / 11, 0.55, 1.7);
-  const form = Math.exp(clamp(margin, -25, 20) / 22);
+  const form = Math.exp(clamp(margin, -25, youth ? 30 : 20) / (youth ? 15 : 22));
   const gShare = clamp(POS_GOAL[pos] * form * shootQ * mf * (s.ab.traits.includes('clutch') ? 1.05 : 1), 0, 0.7);
   const aShare = clamp(POS_ASSIST[pos] * form * passQ * mf, 0, 0.6);
   let goals = 0;

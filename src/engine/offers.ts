@@ -10,7 +10,7 @@ import { ageAt } from './time';
 
 export function offerLabel(s: GameState, o: Offer): string {
   const c = getClub(o.clubId);
-  return `${c.name} · ${getCountry(c.country).ko} · ${roleLabel(o.role)} · 연봉 ${formatKRW(o.wage)}${o.loan ? ' · 임대' : ''}${o.trial ? ' · 입단 테스트' : ''}`;
+  return `${c.name} · ${getCountry(c.country).ko} · ${roleLabel(o.role)} · 연봉 ${formatKRW(o.wage)}${o.loan ? ' · 임대' : ''}${o.trial ? ' · 입단 테스트' : ''}${o.tag === 'money' ? ' · 고액 연봉 제안' : ''}`;
 }
 
 export function hasPendingOffer(s: GameState): boolean {

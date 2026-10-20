@@ -250,7 +250,7 @@ export function endSeasonCountry(s: GameState, code: string, playerLg: string, f
     const L = lgs[i + 1];
     const n = Math.min(L.up, U.down);
     if (n <= 0) continue;
-    const down = ranks[U.id].slice(-n);
+    const down = ranks[U.id].filter((id) => !(getClub(id).elite && getClub(id).lg0 === U.id)).slice(-n);
     const up = ranks[L.id].slice(0, n);
     for (const id of down) { c.clubs[id].lg = L.id; relegated.push(id); }
     for (const id of up) { c.clubs[id].lg = U.id; promoted.push(id); }

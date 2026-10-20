@@ -1,3 +1,4 @@
+import { hunit } from './streams';
 import { LEVEL_STARTER_OVR, LEVEL_WAGE_MULT } from '../data/countries';
 import { Rng, clamp } from './rng';
 import { getCal, mFor } from './calibration';
@@ -58,7 +59,7 @@ function countriesWithLevel(L: number): string[] {
   return out;
 }
 
-function pickClubIn(s: GameState, rng: Rng, code: string, L: number, ovr: number, excl: string): ClubStatic | null {
+function pickClubIn(s: GameState, rng: Rng, code: string, L: number, ovr: number, excl: string, tight = false): ClubStatic | null {
   ensureCountry(s, code);
   const cands: ClubStatic[] = [];
   const w: number[] = [];
@@ -69,9 +70,10 @@ function pickClubIn(s: GameState, rng: Rng, code: string, L: number, ovr: number
       const cs = getClub(id);
       const std = clubStd(s, id);
       const gap = ovr - std;
-      if (gap < -14) continue;
+      if (gap < (tight ? -9 : -14)) continue;
+      if (tight && gap > 16) continue;
       cands.push(cs);
-      w.push(Math.exp(-Math.pow(gap + 1, 2) / 110) + 0.02);
+      w.push(tight ? Math.exp(-Math.pow(gap - 2, 2) / 60) + 0.01 : Math.exp(-Math.pow(gap + 1, 2) / 110) + 0.02);
     }
   }
   if (!cands.length) return null;
@@ -113,6 +115,8 @@ export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string
   return offer;
 }
 
+const RICH = ['SA', 'TR', 'CN'];
+
 const FREE_YOUTH = 0.2;
 
 export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count: number): Offer[] {
@@ -134,7 +138,7 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
       let v = levelFit(gap) * (L > curLvl ? 1 + s.career.upBias : 1);
       if (L >= 5) v *= mf * fameBoost * potBoost;
       if (L < curLvl - 1 && kind !== 'free' && kind !== 'first' && kind !== 'trial') v *= 0.25;
-      if (kind !== 'first' && gap > 8 && L < expLvl - 1) v *= Math.exp(-(expLvl - 1 - L) * 1.2);
+      if (gap > 8 && L < expLvl - 1) v *= Math.exp(-(expLvl - 1 - L) * 1.2);
       return Math.max(0, v) + (L === 2 ? 0.02 : 0);
     });
     const L = levels[rng.weightedIndex(w)];
@@ -154,9 +158,25 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
       code = list[rng.weightedIndex(cw)];
     }
     if (code !== home.code && L >= 4 && rng.next() > Math.min(1, Math.pow(Math.max(mf, 1e-6), 0.6))) continue;
-    const club = pickClubIn(s, rng, code, L, ovr, s.career.clubId);
+    const club = pickClubIn(s, rng, code, L, ovr, s.career.clubId, kind === 'window' || kind === 'free');
     if (!club || used.has(club.id)) continue;
     if (s.phase === 'youth' && kind === 'free' && !rng.chance(FREE_YOUTH)) continue;
+    if (kind === 'window' && age >= 22 && age <= 34 && ovr >= 52 && rng.chance(0.05)) {
+      const rc = rng.pick(RICH);
+      if (rc !== s.career.clubId?.split(':')[0]) {
+        const rich = pickClubIn(s, rng, rc, 3, ovr, s.career.clubId, false) ?? pickClubIn(s, rng, rc, 4, ovr, s.career.clubId, false);
+        if (rich && !used.has(rich.id)) {
+          const ro = makeOfferFor(s, rng, rich.id, 'money', { first: false });
+          if (ro) {
+            ro.wage = Math.round((ro.wage * rng.float(3, 6)) / 10) * 10;
+            ro.role = 'starter';
+            used.add(rich.id);
+            out.push(ro);
+            continue;
+          }
+        }
+      }
+    }
     const trial = kind === 'trial' || (kind === 'free' && code !== home.code && rng.chance(0.3));
     const offer = makeOfferFor(s, rng, club.id, kind, { trial, first: kind === 'first' });
     if (!offer) continue;
@@ -402,7 +422,7 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   const lvl = clubLvl(s, o.clubId);
   s.career.cur.lvl = lvl;
   s.career.maxLvl = Math.max(s.career.maxLvl, lvl);
-  s.career.bigClub = o.tag === 'renew' ? s.career.bigClub : lvl >= 5;
+  s.career.bigClub = o.tag === 'renew' ? s.career.bigClub : lvl >= 5 && hunit(`${s.cfg.seed}|big`) < Math.min(1, Math.pow(Math.max(mFor(s.p.country), 1e-6), 0.5));
   if (cs.country !== s.p.country) {
     s.ev.flags.abroad = s.week;
     s.fame.abroad = clamp(s.fame.abroad + 1.5 + lvl, 0, 100);

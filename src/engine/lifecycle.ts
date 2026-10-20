@@ -8,7 +8,7 @@ import { getClub, getCountry, leaguesOf } from './data';
 import { genOffers, genYouthJudgement, joinClub, leaveToFree, fallbackOffer, makeOfferFor, roleLabel, closeCurrent } from './transfer';
 import { presentOffers, hasPendingOffer } from './offers';
 import { fireEvent, getEvent, pushDecision } from './events';
-import { getCal } from './calibration';
+import { getCal, mFor } from './calibration';
 import { releaseEvent, scholarshipStep } from './youth';
 import { minProAge } from './stages';
 import { closeYouthCurrent } from './yleague';
@@ -187,14 +187,15 @@ export function scoutThreshold(country: string): number {
 }
 
 export function topClubScout(s: GameState, rng: Rng, age: number): void {
-  const sw = swOf(s.week);
   const season = seasonOf(s.week);
-  if (sw < 6 || sw > 40 || !s.career.clubId || s.decision || s.decQueue.length || s.ev.flags.topScoutS === season) return;
+  if (!windowNow(s) || !s.career.clubId || s.decision || s.decQueue.length || s.ev.flags.topScoutS === season) return;
   const country = getClub(s.career.clubId).country;
   if (shownOvr(s.ab, age) < scoutThreshold(country)) return;
   const top = leaguesOf(country)[0];
   const ranked = top.clubIds.slice().sort((a, b) => clubSt(s, b) - clubSt(s, a))  .filter((id) => id !== s.career.clubId).slice(0, 10);
-  if (!ranked.length || !rng.chance(0.3)) return;
+  const topLvl = clubLvl(s, ranked[0] ?? s.career.clubId);
+  const gate = topLvl >= 5 ? Math.min(1, Math.pow(Math.max(mFor(s.p.country), 1e-6), 0.6)) : 1;
+  if (!ranked.length || !rng.chance(0.3 * gate)) return;
   s.ev.flags.topScoutS = season;
   if (age >= 16) {
     const offers = rng.shuffle(ranked.slice()).slice(0, 3).map((id) => makeOfferFor(s, rng, id, 'first', { first: true })).filter((o): o is NonNullable<typeof o> => !!o);

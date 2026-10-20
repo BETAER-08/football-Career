@@ -11,6 +11,7 @@ import { leaveToFree, genOffers, joinClub, makeOfferFor, buildClubPeople, setupC
 import { presentOffers, hasPendingOffer } from './offers';
 import { playIntl } from './season';
 import { clubLvl, clubSt } from './world';
+import { windowNow } from './calendar';
 import { getClub, getCountry, leaguesOf } from './data';
 import type { GameState, PersonKind } from './types';
 import { TRAIT_LABEL } from './player';
@@ -184,6 +185,10 @@ registerFx('youthQuit', (s, { rng }) => {
   retirePlayer(s, rng, '축구를 포기하기로 했다.');
 });
 registerFx('offers', (s, { rng }, arg) => {
+  if (arg !== 'free' && s.career.clubId && !windowNow(s)) {
+    addLog(s, 'system', '이적 시장', '지금은 이적 시장이 닫혀 있다. 이적 시장이 열리면 다시 이야기가 나올 것이다.', []);
+    return;
+  }
   const curLvl = s.career.clubId ? clubLvl(s, s.career.clubId) : 1;
   if (arg === 'loan') {
     const list = genOffers(s, rng, 'window', 2).filter((o) => clubLvl(s, o.clubId) <= curLvl);
