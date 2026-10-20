@@ -235,8 +235,9 @@ export function dueScheduled(s: GameState): EventDef[] {
   return out;
 }
 
-export const P_CHOICE = { v: 0.13 };
-export const P_PASSIVE = { v: 0.28 };
+export const P_CHOICE = { v: 0.12 };
+export const MIN_GAP = { v: 1 };
+export const P_PASSIVE = { v: 0.42 };
 
 export function rollWeekly(s: GameState, rng: Rng): void {
   const phase = s.phase;
@@ -246,12 +247,15 @@ export function rollWeekly(s: GameState, rng: Rng): void {
   }
   const pool = byPhase[phase];
   if (!pool.length) return;
+  if (s.week - s.ev.lastRollW <= MIN_GAP.v) return;
   const pc = P_CHOICE.v * (phase === 'youth' ? 0.9 : 1);
-  if (!s.decision && rng.next() < pc) pickAndFire(s, rng, pool, true);
-  if (rng.next() < P_PASSIVE.v) pickAndFire(s, rng, pool, false);
+  if (!s.decision && rng.next() < pc) {
+    if (pickAndFire(s, rng, pool, true)) { s.ev.lastRollW = s.week; return; }
+  }
+  if (rng.next() < P_PASSIVE.v && pickAndFire(s, rng, pool, false)) s.ev.lastRollW = s.week;
 }
 
-function pickAndFire(s: GameState, rng: Rng, pool: EventDef[], interactive: boolean): void {
+function pickAndFire(s: GameState, rng: Rng, pool: EventDef[], interactive: boolean): boolean {
   const cands: EventDef[] = [];
   const w: number[] = [];
   for (const def of pool) {
@@ -261,9 +265,10 @@ function pickAndFire(s: GameState, rng: Rng, pool: EventDef[], interactive: bool
     cands.push(def);
     w.push(def.weight);
   }
-  if (!cands.length) return;
+  if (!cands.length) return false;
   const def = cands[rng.weightedIndex(w)];
   fireEvent(s, rng, def);
+  return true;
 }
 
 export function momentFor(s: GameState, trigger: string): EventDef | null {

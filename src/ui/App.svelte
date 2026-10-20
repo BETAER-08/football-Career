@@ -9,6 +9,7 @@
   import Vault from './Vault.svelte';
 
   let width = $state(window.innerWidth);
+  const z = $derived(Math.min(1.7, Math.max(0.85, width / 1600)));
   onMount(() => {
     const on = () => (width = window.innerWidth);
     window.addEventListener('resize', on);
@@ -25,7 +26,7 @@
     </div>
   </div>
 {:else}
-  <div class="app" class:compact={width < 1440}>
+  <div class="app" class:compact={width / z < 1500} style="zoom:{z};height:{100 / z}vh">
     {#if store.screen === 'menu'}
       <Menu />
     {:else if store.screen === 'setup'}
@@ -43,7 +44,7 @@
 {/if}
 
 <style>
-  .app { height: 100%; }
+  .app { width: 100%; }
   .narrow { height: 100%; display: grid; place-items: center; padding: 24px; text-align: center; }
   .narrow-card { max-width: 420px; }
   h1 { margin: 0 0 12px; }
