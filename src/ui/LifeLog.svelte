@@ -4,6 +4,8 @@
   import { dateOf, fmtDate, seasonLabel, seasonOf } from '../engine/time';
   import Chips from './Chips.svelte';
   import Lines from './Lines.svelte';
+  import DecisionCard from './DecisionCard.svelte';
+  import ResultCard from './ResultCard.svelte';
   import Icon from './Icon.svelte';
   import type { Grade, LogEntry } from '../engine/types';
 
@@ -196,6 +198,12 @@
       <button class="btn sm" class:on={filter === k} aria-pressed={filter === k} onclick={() => (filter = k)}>{label}</button>
     {/each}
   </div>
+  {#if !full}
+    <div class="slot scroll">
+      {#if store.game?.decision}<DecisionCard />{/if}
+      <ResultCard />
+    </div>
+  {/if}
   <div class="logs scroll" bind:this={scroller} onscroll={onScroll}>
     {#if rows.length}<div class="pin" aria-hidden="true">{pinned}</div>{/if}
     <div style="height:{topPad}px"></div>
@@ -245,6 +253,8 @@
 </div>
 
 <style>
+  .slot { flex: none; max-height: 58%; overflow-y: auto; display: flex; flex-direction: column; gap: var(--s2); padding: 0 var(--s2); }
+  .slot:empty { display: none; }
   .sub { margin: var(--s2) var(--s3); align-self: flex-start; }
   .entry { display: flex; gap: var(--s3); padding: 9px var(--s3); border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
   .entry:last-child { border-bottom: none; }
@@ -272,7 +282,9 @@
   .entry[data-g='worst'] .badge { font-weight: 900; }
   .star { background: none; border: none; cursor: pointer; color: var(--faint); padding: 0 2px; display: inline-flex; }
   .star.on { color: var(--amber); }
+  .panel:not(.fullp) { display: flex; flex-direction: column; }
   .logs { height: 520px; position: relative; }
+  .panel:not(.fullp) .logs { flex: 1; height: auto; min-height: 320px; }
   .fullp .logs { height: calc(70vh / var(--z, 1)); }
   .pin { position: sticky; top: 0; z-index: 3; padding: var(--s1) var(--s3); background: color-mix(in srgb, var(--accent) 18%, var(--panel2)); border-bottom: 1px solid var(--line); font-size: var(--fs-panel); font-weight: 800; letter-spacing: 0.04em; }
   .head { padding: var(--s2) var(--s3); background: var(--panel2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: var(--fs-panel); font-weight: 800; color: var(--muted); letter-spacing: 0.04em; }
