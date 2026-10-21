@@ -273,6 +273,7 @@ export interface Offer {
   yth?: 'youth' | 'scholar' | 'pro';
   note?: string;
   optionFee?: number;
+  renego?: boolean;
 }
 
 export type OfferMode = 'transfer' | 'renew' | 'loan' | 'free' | 'pre';

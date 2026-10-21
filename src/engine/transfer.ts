@@ -387,26 +387,125 @@ export function fallbackOffer(s: GameState, rng: Rng, kind: OfferGen['kind'], us
   };
 }
 
-export function negotiate(s: GameState, rng: Rng, o: Offer, demands: { wage: boolean; role: boolean; buyout: boolean }): { ok: boolean; offer: Offer; text: string; roll: number; need: number } {
-  const agent = s.fin.agentSkill;
-  const val = marketValue(s);
-  let fail = 0.04;
-  if (demands.wage) fail += 0.14;
-  if (demands.role) fail += 0.17;
-  if (demands.buyout) fail += 0.1;
-  fail -= agent / 600;
-  fail -= Math.min(0.08, val / 200000000);
+export const ROLE_UP: Record<Role, Role | null> = { backup: 'rotation', prospect: 'rotation', rotation: 'starter', starter: null };
+
+const ROLE_MARGIN: Record<Role, number> = { starter: -1.5, rotation: -5, prospect: -13, backup: -8.5 };
+
+export interface RoleUpOdds {
+  target: Role;
+  gap: number;
+  p: number;
+}
+
+export function roleUpOdds(s: GameState, o: Offer): RoleUpOdds | null {
+  const target = ROLE_UP[o.role];
+  if (!target) return null;
+  const age = ageAt(s.p.birth, s.week);
+  const margin = curOvr(s.ab) - clubStd(s, o.clubId) - 1.2 * Math.max(0, age - 31);
+  const gap = margin - ROLE_MARGIN[target];
+  let p = 1 / (1 + Math.exp(-(gap + 1.5) / 1.2));
+  p *= 0.85 + (0.3 * s.fin.agentSkill) / 100;
+  p *= 1 + Math.max(s.fame.dom, s.fame.abroad) / 300;
+  const last = s.career.seasons[s.career.seasons.length - 1];
+  if (last && last.ratingN > 0) {
+    const r = last.ratingSum / last.ratingN;
+    if (r >= 7.2) p *= 1.15;
+    else if (r < 6.5) p *= 0.8;
+  }
+  if (o.first) p *= 0.8;
+  if (o.mode === 'renew' && last && last.avail > 0 && last.apps / last.avail >= 0.7) p *= 1.15;
+  return { target, gap, p: clamp(p, 0.03, 0.92) };
+}
+
+export interface Demands { wage: boolean; role: boolean; buyout: boolean }
+
+export interface NegItem { k: 'wage' | 'role' | 'buyout'; ok: boolean }
+
+export interface NegResult {
+  ok: boolean;
+  offer: Offer;
+  text: string;
+  roll: number;
+  need: number;
+  items: NegItem[];
+  withdrawn: boolean;
+  denied: boolean;
+}
+
+function itemFail(s: GameState, o: Offer, k: 'wage' | 'buyout'): number {
+  let fail = 0.04 + (k === 'wage' ? 0.14 : 0.1);
+  fail -= s.fin.agentSkill / 600;
+  fail -= Math.min(0.08, marketValue(s) / 200000000);
   if (o.first) fail += 0.04;
-  fail = clamp(fail, 0.02, 0.7);
-  const roll = rng.next();
-  const need = fail;
-  if (!demands.wage && !demands.role && !demands.buyout) return { ok: true, offer: o, text: '조건을 그대로 받아들였다.', roll, need };
-  if (roll < need) return { ok: false, offer: o, text: '요구가 과하다는 이유로 구단이 제안을 거둬들였다.', roll, need };
+  return clamp(fail, 0.02, 0.7);
+}
+
+export function demandOdds(s: GameState, o: Offer): { wage: number; buyout: number; role: number | null } {
+  const r = roleUpOdds(s, o);
+  return { wage: 1 - itemFail(s, o, 'wage'), buyout: 1 - itemFail(s, o, 'buyout'), role: r ? r.p : null };
+}
+
+const ITEM_LABEL = { wage: '연봉 인상', role: '역할 상향', buyout: '바이아웃' };
+
+export function withdrawChance(o: Offer, d: Demands, gap: number | null): number {
+  let w = 0.2;
+  if (d.wage) w += 0.15;
+  if (d.buyout) w += 0.1;
+  if (d.role && gap !== null && gap <= -4) w += 0.15;
+  if (o.first) w += 0.05;
+  return clamp(w, 0.05, 0.8);
+}
+
+export function negotiate(s: GameState, rng: Rng, o: Offer, demandsIn: Demands): NegResult {
+  const odds = demandsIn.role ? roleUpOdds(s, o) : null;
+  const demands: Demands = { wage: demandsIn.wage, buyout: demandsIn.buyout, role: demandsIn.role && !!odds };
+  if (!demands.wage && !demands.role && !demands.buyout) {
+    return { ok: true, offer: o, text: '조건을 그대로 받아들였다.', roll: rng.next(), need: 100, items: [], withdrawn: false, denied: false };
+  }
+  const items: NegItem[] = [];
   const no = { ...o };
-  if (demands.wage) no.wage = Math.round(o.wage * 1.18);
-  if (demands.role && ROLE_VAL[o.role] < 3) no.role = (['backup', 'prospect', 'rotation', 'starter'] as Role[])[Math.min(3, ROLE_VAL[o.role] + 1)];
-  if (demands.buyout) no.buyout = Math.round(o.buyout * 0.55);
-  return { ok: true, offer: no, text: '협상이 타결됐다. 요구한 조건이 반영됐다.', roll, need };
+  let roll = 0;
+  let need = 0;
+  let first = true;
+  const note = (r: number, p: number) => {
+    if (first) {
+      roll = r;
+      need = p;
+      first = false;
+    }
+  };
+  if (demands.role && odds) {
+    const r = rng.next();
+    const ok = r < odds.p;
+    note(r, odds.p);
+    items.push({ k: 'role', ok });
+    if (ok) no.role = odds.target;
+  }
+  if (demands.wage) {
+    const p = 1 - itemFail(s, o, 'wage');
+    const r = rng.next();
+    const ok = r < p;
+    note(r, p);
+    items.push({ k: 'wage', ok });
+    if (ok) no.wage = Math.round(o.wage * 1.18);
+  }
+  if (demands.buyout) {
+    const p = 1 - itemFail(s, o, 'buyout');
+    const r = rng.next();
+    const ok = r < p;
+    note(r, p);
+    items.push({ k: 'buyout', ok });
+    if (ok) no.buyout = Math.round(o.buyout * 0.55);
+  }
+  const summary = items.map((i) => `${ITEM_LABEL[i.k]} ${i.ok ? '성공' : i.k === 'role' ? '거절' : '실패'}`).join(' · ');
+  const denied = items.some((i) => !i.ok);
+  if (!denied) return { ok: true, offer: no, text: `협상이 타결됐다. ${summary}.`, roll, need, items, withdrawn: false, denied: false };
+  const wp = withdrawChance(o, demands, odds ? odds.gap : null);
+  if (rng.chance(wp)) {
+    return { ok: false, offer: o, text: `요구가 과하다는 이유로 구단이 제안을 거둬들였다. ${summary}.`, roll, need, items, withdrawn: true, denied: true };
+  }
+  no.renego = true;
+  return { ok: true, offer: no, text: `${summary}. 구단은 원래 조건이라면 계약하겠다는 입장이다.`, roll, need, items, withdrawn: false, denied: true };
 }
 
 const TRIAL_YOUTH = 0.2;

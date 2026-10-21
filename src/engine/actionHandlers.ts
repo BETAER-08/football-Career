@@ -8,9 +8,9 @@ import { canStudy, startStudy, resignCoach } from './coach';
 import { setPath, type PathId } from './postcareer';
 import { getClub, getCountry } from './data';
 import { makePerson, randomPos } from './relations';
-import { ROLE_VAL } from './transfer';
+import { ROLE_UP } from './transfer';
 import { applyTransferRequest, withdrawTransferRequest } from './market';
-import type { GameState, Role } from './types';
+import type { GameState } from './types';
 
 function pay(s: GameState, amount: number): void {
   const fromCash = Math.min(s.fin.cash, amount);
@@ -107,8 +107,7 @@ registerAction('roleUp', (s, _c, _a, grade) => {
   const c = s.career.contract;
   if (!c) return;
   if (grade === 'great' || grade === 'ok') {
-    const roles: Role[] = ['backup', 'prospect', 'rotation', 'starter'];
-    c.role = roles[Math.min(3, ROLE_VAL[c.role] + 1)];
+    c.role = ROLE_UP[c.role] ?? c.role;
     if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel + 3, -100, 100);
   }
 });
