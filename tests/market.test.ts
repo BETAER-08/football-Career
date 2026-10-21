@@ -111,7 +111,7 @@ describe('이적시장 최소 제안 보장', () => {
           onDecision: (d) => {
             if (d.kind === 'offer' && d.ref === 'window' && d.text.includes('이적시장이 열렸다')) {
               const key = marketKey(at(s, d.w));
-              if (!got.has(key)) got.set(key, d.offers.filter((o) => !o.loan).length);
+              if (!got.has(key)) got.set(key, d.offers.filter((o) => !o.loan || !!o.optionFee).length);
             }
             return false;
           },
@@ -414,7 +414,7 @@ describe('이적 요청 예약', () => {
       s.career.contract!.endW = Math.max(s.career.contract!.endW, s.week + 52 * 4);
     }
     expect(batch).not.toBeNull();
-    expect(batch!.offers.filter((o) => !o.loan).length).toBeGreaterThanOrEqual(summer ? 3 : 2);
+    expect(batch!.offers.filter((o) => !o.loan || !!o.optionFee).length).toBeGreaterThanOrEqual(summer ? 3 : 2);
     expect(s.career.transferReq).toBeGreaterThanOrEqual(0);
   });
 
@@ -437,7 +437,7 @@ describe('이적 요청 예약', () => {
     expect(panel).not.toBeNull();
     expect(s.decision).not.toBeNull();
     expect(s.decision!.kind).toBe('offer');
-    expect(s.decision!.offers.filter((o) => !o.loan).length).toBeGreaterThanOrEqual(summer ? 3 : 2);
+    expect(s.decision!.offers.filter((o) => !o.loan || !!o.optionFee).length).toBeGreaterThanOrEqual(summer ? 3 : 2);
     declineAll(s);
     expect(s.career.transferReq).toBeGreaterThanOrEqual(0);
     s.ev.actCd = {};

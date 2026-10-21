@@ -1,10 +1,8 @@
 import { getCountry } from './data';
-import { LEVEL_VALUE_MULT } from '../data/countries';
 import { Rng, clamp } from './rng';
-import { clubLvl, clubStd } from './world';
-import { curOvr } from './attributes';
+import { anchored, curOvr } from './attributes';
 import { ageAt } from './time';
-import type { GameState } from './types';
+import type { GameState, Pos } from './types';
 
 export function priceF(code: string): number {
   return 0.55 + getCountry(code).econ * 0.75;
@@ -23,24 +21,75 @@ export function currentWage(s: GameState): number {
   return 0;
 }
 
-export function marketValue(s: GameState): number {
-  const ovr = curOvr(s.ab);
-  const age = ageAt(s.p.birth, s.week);
-  let lvl = 2;
-  let std = 47;
-  if (s.career.clubId) {
-    lvl = clubLvl(s, s.career.clubId);
-    std = clubStd(s, s.career.clubId);
+const VALUE_POINTS: [number, number][] = [
+  [45, 500], [50, 3000], [55, 8000], [60, 20000], [65, 60000], [70, 200000], [75, 700000],
+  [80, 2500000], [85, 7000000], [88, 11000000], [90, 15000000], [93, 22000000]
+];
+
+export function baseValue(ovr: number): number {
+  if (ovr <= VALUE_POINTS[0][0]) return VALUE_POINTS[0][1];
+  const last = VALUE_POINTS[VALUE_POINTS.length - 1];
+  if (ovr >= last[0]) return last[1];
+  for (let i = 1; i < VALUE_POINTS.length; i++) {
+    const [x1, y1] = VALUE_POINTS[i];
+    if (ovr <= x1) {
+      const [x0, y0] = VALUE_POINTS[i - 1];
+      return Math.exp(Math.log(y0) + ((ovr - x0) / (x1 - x0)) * (Math.log(y1) - Math.log(y0)));
+    }
   }
-  const base = 50000 * LEVEL_VALUE_MULT[lvl];
-  const spread = Math.exp(clamp((ovr - std) / 9, -3, 2.4));
-  let ageF = 1;
-  if (age <= 21) ageF = 1 + clamp((s.ab.pot - ovr) / 40, 0, 0.8);
-  else if (age >= 28) ageF = Math.max(0.15, 1 - 0.11 * (age - 27));
-  const fameF = 1 + s.fame.dom / 250 + s.fame.abroad / 150;
-  const pf = priceF(s.p.country);
-  const v = base * spread * ageF * fameF * (0.8 + pf * 0.3) * (age < 15 ? 0.05 : age < 17 ? 0.25 : 1);
-  return Math.max(10, Math.round(v));
+  return last[1];
+}
+
+export function ageValueF(age: number): number {
+  if (age <= 19) return 1.4;
+  if (age <= 23) return 1.3;
+  if (age <= 27) return 1;
+  if (age <= 29) return 0.75;
+  if (age <= 31) return 0.5;
+  if (age <= 33) return 0.3;
+  return 0.15;
+}
+
+export function posValueF(pos: Pos): number {
+  if (pos === 'GK') return 0.7;
+  if (pos === 'CB' || pos === 'LB' || pos === 'RB') return 0.9;
+  if (pos === 'ST' || pos === 'LW' || pos === 'RW') return 1.15;
+  return 1;
+}
+
+export function formValueF(s: GameState): number {
+  const last = s.career.seasons[s.career.seasons.length - 1];
+  if (!last || last.apps <= 0 || last.ratingN <= 0) return 0.85;
+  const avg = last.ratingSum / last.ratingN;
+  return avg >= 7.3 ? 1.2 : avg >= 6.8 ? 1 : avg >= 6.3 ? 0.9 : 0.8;
+}
+
+export interface ValueParts { ovr: number; base: number; age: number; ageF: number; potF: number; posF: number; formF: number; fameF: number; injF: number; value: number }
+
+export function valueParts(s: GameState): ValueParts {
+  const ovr = anchored(curOvr(s.ab));
+  const age = ageAt(s.p.birth, s.week);
+  const base = baseValue(ovr);
+  const ageF = ageValueF(age);
+  const potF = age <= 23 ? 1 + Math.max(0, s.ab.pot - ovr) / 30 : 1;
+  const posF = posValueF(s.ab.pos);
+  const formF = formValueF(s);
+  const fameF = 1 + s.fame.abroad / 200;
+  const injF = s.st.injury && s.st.injury.weeksLeft >= 12 ? 0.7 : 1;
+  const value = Math.max(1, Math.round(base * ageF * potF * posF * formF * fameF * injF));
+  return { ovr, base, age, ageF, potF, posF, formF, fameF, injF, value };
+}
+
+export function marketValue(s: GameState): number {
+  return Math.max(1, valueParts(s).value);
+}
+
+export function formatMarket(man: number): string {
+  const v = Math.abs(Math.round(man));
+  const sign = man < 0 ? '-' : '';
+  if (v < 10000) return `${sign}${v.toLocaleString('ko-KR')}만 원`;
+  if (v < 10000000) return `${sign}${(v / 10000).toFixed(1)}억 원`;
+  return `${sign}${Math.round(v / 10000).toLocaleString('ko-KR')}억 원`;
 }
 
 export function weeklyFinance(s: GameState, rng: Rng): void {

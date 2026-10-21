@@ -1,7 +1,7 @@
 import { Rng, clamp } from './rng';
 import { clubLvl } from './world';
 import { getClub, getCountry } from './data';
-import { formatKRW } from './finance';
+import { formatKRW, formatMarket } from './finance';
 import { moveYouthTo } from './youthmove';
 import { closeMarket, negotiate, trialPass, joinClub, roleLabel, genOffers, fallbackOffer, leaveToFree, feeNote } from './transfer';
 import { clubDeal, youthDeal, extendContract, signPre, modeLabel, expireToFree } from './market';
@@ -14,7 +14,7 @@ import { ageAt } from './time';
 
 export function offerLabel(s: GameState, o: Offer): string {
   const c = getClub(o.clubId);
-  return `[${modeLabel(o)}] ${c.name} · ${getCountry(c.country).ko} · ${roleLabel(o.role)} · 연봉 ${formatKRW(o.wage)}${o.fee ? ` · 이적료 ${formatKRW(o.fee)}` : ''}${o.trial ? ' · 입단 테스트' : ''}${o.tag === 'money' ? ' · 고액 연봉 제안' : ''}`;
+  return `[${modeLabel(o)}] ${c.name} · ${getCountry(c.country).ko} · ${roleLabel(o.role)} · 연봉 ${formatKRW(o.wage)}${o.fee ? ` · ${o.first || o.yth ? '유스 보상금' : '이적료'} ${formatMarket(o.fee)}` : ''}${o.optionFee ? ` · 임대 · 완전 이적 옵션 ${formatMarket(o.optionFee)}` : ''}${o.trial ? ' · 입단 테스트' : ''}${o.tag === 'money' ? ' · 고액 연봉 제안' : ''}`;
 }
 
 export function hasPendingOffer(s: GameState): boolean {
@@ -105,7 +105,7 @@ export function resolveOffer(s: GameState, rng: Rng, d: Decision, idx: number, d
   }
   const club = getClub(final.clubId).name;
   if (final.yth === 'youth' || final.yth === 'scholar') {
-    moveYouthTo(s, rng, final.clubId, `${club}의 ${final.yth === 'scholar' ? '장학 계약' : 'U19·리저브 합류'} 제안을 받아들여 유스 이적했다. 육성 보상금 ${formatKRW(final.fee ?? 0)}.`, final.yth === 'scholar');
+    moveYouthTo(s, rng, final.clubId, `${club}의 ${final.yth === 'scholar' ? '장학 계약' : 'U19·리저브 합류'} 제안을 받아들여 유스 이적했다. 유스 보상금 ${formatMarket(final.fee ?? 0)}.`, final.yth === 'scholar');
     if (final.yth === 'scholar' && s.career.contract) s.career.contract.wage = final.wage;
     closeMarket(s);
     return { title: `${club} 유스 이적`, grade: 'ok', roll: Math.round(neg.roll * 100), need: Math.round(neg.need * 100), text: `${neg.text} ${club}에서 ${final.note ?? '새 도전을 시작한다'}.`, changes: [], later: false, w };

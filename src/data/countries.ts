@@ -61,6 +61,5 @@ export const COUNTRIES: Country[] = rows.map((r) =>
 export const COUNTRY_BY_CODE: Record<string, Country> = Object.fromEntries(COUNTRIES.map((c) => [c.code, c]));
 
 export const LEVEL_STARTER_OVR: Record<number, number> = { 2: 47, 3: 56, 4: 64, 5: 72, 6: 79 };
-export const LEVEL_VALUE_MULT: Record<number, number> = { 2: 0.3, 3: 1, 4: 2, 5: 4, 6: 6 };
 export const LEVEL_WAGE_MULT: Record<number, number> = { 2: 0.6, 3: 1, 4: 2.2, 5: 5, 6: 9 };
 export const LEVEL_SCORE_WEIGHT: Record<number, number> = { 2: 2, 3: 4, 4: 7, 5: 12, 6: 18 };

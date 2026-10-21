@@ -11,7 +11,7 @@ import { STAGE_AGE, STAGE_REF, minProAge } from './stages';
 import { addLog } from './log';
 import { hunit } from './streams';
 import { windowIdx, windowOpenW, windowCloseW, windowNow, nextWindowW } from './calendar';
-import { genOffers, makeOfferFor, pickOne, fallbackOffer, targetLevel, compFee, clubWageCap, joinClub, leaveToFree, closeMarket, dropQueuedOffers, marketKey, contractWeeksLeft, transferFee, freeTerms, roleLabel } from './transfer';
+import { genOffers, makeOfferFor, pickOne, fallbackOffer, targetLevel, compFee, capByBudget, leftFeeF, sellerFeeF, clubWageCap, joinClub, leaveToFree, closeMarket, dropQueuedOffers, marketKey, contractWeeksLeft, transferFee, freeTerms, roleLabel } from './transfer';
 import { presentOffers, hasPendingOffer } from './offers';
 import type { GameState, Offer, OfferMode } from './types';
 
@@ -53,7 +53,7 @@ export function modeLabel(o: Offer): string {
 function externalOffer(s: GameState, rng: Rng, clubId: string, mode: OfferMode, first = false): Offer | null {
   const o = makeOfferFor(s, rng, clubId, first ? 'first' : 'window', { mode, first });
   if (!o) return null;
-  if (mode === 'transfer') o.fee = transferFee(s, rng);
+  if (mode === 'transfer') o.fee = transferFee(s, rng, clubId);
   else freeTerms(o, rng);
   return o;
 }
@@ -79,7 +79,7 @@ function fallbackDistinct(s: GameState, rng: Rng, used: Set<string>, mode: Offer
   if (!o) return null;
   o.trial = false;
   o.mode = mode;
-  if (mode === 'transfer') o.fee = transferFee(s, rng);
+  if (mode === 'transfer') o.fee = transferFee(s, rng, o.clubId);
   else freeTerms(o, rng);
   used.add(o.clubId);
   return o;
@@ -225,6 +225,7 @@ export function buildBatch(s: GameState, rng: Rng, summer: boolean, n: number): 
     const counter = renewalCounter(s, out);
     if (counter > 0) renew = renewOffer(s, rng, counter);
   }
+  for (let i = 0; i < out.length; i++) out[i] = capByBudget(s, out[i]);
   const winter = windowIdx(s) === 1;
   if (winter && contractWeeksLeft(s) <= 26 && !s.career.pre) {
     for (const o of out) {
@@ -476,7 +477,8 @@ export function clubDeal(s: GameState, rng: Rng, o: Offer): DealOut {
   let p = 0.68;
   p += left <= 0.5 ? 0.2 : left <= 1 ? 0.1 : left >= 3 ? -0.1 : left >= 2 ? -0.04 : 0;
   p += { starter: -0.15, rotation: -0.05, prospect: 0.05, backup: 0.1 }[con.role];
-  p += clamp((fee / Math.max(1, val) - 1) * 0.5, -0.25, 0.25);
+  const fair = Math.max(1, val * leftFeeF(left) * sellerFeeF(clubLvl(s, s.career.clubId)));
+  p += clamp((fee / fair - 1) * 0.5, -0.25, 0.25);
   if (s.career.transferReq >= 0) p += s.career.reqStance === 'refused' ? -0.3 : 0.25;
   if (s.people.coach) p -= clamp(s.people.coach.rel, -60, 60) / 600;
   p = clamp(p, 0.05, 0.95);

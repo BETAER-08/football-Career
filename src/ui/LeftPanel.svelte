@@ -10,6 +10,7 @@
   import { mrz, seed32, whyText } from './format';
   import { licenseLabel, licenseLevel, LICENSE_NAME } from '../engine/coach';
   import { hashString } from '../engine/rng';
+  import { formatMarket } from '../engine/finance';
 
   const g = $derived(store.game!);
   const age = $derived(ageAt(g.p.birth, g.week));
@@ -24,6 +25,7 @@
   const keys = $derived<readonly AttrKey[]>(tab === 'tech' ? (isGk ? [...GK_KEYS, ...TECH_KEYS.slice(0, 3)] : TECH_KEYS) : tab === 'phys' ? PHYS_KEYS : MENTAL_KEYS);
   const ovr = $derived(shownOvr(g.ab, age));
   const club = $derived(clubId ? getClub(clubId) : null);
+  const valDelta = $derived(g.snap.val > 0 ? Math.round(((g.fame.value - g.snap.val) / g.snap.val) * 100) : 0);
 
   $effect(() => {
     void age; void clubId;
@@ -55,6 +57,7 @@
     </div>
     <div class="rows">
       <div class="kv"><span>출신 가정</span><span class="mono dots" title="소득 분위">{dots(g.p.incomeTier)}</span></div>
+      {#if g.phase === 'youth' || g.phase === 'pro'}<div class="kv"><span>시장가치</span><span class="mono">{formatMarket(g.fame.value)}<small class={valDelta >= 0 ? 'up' : 'down'}> {valDelta >= 0 ? '▲' : '▼'}{Math.abs(valDelta)}%</small></span></div>{/if}
       <div class="kv"><span>학력</span><span>{eduLabels[Math.min(3, g.life.eduLevel)]}</span></div>
       <div class="kv"><span>포지션</span><span>{POS_LABEL[g.ab.pos]}{secondary.length ? ` · 부: ${secondary.map(([k, v]) => `${k} ${v}`).join(', ')}` : ''}</span></div>
       <div class="kv"><span>주발 · 체격</span><span>{{ R: '오른발', L: '왼발', B: '양발' }[g.p.foot]} · {g.ab.height}cm {g.ab.weight}kg</span></div>

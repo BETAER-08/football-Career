@@ -3,7 +3,7 @@
   import { store } from './store.svelte';
   import { summaryText, renderShareCard } from './share';
   import { getCountry } from '../engine/data';
-  import { formatKRW } from '../engine/finance';
+  import { formatKRW, formatMarket } from '../engine/finance';
   import { START_YEAR } from '../engine/time';
   import type { EndData } from '../engine/enddata';
 
@@ -72,7 +72,9 @@
         {#if d.ballons || d.podiums}<div class="kv"><span>발롱도르</span><span class="mono">수상 {d.ballons}회 · 포디움 {d.podiums ?? d.ballons}회</span></div>{/if}
         <div class="kv"><span>A매치</span><span class="mono">{d.caps}경기 {d.natGoals}골</span></div>
         <div class="kv"><span>최종 순자산</span><span class="mono up">{formatKRW(d.netWorth)}</span></div>
-        <div class="kv"><span>선수 시절 최고 시장가치</span><span class="mono">{formatKRW(d.peakValue)}</span></div>
+        <div class="kv"><span>선수 시절 최고 시장가치</span><span class="mono">{formatMarket(d.peakValue)}</span></div>
+        <div class="kv"><span>누적 이적료 (나를 사기 위해 쓰인 금액)</span><span class="mono">{formatMarket(d.feeSum)}</span></div>
+        <div class="kv"><span>최고 이적료</span><span class="mono">{formatMarket(d.feeMax)}</span></div>
       </div></div>
       <div class="panel"><div class="panel-h">트로피 · 개인상</div><div class="panel-b col" style="gap:3px;max-height:220px;overflow:auto">
         {#each d.trophies as t}<div>🏆 {t.year} {t.name} <span class="faint">· {t.club}</span></div>{/each}

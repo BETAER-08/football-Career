@@ -1,6 +1,6 @@
 <script lang="ts">
   import { store } from './store.svelte';
-  import { formatKRW } from './format';
+  import { formatKRW, formatMarket } from './format';
   import type { SeasonReview, TableRow } from '../engine/types';
 
   const g = $derived(store.game!);
@@ -93,7 +93,7 @@
               <b>변화 요약 <span class="faint" style="font-weight:500">시즌 시작 대비</span></b>
               <div class="stats four">
                 <div><b class="mono" class:up={r.change.ovr > 0} class:down={r.change.ovr < 0}>{sgn(r.change.ovr)}</b><span>오버롤</span></div>
-                <div><b class="mono" class:up={r.change.val > 0} class:down={r.change.val < 0}>{r.change.val >= 0 ? '+' : '−'}{formatKRW(Math.abs(r.change.val))}</b><span>시장가치</span></div>
+                <div><b class="mono" class:up={r.change.val > 0} class:down={r.change.val < 0}>{r.change.val >= 0 ? '+' : '−'}{formatMarket(Math.abs(r.change.val))}</b><span>시장가치</span></div>
                 <div><b class="mono" class:up={r.change.wage > 0} class:down={r.change.wage < 0}>{r.change.wage >= 0 ? '+' : '−'}{formatKRW(Math.abs(r.change.wage))}</b><span>연봉</span></div>
                 <div><b class="mono" class:up={r.change.fame > 0} class:down={r.change.fame < 0}>{sgn(r.change.fame)}</b><span>명성</span></div>
               </div>
