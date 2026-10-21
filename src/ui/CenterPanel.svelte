@@ -1,22 +1,29 @@
 <script lang="ts">
-  import { store } from './store.svelte';
   import TeamBox from './TeamBox.svelte';
   import FocusBox from './FocusBox.svelte';
-  import DecisionCard from './DecisionCard.svelte';
-  import ResultCard from './ResultCard.svelte';
   import LifeLog from './LifeLog.svelte';
-
-  const pending = $derived(!!store.game?.decision);
 </script>
 
 <div class="center scroll" data-tour="center">
-  {#if pending}<DecisionCard />{/if}
-  <ResultCard />
-  <TeamBox />
-  <FocusBox />
-  <LifeLog limit={60} />
+  <div class="top">
+    <TeamBox />
+    <FocusBox />
+  </div>
+  <div class="logwrap"><LifeLog limit={60} /></div>
 </div>
 
 <style>
-  .center { display: flex; flex-direction: column; gap: var(--s3); height: 100%; padding-right: 2px; }
+  .center { display: flex; flex-direction: column; gap: var(--s2); height: 100%; padding-right: 2px; }
+  .top { display: flex; flex-direction: column; gap: var(--s2); flex: none; }
+  .logwrap { flex: 1 1 auto; min-height: 460px; display: flex; flex-direction: column; }
+  .logwrap :global(> .panel) { flex: 1; min-height: 0; }
+  .top :global(.grid) { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--s2); padding: var(--s2); }
+  .top :global(.kv) { font-size: 12px; line-height: 1.25; }
+  .top :global(.cap) { padding-top: var(--s1); }
+  .top :global(.h) { font-size: 11px; }
+  .top :global(.card) { padding: var(--s2); gap: var(--s1); }
+  .top :global(.big) { font-size: 15px; }
+  .top :global(.panel-b) { padding: var(--s2); }
+  .top :global(.foc) { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+  .top :global(.fc) { padding: var(--s1) var(--s2); }
 </style>
