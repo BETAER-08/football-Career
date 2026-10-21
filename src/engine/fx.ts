@@ -377,6 +377,8 @@ export interface CondEnv {
   seasonEnd: (s: GameState) => boolean;
   winterBreak: (s: GameState) => boolean;
   springAutumn: (s: GameState) => boolean;
+  upperClub: (s: GameState) => boolean;
+  upperAbroad: (s: GameState) => boolean;
 }
 let condEnv: CondEnv | null = null;
 export function setCondEnv(e: CondEnv): void {
@@ -427,6 +429,8 @@ const getters: Record<string, Getter> = {
   seasonEnd: (s) => (condEnv!.seasonEnd(s) ? 1 : 0),
   winterBreak: (s) => (condEnv!.winterBreak(s) ? 1 : 0),
   springAutumn: (s) => (condEnv!.springAutumn(s) ? 1 : 0),
+  upperClub: (s) => (condEnv!.upperClub(s) ? 1 : 0),
+  upperAbroad: (s) => (condEnv!.upperAbroad(s) ? 1 : 0),
   dorm: (s) => (s.p.dorm && s.fin.housing === 'dorm' ? 1 : 0),
   retired: (s) => (s.career.retired ? 1 : 0),
   caps: (s) => s.nat.caps,
@@ -462,6 +466,8 @@ const getters: Record<string, Getter> = {
   partnered: (s) => (s.life.romance === 'dating' || s.life.romance === 'married' ? 1 : 0),
   contractLeft: (s) => (s.career.contract ? Math.max(0, s.career.contract.endW - s.week) : 0),
   hasClub: (s) => (s.career.clubId ? 1 : 0),
+  hasReq: (s) => (s.career.transferReq >= 0 ? 1 : 0),
+  hasPre: (s) => (s.career.pre ? 1 : 0),
   coachFame: (s) => s.coach.fame,
   standing: (s) => s.coach.standing,
   license: (s) => (s.coach.licenses.P ? 4 : s.coach.licenses.A ? 3 : s.coach.licenses.B ? 2 : s.coach.licenses.C ? 1 : 0),

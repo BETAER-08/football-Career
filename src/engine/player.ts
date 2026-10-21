@@ -48,13 +48,17 @@ function hiddenInit(rng: Rng, incomeTier: number, supportive: number): Record<Hi
   return h;
 }
 
-function rumorText(pot: number, rng: Rng): string {
+function rumorText(pot: number, start: number, rng: Rng): string {
   const p = pot + rng.normal(0, 3.5);
-  if (p >= 84) return '스카우트들 사이에서 "몇 년에 한 번 나올 재능"이라는 말이 돈다.';
-  if (p >= 77) return '또래 최상위권이라는 평가가 스카우트 사이에 퍼져 있다.';
-  if (p >= 70) return '꾸준히 크면 프로 무대까지는 닿을 수 있다는 소문이다.';
-  if (p >= 62) return '재능은 평범하지만 성실함이 장점이라는 평이다.';
-  return '재능보다 노력으로 승부를 봐야 한다는 이야기가 들린다.';
+  const lo = Math.round(Math.max(start + 4, pot - 5));
+  const hi = Math.round(Math.min(95, pot + 5));
+  const now = start >= 54 ? '지금도 또래 중 눈에 띄는 완성도이고' : start >= 47 ? '지금은 또래 평균 정도이고' : '지금은 아직 다듬을 곳이 많고';
+  const tail = `시작 오버롤 ${Math.round(start)}, 잠재력은 ${lo}~${hi}쯤으로 점쳐진다.`;
+  if (p >= 84) return `스카우트들 사이에서 "몇 년에 한 번 나올 재능"이라는 말이 돈다. ${now} ${tail}`;
+  if (p >= 77) return `또래 최상위권이라는 평가가 스카우트 사이에 퍼져 있다. ${now} ${tail}`;
+  if (p >= 70) return `꾸준히 크면 프로 무대까지는 닿을 수 있다는 소문이다. ${now} ${tail}`;
+  if (p >= 62) return `재능은 평범하지만 성실함이 장점이라는 평이다. ${now} ${tail}`;
+  return `재능보다 노력으로 승부를 봐야 한다는 이야기가 들린다. ${now} ${tail}`;
 }
 
 function famExpPick(rng: Rng): string {
@@ -94,6 +98,25 @@ function storyLines(rng: Rng, s: GameState, origin: RouletteResult, famExp: stri
   return lines.slice(0, 4);
 }
 
+export const START_MAX = 60;
+
+export function scaleToOvr(a: Record<AttrKey, number>, pos: Pos, target: number): void {
+  const base = {} as Record<AttrKey, number>;
+  for (const k of ALL_ATTRS) base[k] = a[k];
+  const want = rawForAnchored(target);
+  let lo = 0.2;
+  let hi = 6;
+  for (let i = 0; i < 40; i++) {
+    const m = (lo + hi) / 2;
+    const test = {} as Record<AttrKey, number>;
+    for (const k of ALL_ATTRS) test[k] = clamp(base[k] * m, 1, 20);
+    if (ovrOf(test, pos) < want) lo = m;
+    else hi = m;
+  }
+  const f = (lo + hi) / 2;
+  for (const k of ALL_ATTRS) a[k] = clamp(base[k] * f, 1, 20);
+}
+
 export interface Created { state: GameState; origin: RouletteResult }
 
 export function originFromSeed(cfg: GameConfig): RouletteResult {
@@ -130,8 +153,12 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   const weight = Math.round(bmi * (height / 100) * (height / 100));
   const build = bmi < 17.4 ? '마름' : bmi > 20.2 ? '건장' : '보통';
   const pos: Pos = cfg.pos === 'random' ? randomPos(rng) : cfg.pos;
+  const startLo = START_MIN[origin.level] ?? 40;
+  const startOvr = Math.round(rng.float(startLo, START_MAX) * 10) / 10;
   let pot = rng.normal(potentialMean(origin.level, country.infra), 8);
   if (rng.chance(0.02)) pot += 8;
+  pot += (startOvr - startLo) * 0.5;
+  pot = Math.max(pot, (startOvr + 8.1) / 1.12);
   pot = clamp(Math.round(pot * 10) / 10, 38, 93);
   const nz = () => rng.normal(0, 1);
   const ceil = makeCeil(pos, pot, nz);
@@ -145,9 +172,8 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     prev[k] = a[k];
   }
   for (const k of ALL_ATTRS) ceil[k] = Math.min(20, ceil[k] * 1.14);
-  const start0 = ovrOf(a, pos);
-  const floor = rawForAnchored((START_MIN[origin.level] ?? 40) - YOUTH_BONUS);
-  if (start0 < floor) for (const k of ALL_ATTRS) a[k] = clamp(a[k] * (floor / Math.max(1, start0)), 1, 20);
+  scaleToOvr(a, pos, startOvr - YOUTH_BONUS);
+  for (const k of ALL_ATTRS) if (ATTR_GROUP[k] !== 'gk' || pos === 'GK') ceil[k] = Math.max(ceil[k], a[k]);
   const hid = hiddenInit(rng, incomeTier, supportive);
   const refYear = START_YEAR;
   const st0 = { nextId: 1 };
@@ -185,7 +211,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     traits: [] as string[], pot: Math.min(95, Math.round(pot * 1.12 * 10) / 10), playShare: 0.6, growthMul: 1, dispAdj: 0, hFrac0: height / finalHeight, bmi0: weight / ((height / 100) * (height / 100))
   };
   ab.dispAdj = YOUTH_BONUS;
-  const rumor = rumorText(pot, rng);
+  const rumor = rumorText(Math.min(95, pot * 1.12), startOvr, rng);
   const state: GameState = {
     v: STATE_VERSION,
     cfg,
@@ -196,7 +222,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     endReason: '',
     p: {
       name, en, birth: { y: START_BIRTH_YEAR, m: month, d: day }, country: country.code, hometown, hometownEn, dorm, foot, build, growth,
-      finalHeight, story: [], rumor, startClubId: club.id, startLeagueId: lgStat, startLvl: origin.level, incomeTier, supportive, famExp
+      finalHeight, story: [], rumor, startClubId: club.id, startLeagueId: lgStat, startLvl: origin.level, startOvr, incomeTier, supportive, famExp
     },
     ab,
     hid,
@@ -214,7 +240,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
       eduLevel: 0, eduProgress: 0, studying: true, lang: { [country.lang]: 100 }, romance: 'single', romanceW: 0, children: 0, divorced: false,
       mil: country.mil ? 'pending' : 'none', milEnd: 0, habit: 0, vacationW: -99
     },
-    nat: { ageRecs: [], caps: 0, goals: 0, youthCaps: 0, status: 'none', declined: 0, lastCallW: -99, tournaments: [], wcCount: 0, debut: false },
+    nat: { stage: 'none', stageW: -1, lastWhy: [], matches: [], pool: {}, poolS: {}, coachStyle: 'attack', coachUntil: -1, mins10: [], injEndW: -99, ageRecs: [], caps: 0, goals: 0, youthCaps: 0, status: 'none', declined: 0, lastCallW: -99, tournaments: [], wcCount: 0, debut: false },
     career: {
       clubId: club.id, contract: {
         clubId: club.id, role: 'prospect', wage: 0, startW: 0, endW: 52 * 6, signing: 0, appBonus: 0, goalBonus: 0, titleBonus: 0, buyout: 0, loanFrom: '', youth: true
@@ -225,7 +251,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
       contStage: 0, contComp: '', contQualified: '', contPts: 0, contGames: 0, seasonMinsAcc: 0, seasonAvailAcc: 0, lastSeasonPos: 0, youthJudged: false, youthFailW: -1, youthStage: 'U15', stageSeasons: 0, scholar: 0,
       signed: false, track: 'pro', yCur: emptyRec(0, club.id, `${club.name} U15`, '', '', origin.level), ySeasons: [], yTrophies: [], yAwards: [],
       entry: { step: 0, trainW: -1, squadW: -1, squadN: 0, jumps: 0, jumpW: -1, boostEnd: -1, callups: 0, callupSeason: -1, doubleJump: false, midChecked: -1 },
-      promisedRole: 'prospect', loanOut: false, nextLoanClub: ''
+      promisedRole: 'prospect', loanOut: false, nextLoanClub: '', transferReq: -1, reqStance: '', mkt: null, pre: null, faPressureW: -1, resCur: emptyRec(0, club.id, '', '', '', origin.level), resSeasons: []
     },
     coach: {
       entered: false, licenses: { C: 0, B: 0, A: 0, P: 0 }, studying: '', studyEnd: 0, coachSeasons: 0, role: 'none', clubId: '', natCountry: '', contract: null,

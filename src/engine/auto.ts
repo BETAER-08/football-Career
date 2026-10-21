@@ -1,5 +1,6 @@
 import { Rng } from './rng';
 import { bestOfferIndex, offerScore } from './offers';
+import { contractWeeksLeft } from './transfer';
 import { clubLvl } from './world';
 import type { Decision, GameState } from './types';
 import { focusList } from './lifestyle';
@@ -50,11 +51,18 @@ export function autoDecide(s: GameState, rng: Rng, d: Decision): { idx: number; 
     if (d.ref === 'window' && s.career.clubId) {
       const cur = s.career.contract;
       const lvl = clubLvl(s, s.career.clubId);
-      const o = d.offers[best];
       const curScore = lvl * 2.2 + ({ starter: 3, rotation: 2, prospect: 1, backup: 0 }[cur?.role ?? 'backup']) * 2.0 + Math.log(Math.max(100, cur?.wage ?? 100)) * 0.35 + s.hid.ambition / 60;
-      const sc = offerScore(s, o);
       const stay = s.hid.loyalty / 80;
-      if (sc > curScore + 0.6 + stay) return { idx: best, demands: '' };
+      let ext = -1;
+      let extScore = -1e9;
+      d.offers.forEach((o, i) => {
+        if (o.mode === 'renew') return;
+        const sc = offerScore(s, o);
+        if (sc > extScore) { extScore = sc; ext = i; }
+      });
+      const renewIdx = d.offers.findIndex((o) => o.mode === 'renew');
+      if (ext >= 0 && extScore > curScore + 0.6 + stay) return { idx: ext, demands: '' };
+      if (renewIdx >= 0 && (contractWeeksLeft(s) <= 52 || offerScore(s, d.offers[renewIdx]) >= curScore)) return { idx: renewIdx, demands: s.hid.ambition > 70 && s.fin.agentSkill > 50 ? 'wage' : '' };
       return { idx: d.choices.length - 1, demands: '' };
     }
     return { idx: best, demands: '' };

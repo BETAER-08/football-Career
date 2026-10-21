@@ -79,6 +79,11 @@ export function makeGoals(s: GameState, rng: Rng | null = null): SeasonGoals | n
   }
   const g = games(s);
   const role = s.career.contract?.role ?? 'prospect';
+  if (!s.career.debuted) {
+    const e = s.career.entry;
+    const club: GoalDef = e.squadN < 5 ? { id: 'c', label: '1군 명단 등록 5회', metric: 'squadReg', target: e.squadN + 5, base: e.squadN } : { id: 'c', label: '1군 데뷔', metric: 'debut', target: 1 };
+    return { s: season, club, personal: { id: 'p', label: '리저브 평균 평점 6.8 이상', metric: 'resrating', target: 6.8 }, settled: false };
+  }
   let club: GoalDef;
   let mult = 1;
   if (role === 'starter') {
@@ -107,6 +112,8 @@ export function goalValue(s: GameState, d: GoalDef): number {
     case 'train': return s.career.entry.step >= 1 ? 1 : 0;
     case 'squad': return s.career.debuted ? s.career.cur.apps : s.career.entry.squadN;
     case 'debut': return s.career.debuted ? 1 : 0;
+    case 'squadReg': return s.career.entry.squadN;
+    case 'resrating': return s.career.resCur.ratingN >= 5 ? s.career.resCur.ratingSum / s.career.resCur.ratingN : 0;
     default: return 0;
   }
 }

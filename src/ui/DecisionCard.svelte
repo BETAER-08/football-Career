@@ -1,10 +1,11 @@
 <script lang="ts">
   import { store } from './store.svelte';
-  import { getClub, getCountry, getLeague } from '../engine/data';
+  import { getClub, getCountry, getLeague, academyGrade } from '../engine/data';
   import { formatKRW } from '../engine/finance';
   import { ROLE_LABEL, type Offer } from '../engine/types';
   import { clubLvl } from '../engine/world';
   import { coachOfferLabel } from '../engine/coach';
+  import { modeLabel } from '../engine/market';
   import Chips from './Chips.svelte';
   import { onMount } from 'svelte';
 
@@ -32,6 +33,12 @@
   function lvlOf(o: Offer): number {
     return o.clubId.startsWith('NAT:') ? 4 : clubLvl(g, o.clubId);
   }
+  function raiseText(o: Offer): string {
+    const cur = g.career.contract ? g.career.contract.wage : 0;
+    if (!cur) return '';
+    const r = Math.round((o.wage / cur - 1) * 100);
+    return `${r >= 0 ? '+' : ''}${r}%`;
+  }
   function demandStr(): string {
     return [demands.wage ? 'wage' : '', demands.role ? 'role' : '', demands.buyout ? 'buyout' : ''].filter(Boolean).join(',');
   }
@@ -56,12 +63,13 @@
                 <div class="muted" style="font-size:12px">계약 {o.years}년</div>
               {:else}
                 {@const c = getClub(o.clubId)}
-                <div class="row"><b class="ocl">{c.name}</b><span class="tag">{getCountry(c.country).flag} {getCountry(c.country).ko}</span><span class="tag">{getLeague(c.lg0).ko}</span><span class="tag">수준 {lvlOf(o)}</span>{#if o.loan}<span class="tag">임대</span>{/if}{#if o.trial}<span class="tag" style="color:var(--amber)">입단 테스트</span>{/if}</div>
+                <div class="row"><b class="ocl">{c.name}</b><span class="tag badge" data-mode={o.mode ?? 'transfer'}>{modeLabel(o)}</span><span class="tag">{getCountry(c.country).flag} {getCountry(c.country).ko}</span><span class="tag">{getLeague(c.lg0).ko}</span><span class="tag">수준 {lvlOf(o)}</span>{#if o.yth || o.first}<span class="tag">아카데미 {academyGrade(c.acad)}등급</span>{/if}{#if o.mode === 'free'}<span class="tag">자유계약 · 이적료 없음</span>{:else if o.mode === 'pre'}<span class="tag">사전 계약 · 시즌 종료 후 합류</span>{/if}{#if o.trial}<span class="tag" style="color:var(--amber)">입단 테스트</span>{/if}</div>
                 <div class="og">
-                  <span>약속 역할 <b>{ROLE_LABEL[o.role]}</b></span><span>연봉 <b class="mono">{formatKRW(o.wage)}</b></span><span>기간 <b>{o.years}년</b></span>
+                  <span>약속 역할 <b>{ROLE_LABEL[o.role]}</b></span><span>연봉 <b class="mono">{formatKRW(o.wage)}</b>{#if o.mode === 'renew' && g.career.contract && g.career.contract.wage > 0} <i class="mono">({raiseText(o)})</i>{/if}</span><span>{o.mode === 'renew' ? '새 계약 기간' : '기간'} <b>{o.years}년</b></span>
+                  {#if o.mode === 'transfer' || o.mode === 'loan'}<span>{o.yth || (o.first && o.clubId !== g.career.clubId) ? '육성 보상금' : '이적료'} <b class="mono">{o.loan ? '임대' : o.fee ? formatKRW(o.fee) : o.first && o.clubId === g.career.clubId ? '없음' : '협의'}</b></span>{:else if o.mode === 'free' || o.mode === 'pre'}<span>이적료 <b>없음</b></span>{/if}
                   <span>서명 보너스 <b class="mono">{formatKRW(o.signing)}</b></span><span>출전 보너스 <b class="mono">{formatKRW(o.appBonus)}</b></span><span>바이아웃 <b class="mono">{o.buyout ? formatKRW(o.buyout) : '없음'}</b></span>
                 </div>
-                <div class="muted" style="font-size:12px">감독 {o.coachName} · {o.coachStyle}</div>
+                <div class="muted" style="font-size:12px">감독 {o.coachName} · {o.coachStyle}{o.note ? ` · ${o.note}` : ''}</div>
               {/if}
               <div class="row" style="margin-top:6px">
                 {#if picked === i && d.ref !== 'coachjob'}
@@ -108,6 +116,11 @@
   .offers { display: flex; flex-direction: column; gap: 8px; }
   .offer { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); }
   .offer.sel { border-color: var(--accent); }
+  .badge { font-weight: 800; color: var(--accent); }
+  .badge[data-mode='renew'] { color: var(--info); }
+  .badge[data-mode='free'] { color: var(--amber); }
+  .badge[data-mode='pre'] { color: #c58bff; }
+  .badge[data-mode='loan'] { color: var(--faint); }
   .ocl { font-size: 16px; }
   .og { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px 14px; font-size: 12.5px; margin: 6px 0; color: var(--muted); }
   .dm { font-size: 12.5px; display: flex; align-items: center; gap: 4px; }

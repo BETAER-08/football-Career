@@ -17,7 +17,12 @@
   const age = $derived(ageAt(g.p.birth, g.week));
   const curSeason = $derived(seasonOf(g.week));
   const first = $derived<SeasonRec[]>([...g.career.seasons, ...(g.career.cur.done || (!g.career.cur.apps && !g.career.cur.mins) ? [] : [g.career.cur])]);
-  const youthRecs = $derived<SeasonRec[]>([...g.career.ySeasons, ...(g.career.yCur.done || (!g.career.yCur.apps && !g.career.yCur.mins) ? [] : [g.career.yCur])]);
+  const youthRecs = $derived<SeasonRec[]>([
+    ...g.career.ySeasons,
+    ...(g.career.yCur.done || (!g.career.yCur.apps && !g.career.yCur.mins) ? [] : [g.career.yCur]),
+    ...g.career.resSeasons.map((r) => ({ ...r, clubName: `${r.clubName} 리저브`, leagueName: r.leagueName || '리저브 리그' })),
+    ...(g.career.resCur.done || (!g.career.resCur.apps && !g.career.resCur.mins) ? [] : [{ ...g.career.resCur, clubName: `${g.career.resCur.clubName} 리저브`, leagueName: g.career.resCur.leagueName || '리저브 리그' }])
+  ]);
   let tabSel = $state<'f' | 'y' | ''>('');
   const tab = $derived<'f' | 'y'>(tabSel || (first.length || !youthRecs.length ? 'f' : 'y'));
   const all = $derived(tab === 'f' ? first : youthRecs);

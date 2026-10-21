@@ -99,3 +99,26 @@ export function hasWinterBreak(s: GameState): boolean {
   const lg = getLeague(activeLeagueId(s));
   return lg.cal === 'aw' && lg.winterBreak;
 }
+
+export function windowIdx(s: GameState): number {
+  const sw = swOf(s.week);
+  return calOf(s).windows.findIndex((r) => within(sw, r));
+}
+
+export function windowOpenW(s: GameState): number {
+  const idx = windowIdx(s);
+  return idx < 0 ? -1 : s.week - (swOf(s.week) - calOf(s).windows[idx][0]);
+}
+
+export function windowCloseW(s: GameState): number {
+  const idx = windowIdx(s);
+  return idx < 0 ? -1 : s.week + (calOf(s).windows[idx][1] - swOf(s.week));
+}
+
+export function nextWindowW(s: GameState): number {
+  const p = calOf(s);
+  for (let w = s.week + 1; w <= s.week + 53; w++) {
+    if (inWindow(p, swOf(w)) && !inWindow(p, swOf(w - 1))) return w;
+  }
+  return s.week + 52;
+}

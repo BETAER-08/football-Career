@@ -531,7 +531,7 @@ export function settleToPro(s: GameState, rng: Rng, why: string): void {
   closeYouthCurrent(s);
   s.yt = null;
   s.goals = makeGoals(s);
-  addLog(s, 'milestone', why, `${getClub(s.career.clubId).name} 1군에 자리를 잡았다. 이제 리저브·유스 경기에는 나서지 않는다.`, [], { star: true });
+  addLog(s, 'milestone', why, `${getClub(s.career.clubId).name} 1군 선수단에 합류했다. 이제 유스 리그에는 나서지 않고, 1군 명단에서 제외되는 주에는 리저브 경기에 나선다.`, [], { star: true });
   void rng;
 }
 

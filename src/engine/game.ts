@@ -11,9 +11,10 @@ import { advanceInjury, startInjury, injuryHazard, injuryEndsCareer } from './he
 import { INJURY_BY_ID } from '../data/injuries';
 import { addLog, toast } from './log';
 import { openSeason, matchesThisWeek, playFixtureToday, intlWindow, tournamentWeek, endSeason, trainingWeekLoad, snapSeason } from './season';
-import { expireContracts, weeklyUnattached, windowOffers, youthStep, forceRetireCheck, retirePlayer, endGame, upBiasUpdate, retirePressure } from './lifecycle';
+import { expireContracts, weeklyUnattached, youthStep, forceRetireCheck, retirePlayer, endGame, upBiasUpdate, retirePressure } from './lifecycle';
 import { rollWeekly, resolveEventChoice, applyMomentContext, pushDecision, getEvent, eventsLoaded, buildDecision, markFired } from './events';
 import { resolveOffer } from './offers';
+import { marketWeek } from './market';
 import { coachWeekly, coachSeasonEnd, acceptCoachJob } from './coach';
 import { postWeekly, setPath, type PathId } from './postcareer';
 import { ageTournamentWeek } from './agecomp';
@@ -32,6 +33,7 @@ import { getClub } from './data';
 import { clubLvl } from './world';
 import { curOvr } from './attributes';
 import { setCondEnv } from './fx';
+import { hasUpperClub } from './upper';
 import { isCosmetic } from './flags';
 
 setCondEnv({
@@ -49,7 +51,9 @@ setCondEnv({
   offseason: (s) => isOffseason(s),
   seasonEnd: (s) => isSeasonEnd(s),
   winterBreak: (s) => hasWinterBreak(s),
-  springAutumn: (s) => calKindOf(s) === 'sa'
+  springAutumn: (s) => calKindOf(s) === 'sa',
+  upperClub: (s) => hasUpperClub(s, false),
+  upperAbroad: (s) => hasUpperClub(s, true)
 });
 
 export function newGame(cfg: GameConfig, forced?: import('./roulette').RouletteResult): GameState {
@@ -133,7 +137,7 @@ function playerWeek(s: GameState, rng: Rng): void {
   if (!s.career.retired) injuryWeek(s, rng, age, s.career.cur.mins + s.career.yCur.mins - beforeMins);
   if (s.career.retired) return;
   if (s.career.clubId) {
-    windowOffers(s, rng);
+    marketWeek(s, rng);
     intlWindow(s, rng, sw);
     tournamentWeek(s, rng, sw);
   } else weeklyUnattached(s, rng);

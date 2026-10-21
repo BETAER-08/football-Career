@@ -2,10 +2,10 @@ import { START_YEAR } from './time';
 import { curOvr } from './attributes';
 import { initWorld } from './worldsim';
 import { emptyRec } from './records';
-import { openYouthRec, setupYouthSeason } from './yleague';
+import { openYouthRec, setupYouthSeason, settleToPro } from './yleague';
 import type { GameState } from './types';
 
-export const STATE_VERSION = 4;
+export const STATE_VERSION = 6;
 
 export type Migrated = { ok: true; state: GameState } | { ok: false; reason: string };
 
@@ -22,6 +22,19 @@ export function migrateState(raw: unknown): Migrated {
   if (c.scholar === undefined) c.scholar = 0;
   if (c.track === undefined) c.track = 'pro';
   if (c.signed === undefined) c.signed = !!c.debuted;
+  if (c.transferReq === undefined) {
+    const flag = (st.ev.flags as Record<string, number>).transfer_request;
+    c.transferReq = flag === undefined ? -1 : flag;
+    delete (st.ev.flags as Record<string, number>).transfer_request;
+  }
+  if (c.reqStance === undefined) c.reqStance = '';
+  if (c.mkt === undefined) c.mkt = null;
+  if (c.pre === undefined) c.pre = null;
+  if (c.faPressureW === undefined) c.faPressureW = -1;
+  if (!c.resCur) c.resCur = emptyRec(0, st.career.clubId, '', '', '', 2);
+  if (!c.resSeasons) c.resSeasons = [];
+  const pp = st.p as unknown as Record<string, unknown>;
+  if (pp.startOvr === undefined) pp.startOvr = 0;
   if (!c.entry) c.entry = { step: 0, trainW: -1, squadW: -1, squadN: 0, jumps: 0, jumpW: -1, boostEnd: -1, callups: 0, callupSeason: -1, doubleJump: false, midChecked: -1 };
   if (!c.ySeasons) c.ySeasons = [];
   if (!c.yTrophies) c.yTrophies = [];
@@ -53,10 +66,22 @@ export function migrateState(raw: unknown): Migrated {
   if (st.ab.hFrac0 === undefined) st.ab.hFrac0 = Math.min(1, st.ab.height / st.p.finalHeight);
   if (st.ab.bmi0 === undefined) st.ab.bmi0 = st.ab.weight / ((st.ab.height / 100) * (st.ab.height / 100));
   if (!st.nat.ageRecs) st.nat.ageRecs = [];
+  const nn = st.nat as unknown as Record<string, unknown>;
+  if (nn.stage === undefined) nn.stage = 'none';
+  if (nn.stageW === undefined) nn.stageW = -1;
+  if (!nn.lastWhy) nn.lastWhy = [];
+  if (!nn.matches) nn.matches = [];
+  if (!nn.pool) nn.pool = {};
+  if (!nn.poolS) nn.poolS = {};
+  if (!nn.coachStyle) nn.coachStyle = 'attack';
+  if (nn.coachUntil === undefined) nn.coachUntil = -1;
+  if (!nn.mins10) nn.mins10 = [];
+  if (nn.injEndW === undefined) nn.injEndW = -99;
   if (st.extra.podium === undefined) st.extra.podium = 0;
   if (!st.why) st.why = {};
   if (!st.recent) st.recent = [];
   st.v = STATE_VERSION;
+  if (st.phase === 'youth' && st.career.signed && st.career.clubId) settleToPro(st, null as never, '프로 선수단 등록');
   if (st.phase === 'youth' && st.career.clubId && !st.yt) {
     setupYouthSeason(st, true);
     openYouthRec(st);

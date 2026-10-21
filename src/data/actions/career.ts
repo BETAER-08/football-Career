@@ -39,11 +39,17 @@ export const careerActions: RawAction[] = [
     bad: { t: '{coach} 감독은 "경쟁은 훈련장에서 하는 것"이라고 선을 그었다.', fx: 'rel.coach-6 morale-4' }
   },
   {
-    id: 'transfer_request', group: 'career', label: '이적 요청', desc: '새 팀을 찾겠다고 구단에 공식 요청한다. 팬과 감독의 시선이 차가워진다.', phase: PRO, cond: ['hasClub', 'contractLeft>12'], cooldown: 26, confirm: true, pv: '이적 제안↑↑ 감독 관계↓ 팬 관계↓',
-    handler: 'transferReq', ok: { t: '구단에 이적 의사를 전했다. 에이전트와 다른 구단들이 분주해졌다.', fx: 'fx:offers=many' }
+    id: 'transfer_request', group: 'career', label: '이적 요청', desc: '새 팀을 찾겠다고 구단에 공식 요청한다. 시장이 닫혀 있으면 다음 이적시장에 반영된다. 팬과 감독의 시선이 차가워진다.', phase: PRO, cond: ['hasClub', 'contractLeft>12', '!hasReq', '!hasPre'], cooldown: 26, confirm: true, pv: '이적 제안↑↑ 감독 관계↓ 팬 관계↓',
+    check: '72 contractLeft*-0.14 roleRank*-8 rel.coach*0.1', handler: 'transferReq',
+    ok: { t: '구단이 이적 요청을 받아들였다. 적절한 제안이 오면 보내 주겠다는 입장이다. 에이전트와 다른 구단들이 분주해졌다.' },
+    bad: { t: '구단은 핵심 선수를 내줄 수 없다며 이적 요청을 거절했다. 다음 이적시장에서도 협상은 쉽지 않을 것이다.' }
   },
   {
-    id: 'renew_request', group: 'career', label: '재계약 요청', desc: '계약 연장과 연봉 인상을 요구한다.', phase: PRO, cond: ['hasClub', 'contractLeft<=104'], cooldown: 26, pv: '연봉↑ 계약 연장 / 감독 관계 변동',
+    id: 'transfer_withdraw', group: 'career', label: '이적 요청 철회', desc: '접수한 이적 요청을 거두고 현 소속팀에 남는다.', phase: PRO, cond: ['hasClub', 'hasReq'], cooldown: 4, pv: '이적 요청 해제 감독 관계↑',
+    handler: 'transferWithdraw', ok: { t: '이적 요청을 거두고 팀에 남기로 했다. 감독이 고개를 끄덕였다.' }
+  },
+  {
+    id: 'renew_request', group: 'career', label: '재계약 요청', desc: '계약 연장과 연봉 인상을 요구한다.', phase: PRO, cond: ['hasClub', 'contractLeft<=104', '!hasPre'], cooldown: 26, pv: '연봉↑ 계약 연장 / 감독 관계 변동',
     check: '36 ovr*0.5 rel.coach*0.15 agent*0.3', handler: 'renewReq',
     great: { t: '구단이 의외로 적극적이었다. 연봉과 기간 모두 만족스러운 조건이 나왔다.' },
     ok: { t: '무난한 선에서 재계약이 성사됐다.' },

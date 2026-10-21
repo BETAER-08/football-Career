@@ -156,7 +156,7 @@ export interface WorldInfo {
   youthCoach: { name: string; retireS: number };
 }
 
-export interface GoalDef { id: string; label: string; metric: 'apps' | 'starts' | 'goals' | 'assists' | 'cs' | 'rating' | 'promo' | 'scholar' | 'train' | 'squad' | 'debut'; target: number; done?: boolean }
+export interface GoalDef { id: string; label: string; metric: 'apps' | 'starts' | 'goals' | 'assists' | 'cs' | 'rating' | 'promo' | 'scholar' | 'train' | 'squad' | 'debut' | 'squadReg' | 'resrating'; target: number; done?: boolean; base?: number }
 export interface SeasonGoals { s: number; club: GoalDef; personal: GoalDef; settled: boolean }
 
 export type DreamId = 'legend' | 'bigstarter' | 'national' | 'ballon' | 'rich';
@@ -267,6 +267,20 @@ export interface Offer {
   first: boolean;
   fromAgent: boolean;
   tag: string;
+  mode?: OfferMode;
+  fee?: number;
+  yth?: 'youth' | 'scholar' | 'pro';
+  note?: string;
+}
+
+export type OfferMode = 'transfer' | 'renew' | 'loan' | 'free' | 'pre';
+
+export interface MarketPlan {
+  key: number;
+  batchW: number;
+  sent: boolean;
+  extras: number[];
+  used: string[];
 }
 
 export interface Fixture {
@@ -308,6 +322,7 @@ export interface Profile {
   finalHeight: number;
   story: string[];
   rumor: string;
+  startOvr: number;
   startClubId: string;
   startLeagueId: string;
   startLvl: number;
@@ -400,7 +415,45 @@ export interface Life {
 
 export interface AgeRec { year: number; id: string; name: string; result: string; apps: number; goals: number; assists: number; awards: string[] }
 
+export type NatLevel = 'A' | 'u23' | 'u20' | 'u17';
+export type NatStage = 'none' | 'prelim' | 'called' | 'starter';
+export type NatStyle = 'attack' | 'defense' | 'rebuild' | 'veteran';
+
+export interface PoolMember {
+  name: string;
+  pos: Pos;
+  age: number;
+  ovr: number;
+  lvl: number;
+  role: number;
+  caps: number;
+  abroad: boolean;
+}
+
+export interface NatMatch {
+  w: number;
+  comp: string;
+  opp: string;
+  started: boolean;
+  mins: number;
+  goals: number;
+  assists: number;
+  rating: number;
+  result: 'W' | 'D' | 'L';
+  squad: boolean;
+}
+
 export interface NatState {
+  stage: NatStage;
+  stageW: number;
+  lastWhy: string[];
+  matches: NatMatch[];
+  pool: Partial<Record<NatLevel, PoolMember[]>>;
+  poolS: Partial<Record<NatLevel, number>>;
+  coachStyle: NatStyle;
+  coachUntil: number;
+  mins10: number[];
+  injEndW: number;
   ageRecs: AgeRec[];
   caps: number;
   goals: number;
@@ -498,6 +551,13 @@ export interface CareerState {
   promisedRole: Role;
   loanOut: boolean;
   nextLoanClub: string;
+  transferReq: number;
+  reqStance: '' | 'accepted' | 'refused';
+  mkt: MarketPlan | null;
+  pre: Offer | null;
+  faPressureW: number;
+  resCur: SeasonRec;
+  resSeasons: SeasonRec[];
 }
 
 export interface CoachRec {

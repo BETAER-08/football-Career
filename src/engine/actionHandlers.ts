@@ -9,6 +9,7 @@ import { setPath, type PathId } from './postcareer';
 import { getClub, getCountry } from './data';
 import { makePerson, randomPos } from './relations';
 import { ROLE_VAL } from './transfer';
+import { applyTransferRequest, withdrawTransferRequest } from './market';
 import type { GameState, Role } from './types';
 
 function pay(s: GameState, amount: number): void {
@@ -111,10 +112,11 @@ registerAction('roleUp', (s, _c, _a, grade) => {
     if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel + 3, -100, 100);
   }
 });
-registerAction('transferReq', (s) => {
-  s.ev.flags.transfer_request = s.week;
-  if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel - 10, -100, 100);
-  if (s.people.fans) s.people.fans.rel = clamp(s.people.fans.rel - 6, -100, 100);
+registerAction('transferReq', (s, ctx, _a, grade) => {
+  applyTransferRequest(s, ctx.rng, grade === 'great' || grade === 'ok');
+});
+registerAction('transferWithdraw', (s) => {
+  withdrawTransferRequest(s);
 });
 registerAction('renewReq', (s, _c, _a, grade) => {
   const c = s.career.contract;

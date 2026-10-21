@@ -5,10 +5,12 @@ import { windowNow } from './calendar';
 import { curOvr, shownOvr } from './attributes';
 import { clubLvl, clubSt, clubStd } from './world';
 import { getClub, getCountry, leaguesOf } from './data';
-import { genOffers, genYouthJudgement, joinClub, leaveToFree, fallbackOffer, makeOfferFor, roleLabel, closeCurrent } from './transfer';
+import { genOffers, genYouthJudgement, joinClub, leaveToFree, fallbackOffer, makeOfferFor, closeCurrent, freeTerms } from './transfer';
+import { hasUpperClub } from './upper';
+import { executePre, expireToFree, freeOffers } from './market';
 import { presentOffers, hasPendingOffer } from './offers';
 import { fireEvent, getEvent, pushDecision } from './events';
-import { getCal, mFor } from './calibration';
+import { getCal, effM } from './calibration';
 import { releaseEvent, scholarshipStep } from './youth';
 import { minProAge } from './stages';
 import { closeYouthCurrent } from './yleague';
@@ -66,7 +68,6 @@ export function expireContracts(s: GameState, rng: Rng): void {
   const con = s.career.contract;
   if (!con || !s.career.clubId) return;
   if (s.life.mil === 'serving') return;
-  const age = ageAt(s.p.birth, s.week);
   if (con.loanFrom) {
     const parent = con.loanFrom;
     const o = makeOfferFor(s, rng, parent, 'loanreturn', { renew: true });
@@ -79,17 +80,11 @@ export function expireContracts(s: GameState, rng: Rng): void {
   }
   if (con.youth) return;
   if (con.endW > s.week + 1) return;
-  const margin = curOvr(s.ab) - clubStd(s, s.career.clubId);
-  const p = 1 / (1 + Math.exp(-((margin + 7) / 3 + s.people.coach.rel / 55))) * (age >= 35 ? 0.5 : 1);
-  if (rng.next() < p) {
-    const o = makeOfferFor(s, rng, s.career.clubId, 'renew', { renew: true });
-    if (o) {
-      o.exp = s.week + 20;
-      presentOffers(s, [o], 'renew', '재계약 제안', `${getClub(s.career.clubId).name}이(가) 계약 연장을 제안했다. 약속 역할은 ${roleLabel(o.role)}.`, true);
-      return;
-    }
+  if (s.career.pre) {
+    executePre(s, rng);
+    return;
   }
-  leaveToFree(s, '계약 만료');
+  expireToFree(s, rng);
 }
 
 export function weeklyUnattached(s: GameState, rng: Rng): void {
@@ -97,38 +92,36 @@ export function weeklyUnattached(s: GameState, rng: Rng): void {
   if (s.decision && s.decision.kind === 'offer') return;
   const waited = s.week - s.career.freeAgentW;
   const age = ageAt(s.p.birth, s.week);
-  const youthFree = !s.career.signed && s.phase === 'youth';
-  if (waited > 0 && (youthFree ? waited === 3 || waited === 12 : waited % 3 === 0) && rng.next() < 0.7) {
-    let offers = genOffers(s, rng, 'free', 3);
-    if (!offers.length && waited >= 9 && (s.phase !== 'youth' || rng.chance(0.4))) {
-      const fb = fallbackOffer(s, rng, 'free');
-      if (fb) offers = [fb];
+  if (s.career.signed && s.phase === 'pro') {
+    if (waited > 0 && waited % 4 === 0 && rng.next() < Math.max(0.35, 0.92 - waited / 70)) {
+      let offers = freeOffers(s, rng, rng.chance(0.4) ? 2 : 1, waited);
+      if (!offers.length && waited >= 12) {
+        const fb = fallbackOffer(s, rng, 'free');
+        if (fb) {
+          fb.trial = false;
+          fb.mode = 'free';
+          freeTerms(fb, rng);
+          offers = [fb];
+        }
+      }
+      if (offers.length) presentOffers(s, offers, 'free', '새 팀의 제안', `무적 ${waited}주째, 몇몇 구단이 관심을 보였다.`, true);
     }
-    if (offers.length) presentOffers(s, offers, 'free', '새 팀의 제안', '무적 신분인 당신에게 몇몇 구단이 관심을 보였다.', true);
+    if (waited >= 26 && s.career.faPressureW < 0) {
+      s.career.faPressureW = s.week;
+      fireEvent(s, rng, getEvent('fa_pressure'));
+    }
+  } else {
+    const youthFree = !s.career.signed && s.phase === 'youth';
+    if (waited > 0 && (youthFree ? waited === 3 || waited === 12 : waited % 3 === 0) && rng.next() < 0.7) {
+      let offers = genOffers(s, rng, 'free', 3);
+      if (!offers.length && waited >= 9 && (s.phase !== 'youth' || rng.chance(0.4))) {
+        const fb = fallbackOffer(s, rng, 'free');
+        if (fb) offers = [fb];
+      }
+      if (offers.length) presentOffers(s, offers, 'free', '새 팀의 제안', '무적 신분인 당신에게 몇몇 구단이 관심을 보였다.', true);
+    }
   }
   if (waited >= (s.career.signed ? 78 : 30) || (age >= 37 && waited >= 26)) retirePlayer(s, rng, '새로운 소속 팀을 끝내 찾지 못했다.');
-}
-
-export function windowOffers(s: GameState, rng: Rng): void {
-  if (!windowNow(s) || !s.career.clubId || s.career.retired || s.phase !== 'pro') return;
-  if (s.decision || hasPendingOffer(s)) return;
-  const age = ageAt(s.p.birth, s.week);
-  const wantOut = s.ev.flags.transfer_request !== undefined ? 3 : 1;
-  const p = (0.055 + s.fame.dom / 700 + s.career.upBias * 0.08) * wantOut;
-  if (rng.next() >= p) return;
-  const curLvl = clubLvl(s, s.career.clubId);
-  const offers = genOffers(s, rng, 'window', 1).filter((o) => clubLvl(s, o.clubId) >= curLvl || o.wage > (s.career.contract ? s.career.contract.wage : 0) * 1.2);
-  if (age <= 24 && swOf(s.week) <= 9 && ['prospect', 'backup'].includes(s.career.contract?.role ?? '') && curLvl >= 3 && rng.chance(0.3)) {
-    const lowLvlClubs = genOffers(s, rng, 'window', 2).filter((o) => clubLvl(s, o.clubId) < curLvl && getClub(o.clubId).country === getClub(s.career.clubId).country);
-    if (lowLvlClubs.length) {
-      const lo = { ...lowLvlClubs[0], loan: true, years: 1 };
-      offers.push(lo);
-    }
-  }
-  if (!offers.length) return;
-  const hi = offers.some((o) => clubLvl(s, o.clubId) > curLvl);
-  presentOffers(s, offers, 'window', '이적 제안', `이적 시장에서 ${offers.length}개 구단이 접촉해 왔다.`, true);
-  if (hi) s.career.upBias = 0;
 }
 
 export function upBiasUpdate(s: GameState): void {
@@ -208,7 +201,7 @@ export function topClubScout(s: GameState, rng: Rng, age: number): void {
   const top = leaguesOf(country)[0];
   const ranked = top.clubIds.slice().sort((a, b) => clubSt(s, b) - clubSt(s, a))  .filter((id) => id !== s.career.clubId).slice(0, 10);
   const topLvl = clubLvl(s, ranked[0] ?? s.career.clubId);
-  const gate = topLvl >= 5 ? Math.min(1, Math.pow(Math.max(mFor(s.p.country), 1e-6), 0.6)) : 1;
+  const gate = topLvl >= 5 ? Math.min(1, Math.pow(Math.max(effM(s.p.country, shownOvr(s.ab, age)), 1e-6), 0.6)) : 1;
   if (!ranked.length || !rng.chance(0.3 * gate)) return;
   s.ev.flags.topScoutS = season;
   if (age >= 16) {
@@ -219,5 +212,5 @@ export function topClubScout(s: GameState, rng: Rng, age: number): void {
       return;
     }
   }
-  fireEvent(s, rng, getEvent('ys_top_scout'));
+  if (hasUpperClub(s, false)) fireEvent(s, rng, getEvent('ys_top_scout'));
 }

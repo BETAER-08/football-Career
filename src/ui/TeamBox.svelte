@@ -14,6 +14,9 @@
   import { schoolInfo } from '../engine/school';
   import { STAGE_LABEL } from '../engine/stages';
   import { DREAM_LABEL } from '../engine/goals';
+  import { nextWindowText } from '../engine/market';
+  import { STAGE_TEXT } from '../engine/natsel';
+  import { nextWindowW, windowNow } from '../engine/calendar';
 
   const g = $derived(store.game!);
   const idc = $derived(g.phase === 'coach' ? g.coach.clubId : g.career.clubId);
@@ -29,6 +32,12 @@
   const weeksLeft = $derived(con ? Math.max(0, con.endW - g.week) : 0);
   const retDate = $derived(g.st.injury ? fmtDate(dateOf(g.week + Math.ceil(g.st.injury.weeksLeft))) : '');
   const wage = $derived(currentWage(g));
+  const months = $derived(Math.round(weeksLeft / 4.345));
+  const isFA = $derived(g.phase === 'pro' && !g.career.clubId && g.career.signed && !g.career.retired);
+  const faWeeks = $derived(isFA && g.career.freeAgentW >= 0 ? g.week - g.career.freeAgentW : 0);
+  const reqOn = $derived(g.career.transferReq >= 0);
+  const reqText = $derived(reqOn ? (windowNow(g) ? `이적 요청 중 · 이적시장 열림 (${g.career.reqStance === 'refused' ? '구단 거절' : '구단 수용'})` : `이적 요청 중 · 다음 이적시장 ${fmtDate(dateOf(nextWindowW(g)))} (${g.career.reqStance === 'refused' ? '구단 거절' : '구단 수용'})`) : '없음');
+  const preText = $derived(g.career.pre ? `${getClub(g.career.pre.clubId).name} (시즌 종료 후 합류)` : weeksLeft > 0 && weeksLeft <= 26 ? '가능 (잔여 6개월 이하)' : '불가 (잔여 6개월 이하부터)');
   const target = $derived(g.coach.tableTarget);
   const yt = $derived(g.phase === 'youth' ? g.yt : null);
   const yRank = $derived(yt ? youthRank(g) : 0);
@@ -78,6 +87,9 @@
           <div class="kv"><span>역할</span><span>{con ? ROLE_LABEL[con.role] : '유망주'}</span></div>
           <div class="kv"><span>이번 시즌</span><span class="mono">{cur.apps}경기 {cur.goals}골 {cur.assists}도움 · {cur.starts}선발</span></div>
         {/if}
+      {:else if isFA}
+        <div class="big">자유계약(FA)</div>
+        <div class="muted">무적 {faWeeks}주 · 새 소속팀을 기다리는 중</div>
       {:else}
         <div class="big">무적</div>
         <div class="muted">새 소속팀을 기다리는 중</div>
@@ -96,7 +108,7 @@
       {#if g.goals && !g.goals.settled && (g.phase === 'pro' || g.phase === 'youth')}
         {#each [{ lab: '구단 기대', gd: g.goals.club }, { lab: '개인 목표', gd: g.goals.personal }] as { lab, gd }}
           {@const v = goalValue(g, gd)}
-          <div class="goal" title="시즌 결산에서 달성 여부와 보상을 처리해요"><span>{lab} · {gd.label}</span><div class="gauge"><i style="width:{Math.min(100, (v / gd.target) * 100)}%"></i></div><b class="mono">{gd.metric === 'rating' ? v.toFixed(1) : Math.round(v)}/{gd.target}</b></div>
+          <div class="goal" title="시즌 결산에서 달성 여부와 보상을 처리해요"><span>{lab} · {gd.label}</span><div class="gauge"><i style="width:{Math.min(100, (v / gd.target) * 100)}%"></i></div><b class="mono">{gd.metric === 'rating' || gd.metric === 'resrating' ? v.toFixed(1) : Math.round(v)}/{gd.target}</b></div>
         {/each}
       {/if}
       {#if g.dream}<div class="mini-hint">✦ 꿈 · {DREAM_LABEL[g.dream]}{g.dreamHits.includes(g.dream) ? ' (이룰 조짐!)' : ''}</div>{/if}
@@ -117,8 +129,11 @@
     <div class="col" style="gap:5px">
       <div class="h">계약 상태</div>
       {#if con && (g.phase === 'pro' || g.phase === 'coach')}
-        <div class="kv"><span>남은 기간</span><span class="mono">{Math.floor(weeksLeft / 52)}년 {Math.round((weeksLeft % 52) / 4.3)}개월</span></div>
+        <div class="kv"><span>남은 기간</span><span class="mono">{months}개월 ({Math.floor(weeksLeft / 52)}년 {Math.round((weeksLeft % 52) / 4.3)}개월)</span></div>
         {#if g.phase === 'pro'}
+          <div class="kv"><span>이적시장</span><span>{nextWindowText(g)}</span></div>
+          <div class="kv"><span>사전 계약</span><span>{preText}</span></div>
+          <div class="kv"><span>이적 요청</span><span>{reqText}</span></div>
           <div class="kv"><span>약속 역할</span><span>{ROLE_LABEL[g.career.promisedRole]}</span></div>
           <div class="kv"><span>바이아웃</span><span class="mono">{con.buyout ? formatKRW(con.buyout) : '없음'}</span></div>
           <div class="kv"><span>출전 보너스</span><span class="mono">{cur.apps}경기 / 선발 {cur.starts}</span></div>
@@ -132,8 +147,15 @@
         {#if (g.career.scholar === 1 || g.career.signed) && con && con.wage > 0}<div class="kv"><span>{g.career.signed ? '연봉' : '장학 수당'}</span><span class="mono">{formatKRW(con.wage)}</span></div>{/if}
         {#if g.career.signed && con}<div class="kv"><span>남은 기간</span><span class="mono">{Math.floor(weeksLeft / 52)}년 {Math.round((weeksLeft % 52) / 4.3)}개월</span></div>{/if}
         <div class="mini-hint">시즌 말마다 승급·잔류·방출 심사를 받아요. 1군 훈련 합류 → 명단 등록 → 프로 계약 후 데뷔 순서로 1군에 다가가요.{g.career.track === 'school' ? ' 학교 경로에서는 시즌 말 프로 입단 제안으로 프로에 합류해요.' : ''}</div>
+      {:else if isFA}
+        <div class="kv"><span>상태</span><span>자유계약(FA)</span></div>
+        <div class="kv"><span>무적 기간</span><span class="mono">{faWeeks}주</span></div>
+        <div class="mini-hint">이적시장이 닫혀 있어도 계약할 수 있어요. 무적 기간이 길어질수록 제안 수준과 연봉이 떨어지고 경기 감각이 무뎌져요.</div>
       {:else}
         <div class="muted">계약 없음</div>
+      {/if}
+      {#if g.phase === 'pro' && g.career.clubId}
+        <div class="kv" title={g.nat.lastWhy.length ? `최근 탈락 이유: ${g.nat.lastWhy.join(' / ')}` : '대표팀 선발 점수는 실력·소속팀 수준·출전 시간·폼·이력·몸 상태·나이로 정해져요'}><span>대표팀 상태</span><span>{STAGE_TEXT[g.nat.stage]}{g.nat.lastWhy.length && g.nat.stage !== 'called' && g.nat.stage !== 'starter' ? ` · ${g.nat.lastWhy[0]}` : ''}</span></div>
       {/if}
       {#if g.nat.caps > 0 || g.nat.youthCaps > 0}
         <div class="kv"><span>대표팀</span><span class="mono">A매치 {g.nat.caps}경기 {g.nat.goals}골{g.nat.youthCaps ? ` · 연령별 ${g.nat.youthCaps}` : ''}</span></div>

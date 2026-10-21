@@ -33,3 +33,9 @@ export function mFor(code: string): number {
 export function setM(code: string, v: number): void {
   current.m[code] = v;
 }
+
+export function effM(code: string, ovr: number): number {
+  const m = Math.max(mFor(code), 1e-6);
+  const e = Math.min(1, Math.max(0, 1 - (ovr - 75) / 15));
+  return Math.pow(m, e);
+}
