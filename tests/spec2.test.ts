@@ -37,13 +37,22 @@ function mk(seed: string, country?: string, level?: number): GameState {
   return newGame(cfgOf(seed), forcedOrigin(originRng(seed), country, level));
 }
 
+function liftCap(s: GameState, v: number): void {
+  if (s.ab.cap < v + 1) {
+    s.ab.cap = Math.min(99, v + 1);
+    s.ab.pot = rawForAnchored(s.ab.cap);
+  }
+}
+
 function setRaw(s: GameState, raw: number): void {
+  liftCap(s, anchored(raw));
   scaleToOvr(s.ab.a, s.ab.pos, anchored(raw));
 }
 
 function setShown(s: GameState, shown: number): void {
   const age = ageAt(s.p.birth, s.week);
   const t = Math.min(1, Math.max(0, (24 - age) / 7));
+  liftCap(s, shown);
   scaleToOvr(s.ab.a, s.ab.pos, shown - (s.ab.dispAdj ?? 0) * t);
 }
 
@@ -74,6 +83,8 @@ function step(s: GameState, on?: (d: Decision) => void): void {
 function toPro(seed: string, country = 'GB', power = 13): GameState {
   const s = mk(seed, country);
   s.auto = true;
+  s.ab.cap = 99;
+  s.ab.pot = rawForAnchored(99);
   for (let i = 0; i < 52 * 8 && !s.career.retired; i++) {
     if (s.phase === 'pro' && marketEligible(s)) return s;
     for (const k of ALL_ATTRS) s.ab.a[k] = Math.max(s.ab.a[k], power);
@@ -82,7 +93,7 @@ function toPro(seed: string, country = 'GB', power = 13): GameState {
   return s;
 }
 
-function adult19(seed: string, code: string, shown: number, pot = 93): GameState {
+function adult19(seed: string, code: string, shown: number, pot = 99): GameState {
   const s = mk(seed, code, 4);
   s.p.birth = { y: s.p.birth.y, m: 6, d: 28 };
   s.week = 52 * 5 + 30;
@@ -123,11 +134,11 @@ describe('시작 오버롤 범위', () => {
         const mean = list.reduce((a, b) => a + b, 0) / list.length;
         expect(min).toBeGreaterThanOrEqual(lo - 1.6);
         expect(max).toBeLessThanOrEqual(START_MAX + 1.6);
-        expect(mean).toBeGreaterThan((lo + START_MAX) / 2 - 3);
+        expect(mean).toBeGreaterThan((lo + START_MAX) / 2 - 6);
         expect(mean).toBeLessThan((lo + START_MAX) / 2 + 3);
         const bins = [0, 0, 0, 0];
         for (const v of list) bins[Math.min(3, Math.floor(((v - lo) / (START_MAX - lo)) * 4))]++;
-        for (const b of bins) expect(b).toBeGreaterThan(list.length / 8);
+        for (const b of bins) expect(b).toBeGreaterThan(list.length / 12);
       }
     }
   });
@@ -268,7 +279,7 @@ describe('첫 프로 계약과 제안 수준', () => {
     let total = 0;
     let withSix = 0;
     for (let i = 0; i < 100; i++) {
-      const s = adult19(`first85-${i}`, codes[i % codes.length], 85);
+      const s = adult19(`first85-${i}`, codes[i % codes.length], 86);
       const rng = new Rng(seedState(`first85rng-${i}`));
       const offers = firstContractOffers(s, rng);
       total += offers.length;

@@ -17,6 +17,12 @@ export function migrateState(raw: unknown): Migrated {
   const v = typeof st.v === 'number' ? st.v : 1;
   if (v > STATE_VERSION) return { ok: false, reason: '더 새로운 버전의 저장이에요' };
   if (!st.p.birth || st.p.birth.y !== START_YEAR - 14) return { ok: false, reason: '이전 버전 저장이라 이어할 수 없어요' };
+  if (v < 8 || (st.ab as unknown as Record<string, unknown>).cap === undefined) {
+    const old = Number(st.ab.pot);
+    const cp = Math.min(99, Math.max(60, Number.isFinite(old) ? old : 70));
+    st.ab.cap = Math.round(cp * 10) / 10;
+    st.ab.pot = Math.round(rawForAnchored(st.ab.cap) * 10) / 10;
+  }
   const c = st.career as unknown as Record<string, unknown>;
   if (c.youthStage === undefined) c.youthStage = 'U17';
   if (c.stageSeasons === undefined) c.stageSeasons = 0;
@@ -91,12 +97,6 @@ export function migrateState(raw: unknown): Migrated {
     st.fame.value = marketValue(st);
     st.fame.peakValue = st.fame.value;
     st.snap.val = st.fame.value;
-  }
-  if (v < 8 || (st.ab as unknown as Record<string, unknown>).cap === undefined) {
-    const old = Number(st.ab.pot);
-    const cp = Math.min(99, Math.max(60, Number.isFinite(old) ? old : 70));
-    st.ab.cap = Math.round(cp * 10) / 10;
-    st.ab.pot = Math.round(rawForAnchored(st.ab.cap) * 10) / 10;
   }
   st.v = STATE_VERSION;
   if (st.phase === 'youth' && st.career.signed && st.career.clubId) settleToPro(st, null as never, '프로 선수단 등록');
