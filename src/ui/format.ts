@@ -1,8 +1,8 @@
 import { ageAt, dateOf, fmtDate, seasonOf, swOf } from '../engine/time';
-import { formatKRW } from '../engine/finance';
+import { formatKRW, formatMarket } from '../engine/finance';
 import type { Chip, GameState } from '../engine/types';
 
-export { formatKRW };
+export { formatKRW, formatMarket };
 
 export function chipText(c: Chip): string {
   if (c.d === 0) return c.k;

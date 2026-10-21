@@ -3,7 +3,7 @@
   import { getClub, getLeague, getCountry } from '../engine/data';
   import { clubLeagueId, positionOf, ranking } from '../engine/world';
   import { ROLE_LABEL } from '../engine/types';
-  import { formatKRW, netWorth, currentWage } from '../engine/finance';
+  import { formatKRW, formatMarket, netWorth, currentWage } from '../engine/finance';
   import { dateOf, fmtDate, ageAt } from '../engine/time';
   import { healthLabel } from '../engine/health';
   import { roleLabel as coachRoleLabel } from '../engine/coach';
@@ -32,6 +32,7 @@
   const weeksLeft = $derived(con ? Math.max(0, con.endW - g.week) : 0);
   const retDate = $derived(g.st.injury ? fmtDate(dateOf(g.week + Math.ceil(g.st.injury.weeksLeft))) : '');
   const wage = $derived(currentWage(g));
+  const valDelta = $derived(g.snap.val > 0 ? Math.round(((g.fame.value - g.snap.val) / g.snap.val) * 100) : 0);
   const months = $derived(Math.round(weeksLeft / 4.345));
   const isFA = $derived(g.phase === 'pro' && !g.career.clubId && g.career.signed && !g.career.retired);
   const faWeeks = $derived(isFA && g.career.freeAgentW >= 0 ? g.week - g.career.freeAgentW : 0);
@@ -121,7 +122,7 @@
       {#if g.phase === 'pro' && con}<div class="kv"><span>보너스</span><span class="mono">출전 {formatKRW(con.appBonus)} · 득점 {formatKRW(con.goalBonus)}</span></div>{/if}
       <div class="kv"><span>스폰서</span><span class="mono">{formatKRW(g.fin.sponsorYear)}/년</span></div>
       <div class="kv"><span>연 소득</span><span class="mono">{formatKRW(g.fin.yearIncome || g.fin.yearIncomeAcc)}</span></div>
-      <div class="kv"><span>시장가치</span><span class="mono">{formatKRW(g.fame.value)}</span></div>
+      <div class="kv"><span>시장가치</span><span class="mono">{formatMarket(g.fame.value)}<small class={valDelta >= 0 ? 'up' : 'down'}> {valDelta >= 0 ? '▲' : '▼'}{Math.abs(valDelta)}%</small></span></div>
       <div class="kv"><span>순자산</span><span class="mono up">{formatKRW(netWorth(g))}</span></div>
       <div class="kv"><span>현금 · 부채</span><span class="mono">{formatKRW(g.fin.cash)}{g.fin.debt ? ` · -${formatKRW(g.fin.debt)}` : ''}</span></div>
     </div>
@@ -135,7 +136,7 @@
           <div class="kv"><span>사전 계약</span><span>{preText}</span></div>
           <div class="kv"><span>이적 요청</span><span>{reqText}</span></div>
           <div class="kv"><span>약속 역할</span><span>{ROLE_LABEL[g.career.promisedRole]}</span></div>
-          <div class="kv"><span>바이아웃</span><span class="mono">{con.buyout ? formatKRW(con.buyout) : '없음'}</span></div>
+          <div class="kv"><span>바이아웃</span><span class="mono">{con.buyout ? formatMarket(con.buyout) : '없음'}</span></div>
           <div class="kv"><span>출전 보너스</span><span class="mono">{cur.apps}경기 / 선발 {cur.starts}</span></div>
           {#if con.loanFrom}<div class="kv"><span>임대</span><span>{getClub(con.loanFrom).name} 소속</span></div>{/if}
         {/if}

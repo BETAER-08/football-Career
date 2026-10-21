@@ -2,7 +2,7 @@
   import { store } from './store.svelte';
   import { getClub, getLeague, getCountry } from '../engine/data';
   import { START_YEAR, ageAt, seasonOf, yearOf } from '../engine/time';
-  import { formatKRW } from '../engine/finance';
+  import { formatKRW, formatMarket } from '../engine/finance';
   import { REL_LABEL } from '../engine/fx';
   import type { Person, SeasonRec } from '../engine/types';
   import { whyText } from './format';
@@ -164,7 +164,8 @@
         <div class="mini-hint">오버롤 추이 · 시장가치 추이</div>
         <svg viewBox="0 0 320 54" class="chart"><path d={path(hist.map((h) => h.ovr), 320, 54)} fill="none" stroke="var(--info)" stroke-width="2" /></svg>
         <svg viewBox="0 0 320 54" class="chart"><path d={path(hist.map((h) => h.val), 320, 54)} fill="none" stroke="var(--amber)" stroke-width="2" /></svg>
-        <div class="mini-hint">최고 시장가치 {formatKRW(g.fame.peakValue)} · 현재 {formatKRW(g.fame.value)}</div>
+        <div class="mini-hint">최고 시장가치 {formatMarket(g.fame.peakValue)} · 현재 {formatMarket(g.fame.value)}</div>
+        <div class="mini-hint">누적 이적료 {formatMarket(g.career.feeSum)} · 최고 이적료 {formatMarket(g.career.feeMax)}</div>
       {/if}
       <div class="mini-hint">{getCountry(g.p.country).ko} · 만 {age}세 · {getLeague(getClub(g.p.startClubId).lg0).ko}에서 출발</div>
     </div>

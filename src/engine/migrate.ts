@@ -1,11 +1,12 @@
 import { START_YEAR } from './time';
 import { curOvr } from './attributes';
+import { marketValue } from './finance';
 import { initWorld } from './worldsim';
 import { emptyRec } from './records';
 import { openYouthRec, setupYouthSeason, settleToPro } from './yleague';
 import type { GameState } from './types';
 
-export const STATE_VERSION = 6;
+export const STATE_VERSION = 7;
 
 export type Migrated = { ok: true; state: GameState } | { ok: false; reason: string };
 
@@ -81,6 +82,16 @@ export function migrateState(raw: unknown): Migrated {
   if (st.extra.podium === undefined) st.extra.podium = 0;
   if (!st.why) st.why = {};
   if (!st.recent) st.recent = [];
+  if (v < 7) {
+    const cc = st.career as unknown as Record<string, unknown>;
+    if (cc.feeSum === undefined) cc.feeSum = 0;
+    if (cc.feeMax === undefined) cc.feeMax = 0;
+    const ww = st.wld as unknown as Record<string, unknown>;
+    if (!ww.feeRec) ww.feeRec = { club: {}, league: {} };
+    st.fame.value = marketValue(st);
+    st.fame.peakValue = st.fame.value;
+    st.snap.val = st.fame.value;
+  }
   st.v = STATE_VERSION;
   if (st.phase === 'youth' && st.career.signed && st.career.clubId) settleToPro(st, null as never, '프로 선수단 등록');
   if (st.phase === 'youth' && st.career.clubId && !st.yt) {

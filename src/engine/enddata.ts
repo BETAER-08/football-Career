@@ -39,6 +39,8 @@ export interface EndData {
   natGoals: number;
   netWorth: number;
   peakValue: number;
+  feeSum: number;
+  feeMax: number;
   trophies: TrophyRec[];
   coachTrophies: TrophyRec[];
   awards: AwardRec[];
@@ -90,7 +92,7 @@ export function buildEndData(s: GameState, grade: string, percentile: number, ba
     version: ARCHIVE_VERSION, name: s.p.name, en: s.p.en, country: s.p.country, birthYear: s.p.birth.y, startClub: getClub(s.p.startClubId).name, startClubId: s.p.startClubId,
     startLvl: s.p.startLvl, startLeague: getLeague(s.p.startLeagueId).ko, pos: s.ab.pos, seed: s.cfg.seed, cfgName: s.cfg.name, endReason: s.endReason, score: s.score,
     debuted: s.career.debuted, grade, percentile, coachGrade: s.coach.entered && s.coach.recs.length ? coachGrade(s.coach.peakFame) : '', peakFame: Math.round(s.coach.peakFame),
-    apps, goals, assists, avg: rn ? rs / rn : 0, caps: s.nat.caps, natGoals: s.nat.goals, netWorth: netWorth(s), peakValue: s.fame.peakValue, trophies: s.career.trophies, coachTrophies: s.coach.trophies,
+    apps, goals, assists, avg: rn ? rs / rn : 0, caps: s.nat.caps, natGoals: s.nat.goals, netWorth: netWorth(s), peakValue: s.fame.peakValue, feeSum: s.career.feeSum, feeMax: s.career.feeMax, trophies: s.career.trophies, coachTrophies: s.coach.trophies,
     awards: s.career.awards, clubs, clubNames: names, seasons, coachRecs: s.coach.recs.map((r) => ({ ...r })), logs: keyLogs, baseline: baseline.map((v) => Math.round(v * 10) / 10),
     dream: { id: s.dream, label: s.dream ? DREAM_LABEL[s.dream] : '', achieved: s.dream ? dreamAchieved(s, s.dream) : false }, epilogue: epilogueText(s), ballons: s.extra.ballon, podiums: s.extra.podium, ageRecs: s.nat.ageRecs, natMatches: s.nat.matches.slice(-60), youth: youthSummary(s)
   };
