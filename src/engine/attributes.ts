@@ -118,6 +118,23 @@ export function groupAvg(ab: Abilities, g: 'tech' | 'phys' | 'mental'): number {
   return s / n;
 }
 
+export function scaleToOvr(a: Record<AttrKey, number>, pos: Pos, target: number): void {
+  const base = {} as Record<AttrKey, number>;
+  for (const k of ALL_ATTRS) base[k] = a[k];
+  const want = rawForAnchored(target);
+  let lo = 0.2;
+  let hi = 6;
+  for (let i = 0; i < 40; i++) {
+    const m = (lo + hi) / 2;
+    const test = {} as Record<AttrKey, number>;
+    for (const k of ALL_ATTRS) test[k] = Math.min(20, Math.max(1, base[k] * m));
+    if (ovrOf(test, pos) < want) lo = m;
+    else hi = m;
+  }
+  const f = (lo + hi) / 2;
+  for (const k of ALL_ATTRS) a[k] = Math.min(20, Math.max(1, base[k] * f));
+}
+
 export function ceilingOvr(ab: Abilities): number {
   return ovrOf(ab.ceil, ab.pos);
 }

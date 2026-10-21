@@ -71,7 +71,7 @@ export function valueParts(s: GameState): ValueParts {
   const age = ageAt(s.p.birth, s.week);
   const base = baseValue(ovr);
   const ageF = ageValueF(age);
-  const potF = age <= 23 ? 1 + Math.max(0, s.ab.pot - ovr) / 30 : 1;
+  const potF = age <= 23 ? 1 + Math.max(0, s.ab.cap - ovr) / 30 : 1;
   const posF = posValueF(s.ab.pos);
   const formF = formValueF(s);
   const fameF = 1 + s.fame.abroad / 200;
