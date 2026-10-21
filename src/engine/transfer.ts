@@ -18,7 +18,6 @@ import { CONT_LP_WEEKS, CONT_COMPS } from '../data/competitions';
 import { leagueWeek, profileOf, windowIdx } from './calendar';
 import { firstContractOffers } from './market';
 import { makeGoals } from './goals';
-import { josa } from './josa';
 
 export const ROLE_VAL: Record<Role, number> = { starter: 3, rotation: 2, prospect: 1, backup: 0 };
 

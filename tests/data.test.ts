@@ -181,7 +181,7 @@ describe('데이터 검증', () => {
   it('인물 재등장: 20개 이상 텍스트에 동료·주장·라이벌 템플릿, 새 이벤트 6개', () => {
     ensureContent();
     const defs = allEventDefs();
-    const re = /\{(mate1|mate2|captain|rival)\}/;
+    const re = /\{(mate1|mate2|captain|rival)(:[가-힣]+)?\}/;
     expect(defs.filter((e) => !e.id.startsWith('fc_') && e.text.some((x) => re.test(x))).length).toBeGreaterThanOrEqual(20);
     expect(defs.filter((e) => e.id.startsWith('fc_')).length).toBe(6);
   });

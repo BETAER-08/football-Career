@@ -275,6 +275,17 @@ export interface Offer {
   note?: string;
   optionFee?: number;
   renego?: boolean;
+  cinfo?: CoachOfferInfo;
+}
+
+export interface CoachOfferInfo {
+  country: string;
+  leagueName: string;
+  level: number;
+  target: number;
+  budget: string;
+  director: string;
+  reason: string;
 }
 
 export type OfferMode = 'transfer' | 'renew' | 'loan' | 'free' | 'pre';

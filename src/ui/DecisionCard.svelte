@@ -2,11 +2,11 @@
   import Lines from './Lines.svelte';
   import CountryBadge from './CountryBadge.svelte';
   import { store } from './store.svelte';
-  import { getClub, getLeague, academyGrade } from '../engine/data';
+  import { getClub, getCountry, getLeague, academyGrade } from '../engine/data';
   import { formatKRW, formatMarket } from '../engine/finance';
   import { ROLE_LABEL, type Offer } from '../engine/types';
   import { clubLvl } from '../engine/world';
-  import { coachOfferLabel } from '../engine/coach';
+  import { coachOfferLabel, coachRoleLabel } from '../engine/coach';
   import { modeLabel } from '../engine/market';
   import { demandOdds } from '../engine/transfer';
   import Chips from './Chips.svelte';
@@ -96,8 +96,17 @@
           {#each d.offers as o, i}
             <div class="offer" class:sel={picked === i}>
               {#if d.ref === 'coachjob'}
-                <div class="row"><b>{coachOfferLabel(o)}</b></div>
-                <div class="muted" style="font-size:12px">계약 {o.years}년</div>
+                {#if o.cinfo}
+                  {@const ci = o.cinfo}
+                  <div class="row"><b class="ocl">{o.clubId.startsWith('NAT:') ? getCountry(ci.country).natTeam : getClub(o.clubId).name}</b><span class="tag">{coachRoleLabel(o.tag)}</span><span class="tag"><CountryBadge code={ci.country} name /></span><span class="tag">{ci.leagueName}</span><span class="tag">수준 {ci.level}</span></div>
+                  <div class="og">
+                    {#if ci.target > 0}<span>구단 목표 <b>{ci.target}위 이내</b></span>{/if}<span>계약 <b>{o.years}년</b></span><span>연봉 <b class="mono">{formatKRW(o.wage)}</b></span><span>예산 <b>{ci.budget}</b></span><span>단장 성향 <b>{ci.director}</b></span>
+                  </div>
+                  <div class="muted" style="font-size:12px">{ci.reason}</div>
+                {:else}
+                  <div class="row"><b>{coachOfferLabel(o)}</b></div>
+                  <div class="muted" style="font-size:12px">계약 {o.years}년</div>
+                {/if}
               {:else}
                 {@const c = getClub(o.clubId)}
                 <div class="row"><b class="ocl">{c.name}</b><span class="tag badge" data-mode={o.mode ?? 'transfer'}>{modeLabel(o)}</span><span class="tag"><CountryBadge code={c.country} name /></span><span class="tag">{getLeague(c.lg0).ko}</span><span class="tag">수준 {lvlOf(o)}</span>{#if o.yth || o.first}<span class="tag">아카데미 {academyGrade(c.acad)}등급</span>{/if}{#if o.mode === 'free'}<span class="tag">자유계약 · 이적료 없음</span>{:else if o.mode === 'pre'}<span class="tag">사전 계약 · 시즌 종료 후 합류</span>{/if}{#if o.trial}<span class="tag" style="color:var(--amber)">입단 테스트</span>{/if}</div>

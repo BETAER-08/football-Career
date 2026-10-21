@@ -400,7 +400,7 @@ registerFx('milDefer', (s) => {
 import { genCoachOffers } from './coach';
 registerFx('coachOffers', (s, { rng }) => {
   if (s.decision || hasPendingOffer(s)) return;
-  const offers = genCoachOffers(s, rng, 2).filter((o) => o.tag !== s.coach.role.replace('youthCoach', 'youth') || o.clubId.startsWith('NAT:'));
+  const offers = genCoachOffers(s, rng, 2);
   if (offers.length) presentOffers(s, offers, 'coachjob', '이직 제안', '새로운 자리를 제안받았다.', true);
   else toast(s, '구체적인 제안은 아직 오지 않았다.');
 });

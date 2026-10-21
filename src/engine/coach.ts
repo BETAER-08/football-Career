@@ -1,6 +1,6 @@
 import { LEVEL_WAGE_MULT, LEVEL_STARTER_OVR } from '../data/countries';
 import { TOURNAMENTS } from '../data/competitions';
-import { Rng, clamp } from './rng';
+import { Rng, clamp, hashString } from './rng';
 import { sys } from './narrative';
 import { addLog, toast } from './log';
 import { ageAt, seasonOf, swOf, yearOf, START_YEAR } from './time';
@@ -10,7 +10,7 @@ import { makePerson, randomPos } from './relations';
 import { setupClubSeason } from './transfer';
 import { presentOffers, hasPendingOffer } from './offers';
 import { playTeamOnly, natTeamBase } from './match';
-import type { CoachRec, Contract, GameState, Offer, Person, Pos } from './types';
+import type { CoachRec, CoachState, Contract, GameState, Offer, Person, Pos } from './types';
 import { awardTrophy, matchesThisWeek } from './season';
 import { formatKRW } from './finance';
 
@@ -30,7 +30,6 @@ export function licenseLabel(code: string, key: 'C' | 'B' | 'A' | 'P'): string {
 
 const PASS_RATE = { C: 0.85, B: 0.6, A: 0.45, P: 0.35 };
 const NEED_SEASONS = { C: 0, B: 1, A: 3, P: 5 };
-const FAME_REQ: Record<number, number> = { 2: 6, 3: 16, 4: 30, 5: 46, 6: 64 };
 
 export function licenseLevel(s: GameState): number {
   const l = s.coach.licenses;
@@ -119,58 +118,204 @@ function coachWage(s: GameState, lvl: number, role: string): number {
   return Math.round(7000 * LEVEL_WAGE_MULT[lvl] * mult * (1 + s.coach.fame / 90) * (0.5 + getCountry(s.p.country).econ));
 }
 
+type OfferRole = 'youth' | 'assistant' | 'manager' | 'national';
+
+const ROLE_RANK: Record<OfferRole, number> = { youth: 0, assistant: 1, manager: 2, national: 3 };
+const ROLE_LIC: Record<OfferRole, number> = { youth: 1, assistant: 2, manager: 3, national: 4 };
+const ROLE_ORDER: OfferRole[] = ['youth', 'assistant', 'manager', 'national'];
+
+const ROLE_WEIGHTS: Record<OfferRole, Record<keyof CoachState['skills'], number>> = {
+  youth: { development: 0.35, leadership: 0.15, tactics: 0.15, data: 0.1, language: 0.1, media: 0.05, management: 0.1 },
+  assistant: { tactics: 0.35, leadership: 0.2, data: 0.15, development: 0.1, management: 0.1, media: 0.05, language: 0.05 },
+  manager: { tactics: 0.25, management: 0.2, leadership: 0.2, media: 0.1, data: 0.1, language: 0.1, development: 0.05 },
+  national: { tactics: 0.2, management: 0.2, leadership: 0.2, media: 0.15, language: 0.15, data: 0.05, development: 0.05 }
+};
+
+const LEVEL_CAPS: ReadonlyArray<readonly [number, number]> = [[75, 6], [60, 5], [45, 4], [30, 3], [-Infinity, 2]];
+
+const DIRECTOR_STYLES = ['육성 중시형', '성과 중시형', '안정 추구형', '공격 투자형'];
+
+export function roleOfRec(label: string): OfferRole | null {
+  if (!label) return null;
+  if (label.includes('국가대표')) return 'national';
+  if (label.includes('유스')) return 'youth';
+  if (label.includes('수석')) return 'assistant';
+  return 'manager';
+}
+
+export function currentOfferRole(s: GameState): OfferRole | null {
+  const c = s.coach;
+  if (c.role === 'youthCoach') return 'youth';
+  if (c.role === 'assistant') return 'assistant';
+  if (c.role === 'manager') return 'manager';
+  if (c.role === 'national') return 'national';
+  const last = c.recs[c.recs.length - 1];
+  return last ? roleOfRec(last.role) : null;
+}
+
+export function coachScore(s: GameState, role: OfferRole): { score: number; ability: number; recent: number } {
+  const c = s.coach;
+  const w = ROLE_WEIGHTS[role];
+  let ability = 0;
+  for (const k of Object.keys(w) as (keyof CoachState['skills'])[]) ability += c.skills[k] * w[k];
+  const recent = clamp(c.standing, 0, 100);
+  return { score: c.fame * 0.45 + ability * 0.35 + recent * 0.2, ability, recent };
+}
+
+export function levelCap(score: number, role: OfferRole, lic: number): number {
+  const adj = score + (role === 'manager' ? 0 : 6);
+  let cap = 2;
+  for (const [min, lv] of LEVEL_CAPS) if (adj >= min) { cap = lv; break; }
+  if (lic <= 3) cap = Math.min(cap, 3);
+  return cap;
+}
+
+export function allowedOfferRoles(s: GameState): { role: OfferRole; downOnly: boolean; viaLevel: boolean }[] {
+  const lic = licenseLevel(s);
+  const cur = currentOfferRole(s);
+  const c = s.coach;
+  const out: { role: OfferRole; downOnly: boolean; viaLevel: boolean }[] = [];
+  const add = (r: OfferRole, downOnly = false, viaLevel = false): void => {
+    if (lic >= ROLE_LIC[r] && !out.some((x) => x.role === r)) out.push({ role: r, downOnly, viaLevel });
+  };
+  if (cur === null) { add('youth'); add('assistant'); return out; }
+  add(cur);
+  if (cur === 'national') add('manager');
+  else if (cur !== 'manager') add(ROLE_ORDER[ROLE_RANK[cur] + 1]);
+  else add('national');
+  const underperf = c.role === 'manager' && c.tablePos > 0 && c.tablePos - c.tableTarget >= 5;
+  if (ROLE_RANK[cur] > 0 && (c.jobless >= 26 || underperf)) add(ROLE_ORDER[ROLE_RANK[cur] - 1], true);
+  if (ROLE_RANK[cur] > 0 && c.clubId) add(ROLE_ORDER[ROLE_RANK[cur] - 1], true, true);
+  return out;
+}
+
+function langScore(s: GameState, code: string): number {
+  const lang = getCountry(code).lang;
+  if (getCountry(s.p.country).lang === lang) return 100;
+  return Math.min(100, (s.life.lang[lang] ?? 0) + s.coach.skills.language * 0.3);
+}
+
+function coachedCodes(s: GameState): Set<string> {
+  const out = new Set<string>();
+  for (const r of s.coach.recs) {
+    if (r.clubId.startsWith('NAT:')) out.add(r.clubId.slice(4));
+    else {
+      try { out.add(getClub(r.clubId).country); } catch { continue; }
+    }
+  }
+  if (s.coach.clubId) out.add(getClub(s.coach.clubId).country);
+  return out;
+}
+
+function playedCodes(s: GameState): Set<string> {
+  const out = new Set<string>();
+  for (const r of s.career.seasons) {
+    try { out.add(getClub(r.clubId).country); } catch { continue; }
+  }
+  return out;
+}
+
+export function hasTie(s: GameState, code: string): boolean {
+  if (code === s.p.country) return true;
+  return coachedCodes(s).has(code) || playedCodes(s).has(code) || langScore(s, code) >= 50 || getCountry(code).confed === getCountry(s.p.country).confed;
+}
+
+function budgetTier(fin: number): string {
+  return fin >= 70 ? '풍족' : fin >= 40 ? '보통' : '빠듯';
+}
+
 export function genCoachOffers(s: GameState, rng: Rng, n: number): Offer[] {
   const out: Offer[] = [];
   const lic = licenseLevel(s);
-  const fame = s.coach.fame;
   if (lic < 1) return out;
+  const allowed = allowedOfferRoles(s);
+  if (!allowed.length) return out;
+  const cur = currentOfferRole(s);
+  const curLvl = s.coach.clubId ? clubLvl(s, s.coach.clubId) : 0;
   const home = getCountry(s.p.country);
-  const roles: ('youth' | 'assistant' | 'manager' | 'national')[] = [];
-  roles.push('youth');
-  if (lic >= 2) roles.push('assistant');
-  if (lic >= 3) roles.push('manager');
-  if (lic >= 4 && fame >= 60) roles.push('national');
-  const lastBest = s.coach.role;
+  const coached = coachedCodes(s);
+  const played = playedCodes(s);
+  const homeFirst = (r: OfferRole) => (r === 'national' ? 0.93 : 0.7);
   for (let i = 0; i < n; i++) {
-    const wts = roles.map((r) => {
-      if (r === 'youth') return lastBest === 'none' ? 3 : 0.6;
-      if (r === 'assistant') return 2 + (lic >= 2 ? 1 : 0);
-      if (r === 'manager') return 1.5 + fame / 40 + (s.coach.assistantSeasons > 0 ? 1.5 : 0);
-      return fame >= 60 ? 0.17 + (fame - 60) / 90 : 0;
+    const wts = allowed.map((a) => {
+      const sc = coachScore(s, a.role).score;
+      if (a.role === 'national') return sc >= 65 ? 0.05 + (sc - 65) / 300 : 0;
+      let w = a.role === cur ? 3 : a.downOnly ? 0.6 : 1.8;
+      if (a.role === 'manager' && s.coach.assistantSeasons > 0) w += 1;
+      return w;
     });
-    const role = roles[rng.weightedIndex(wts)];
+    if (wts.every((w) => w <= 0)) break;
+    const pick = allowed[rng.weightedIndex(wts)];
+    const role = pick.role;
+    const sc = coachScore(s, role);
     if (role === 'national') {
-      const code = rng.chance(0.93) ? s.p.country : rng.pick(allCountries()).code;
+      let code = s.p.country;
+      if (!rng.chance(homeFirst(role))) {
+        const alt = allCountries().filter((c) => c.code !== s.p.country && sc.score >= 80 && (coached.has(c.code) || played.has(c.code) || langScore(s, c.code) >= 50 || c.confed === home.confed));
+        if (!alt.length) continue;
+        code = rng.pick(alt).code;
+      }
+      if (out.some((o) => o.clubId === `NAT:${code}`)) continue;
       const cc = getCountry(code);
-      if (code !== s.p.country && fame < 75) continue;
-      const o: Offer = { id: s.ev.nextId++, clubId: `NAT:${code}`, role: 'starter', wage: Math.round(coachWage(s, Math.min(5, cc.top), 'national')), years: 4, signing: 0, appBonus: 0, goalBonus: 0, buyout: 0, loan: false, trial: false, exp: s.week + 10, coachName: '', coachStyle: '', first: false, fromAgent: false, tag: 'national' };
-      out.push(o);
+      out.push({
+        id: s.ev.nextId++, clubId: `NAT:${code}`, role: 'starter', wage: Math.round(coachWage(s, Math.min(5, cc.top), 'national')), years: 4, signing: 0, appBonus: 0, goalBonus: 0, buyout: 0, loan: false, trial: false, exp: s.week + 10, coachName: '', coachStyle: '', first: false, fromAgent: false, tag: 'national',
+        cinfo: { country: code, leagueName: '대표팀', level: Math.min(5, cc.top), target: 0, budget: '협회 지원', director: '협회', reason: `점수 ${Math.round(sc.score)}점, 대표팀 감독 후보` }
+      });
       continue;
     }
-    const levels = [2, 3, 4, 5, 6];
+    const cap = levelCap(sc.score, role, lic);
+    const levels = [2, 3, 4, 5, 6].filter((L) => L <= cap && (!pick.viaLevel || L >= curLvl + 2));
+    if (!levels.length) continue;
     const lw = levels.map((L) => {
-      const req = FAME_REQ[L] - (role === 'manager' ? 0 : 8);
-      let v = 1 / (1 + Math.exp(-(fame - req) / 6));
-      if (L >= 5) v *= role === 'manager' ? 0.8 : 0.7;
-      if (role === 'manager' && lic === 3 && L > 3) v = 0;
-      return v + (L === 2 ? 0.03 : 0);
+      let v = L === cap ? 4 : L === cap - 1 ? 3 : L === cap - 2 ? 1.2 : 0.4;
+      if (L === 5) v *= 0.03;
+      if (L === 6) v *= 0.015;
+      return v;
     });
     const L = levels[rng.weightedIndex(lw)];
-    const home1 = rng.chance(0.78);
-    const countries = allCountries().filter((c) => c.top >= L);
-    const code = home1 && home.top >= L ? home.code : rng.pick(countries).code;
+    const homeOk = home.top >= L;
+    let code = s.p.country;
+    if (!homeOk || !rng.chance(homeFirst(role))) {
+      const fc0 = allCountries().filter((c) => c.code !== s.p.country && c.top >= L && !(langScore(s, c.code) < 30 && (role === 'manager')));
+      const fcTie = fc0.filter((c) => hasTie(s, c.code));
+      const fc = fcTie.length ? fcTie : fc0;
+      if (!fc.length) { if (!homeOk) continue; } else {
+        const fw = fc.map((c) => {
+          let w = Math.sqrt(leaguesOf(c.code).reduce((a, lg) => a + lg.clubIds.length, 0));
+          const tie = hasTie(s, c.code);
+          if (coached.has(c.code)) w *= 3;
+          if (played.has(c.code)) w *= 2;
+          if (langScore(s, c.code) >= 50) w *= 2.5;
+          if (c.confed === home.confed) w *= 1.6;
+          if (!tie) w *= 0.01;
+          return w;
+        });
+        code = fc[rng.weightedIndex(fw)].code;
+      }
+    }
     const cands: string[] = [];
     ensureCountry(s, code);
     for (const lg of leaguesOf(code)) for (const id of lg.clubIds) if (clubLvl(s, id) === L && id !== s.coach.clubId) cands.push(id);
     if (!cands.length) continue;
     const id = rng.pick(cands);
     if (out.some((o) => o.clubId === id)) continue;
-    const langOk = code === s.p.country ? 1 : (s.life.lang[getCountry(code).lang] ?? 0) / 100 + 0.4;
-    if (rng.next() > Math.min(1, langOk + s.coach.skills.language / 150)) continue;
     const years = role === 'manager' ? rng.int(1, 3) : 2;
-    out.push({ id: s.ev.nextId++, clubId: id, role: 'starter', wage: coachWage(s, L, role), years, signing: 0, appBonus: 0, goalBonus: 0, buyout: 0, loan: false, trial: false, exp: s.week + 10, coachName: '', coachStyle: '', first: false, fromAgent: false, tag: role });
+    const cs = getClub(id);
+    const lgId = clubLeagueId(s, id);
+    const rank = ranking2(s, lgId);
+    const target = Math.max(1, Math.min(rank.length, rank.indexOf(id) + 1));
+    const dir = DIRECTOR_STYLES[hashString(`dir|${id}`) % DIRECTOR_STYLES.length];
+    const why = pick.downOnly ? '이직 사유: 상황 변화로 한 단계 낮은 직책 제안' : role === cur ? '같은 직책 이직 제안' : cur === null ? '첫 지도자 자리 제안' : '한 단계 높은 직책 제안';
+    out.push({
+      id: s.ev.nextId++, clubId: id, role: 'starter', wage: coachWage(s, L, role), years, signing: 0, appBonus: 0, goalBonus: 0, buyout: 0, loan: false, trial: false, exp: s.week + 10, coachName: '', coachStyle: '', first: false, fromAgent: false, tag: role,
+      cinfo: { country: cs.country, leagueName: getLeague(lgId).ko, level: L, target, budget: budgetTier(cs.fin0), director: dir, reason: `점수 ${Math.round(sc.score)}점 · ${why}` }
+    });
   }
   return out;
+}
+
+export function coachRoleLabel(tag: string): string {
+  return { youth: '유스 코치', assistant: '수석코치', manager: '감독', national: '국가대표 감독' }[tag] ?? '코치';
 }
 
 export function coachOfferLabel(o: Offer): string {
@@ -529,7 +674,7 @@ export function coachWeekly(s: GameState, rng: Rng): void {
   } else {
     if (c.role !== 'national') coachMatchWeek(s, rng);
     if (!s.decision && !hasPendingOffer(s) && s.week - c.lastOfferW > 40 && rng.next() < 0.012 + c.fame / 4000) {
-      const offers = genCoachOffers(s, rng, 2).filter((o) => o.tag === 'national' || o.tag !== c.role.replace('youthCoach', 'youth'));
+      const offers = genCoachOffers(s, rng, 2);
       if (offers.length) { c.lastOfferW = s.week; presentOffers(s, offers, 'coachjob', '이직 제안', '다른 구단에서 당신을 눈여겨봤다.', true); }
     }
     if (c.role === 'manager' && sw === 30 && !c.halfFired && c.standing < 18) {
