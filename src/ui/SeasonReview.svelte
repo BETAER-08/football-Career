@@ -1,5 +1,7 @@
 <script lang="ts">
   import { store } from './store.svelte';
+  import { dialog } from './dialog';
+  import Icon from './Icon.svelte';
   import { formatKRW, formatMarket } from './format';
   import type { SeasonReview, TableRow } from '../engine/types';
 
@@ -30,10 +32,11 @@
 
 {#if r}
   <div class="modal-bg" role="presentation">
-    <div class="modal rv" role="dialog" tabindex="-1" onkeydown={() => {}}>
+    <div class="modal rv" role="dialog" aria-label="시즌 결산" tabindex="-1" use:dialog={{ close: () => store.closeReview() }}>
       <div class="modal-h">
         <span>{r.year}~{r.year + 1} 시즌 결산 · {r.clubName}</span>
         <span class="spacer"></span>
+        {#if store.batchTotal > 1}<span class="tag" title="대기 중인 알림">알림 {store.batchIndex} / {store.batchTotal}</span>{/if}
         <span class="mini-hint">{step + 1} / 3{g.auto ? ' · 8초 뒤 자동으로 닫혀요' : ''}</span>
       </div>
       <div class="modal-b col" style="gap:12px">
@@ -80,12 +83,12 @@
             <div class="sec">
               <b>시상</b>
               {#if r.awards.length}
-                {#each r.awards as a}<div class="award">🏅 {a.name}<span class="tag">{a.scope === 'club' ? '구단' : '리그'}</span></div>{/each}
+                {#each r.awards as a}<div class="award"><Icon name="star" size={14} /> {a.name}<span class="tag">{a.scope === 'club' ? '구단' : '리그'}</span></div>{/each}
               {:else}<div class="muted">이번 시즌에는 수상이 없었어요.</div>{/if}
               {#if r.clubPoy.length}
                 <div class="mini-hint">구단 평점 순위: {r.clubPoy.map((p, i) => `${i + 1}. ${p.name} ${p.rating.toFixed(2)}`).join(' · ')}</div>
               {/if}
-              {#each r.trophies as t}<div class="award">{r.youth ? '🏅 유스 트로피 ·' : '🏆'} {t}</div>{/each}
+              {#each r.trophies as t}<div class="award"><Icon name={r.youth ? 'star' : 'trophy'} size={14} /> {r.youth ? '유스 트로피 · ' : ''}{t}</div>{/each}
             </div>
             <div class="sec"><b>시즌 베스트 장면</b><div class="best">{r.best}</div></div>
           {:else}
@@ -106,7 +109,7 @@
             {/if}
             {#if r.goals.length}
               <div class="sec"><b>이번 시즌 목표</b>
-                {#each r.goals as gl}<div class="goal"><span class={gl.done ? 'up' : 'down'}>{gl.done ? '달성 ✓' : '미달 ✗'}</span> {gl.label} <span class="faint">· {gl.reward}</span></div>{/each}
+                {#each r.goals as gl}<div class="goal"><span class={gl.done ? 'up' : 'down'}><Icon name={gl.done ? 'check' : 'close'} size={14} /> {gl.done ? '달성' : '미달'}</span> {gl.label} <span class="faint">· {gl.reward}</span></div>{/each}
               </div>
             {/if}
             {#if r.next.club}
@@ -138,7 +141,7 @@
             </div>
           {:else if step === 1}
             <div class="sec"><b>선수단 MVP</b><div class="best">{r.coach.mvp}이(가) 시즌 내내 팀의 중심이었다.</div></div>
-            {#each r.trophies as t}<div class="award">🏆 {t}</div>{/each}
+            {#each r.trophies as t}<div class="award"><Icon name="trophy" size={14} /> {t}</div>{/each}
           {:else}
             <div class="sec"><b>변화 요약</b>
               <div class="stats four">
@@ -153,7 +156,7 @@
           <button class="btn" disabled={step === 0} onclick={() => (step -= 1)}>이전</button>
           <span class="spacer"></span>
           {#if step < 2}
-            <button class="btn primary" onclick={() => (step += 1)}>다음</button>
+            <button class="btn primary" data-autofocus onclick={() => (step += 1)}>다음</button>
           {:else}
             <button class="btn primary" onclick={() => store.closeReview()}>닫고 계속하기</button>
           {/if}

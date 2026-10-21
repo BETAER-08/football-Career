@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { dialog } from './dialog';
   import { store } from './store.svelte';
 
   let text = $state('');
@@ -24,8 +25,8 @@
   }
 </script>
 
-<div class="modal-bg" role="presentation" onclick={() => (store.panel = '')}>
-  <div class="modal" style="max-width:600px" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
+<div class="modal-bg" role="presentation">
+  <div class="modal" style="max-width:600px" role="dialog" aria-label="저장 · 나가기" tabindex="-1" use:dialog={{ close: () => (store.panel = '') }}>
     <div class="modal-h">저장 · 나가기</div>
     <div class="modal-b col" style="gap:10px">
       <div class="muted">자동 저장은 매주 이뤄져요. 나가도 이어하기로 돌아올 수 있어요.</div>

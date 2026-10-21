@@ -1,6 +1,9 @@
 <script lang="ts">
   import { store } from './store.svelte';
-  import { getClub, getCountry } from '../engine/data';
+  import { dialog } from './dialog';
+  import Icon from './Icon.svelte';
+  import CountryBadge from './CountryBadge.svelte';
+  import { getClub } from '../engine/data';
 
   const g = $derived(store.game!);
   const c = $derived(g.wld.ceremony);
@@ -17,15 +20,15 @@
 
 {#if c}
   <div class="modal-bg" role="presentation">
-    <div class="modal bl" role="dialog" tabindex="-1" onkeydown={() => {}}>
-      <div class="modal-h">🏆 {c.year} 발롱도르 시상식</div>
+    <div class="modal bl" role="dialog" aria-label="발롱도르 시상식" tabindex="-1" use:dialog={{ close: () => store.closeCeremony() }}>
+      <div class="modal-h"><Icon name="trophy" size={18} /> {c.year} 발롱도르 시상식<span class="spacer"></span>{#if store.batchTotal > 1}<span class="tag">알림 {store.batchIndex} / {store.batchTotal}</span>{/if}</div>
       <div class="modal-b col" style="gap:10px">
         {#each place as idx, k}
           {#if step > k}
             <div class="slot" class:first={idx === 0}>
               <span class="rk">{idx + 1}위</span>
               <div class="grow col" style="gap:0">
-                <b>{c.top[idx].name} {getCountry(c.top[idx].country).flag}</b>
+                <b>{c.top[idx].name} <CountryBadge code={c.top[idx].country} /></b>
                 <span class="faint">{getClub(c.top[idx].club).name}</span>
               </div>
             </div>
@@ -44,7 +47,7 @@
         {/if}
         <div class="row">
           <span class="spacer"></span>
-          <button class="btn primary" onclick={() => store.closeCeremony()}>{step >= 3 ? '닫고 계속하기' : '건너뛰기'}</button>
+          <button class="btn primary" data-autofocus onclick={() => store.closeCeremony()}>{step >= 3 ? '닫고 계속하기' : '건너뛰기'}</button>
         </div>
       </div>
     </div>

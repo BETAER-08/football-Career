@@ -3,6 +3,7 @@
   import { store } from './store.svelte';
   import Chips from './Chips.svelte';
   import Icon from './Icon.svelte';
+  import { dialogCount } from './dialog';
 
   const r = $derived(store.result);
   const labels = { great: '대성공', ok: '성공', bad: '실패', worst: '대실패', none: '결과' } as const;
@@ -11,7 +12,7 @@
   let btn: HTMLButtonElement | undefined = $state();
 
   function onKey(e: KeyboardEvent) {
-    if (!r || e.key !== 'Enter') return;
+    if (!r || e.key !== 'Enter' || dialogCount() > 0) return;
     const t = e.target as HTMLElement;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.tagName === 'BUTTON')) return;
     e.preventDefault();

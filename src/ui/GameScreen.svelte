@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { dialog, dialogCount } from './dialog';
   import { onMount } from 'svelte';
   import { store } from './store.svelte';
   import TopBar from './TopBar.svelte';
@@ -11,12 +12,15 @@
   import SeasonReview from './SeasonReview.svelte';
   import BallonCeremony from './BallonCeremony.svelte';
   import TableModal from './TableModal.svelte';
+  import ResultModal from './ResultModal.svelte';
+  import Toasts from './Toasts.svelte';
   import { focusList } from '../engine/lifestyle';
 
   const g = $derived(store.game!);
 
   function onKey(e: KeyboardEvent) {
     const t = e.target as HTMLElement;
+    if (dialogCount() > 0) return;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
     if (e.code === 'Space') {
       e.preventDefault();
@@ -49,7 +53,7 @@
 
 {#if store.panel === 'log'}
   <div class="modal-bg" role="presentation" onclick={() => (store.panel = '')}>
-    <div class="modal" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
+    <div class="modal" role="dialog" aria-label="인생 기록 전체 보기" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}} use:dialog={{ close: () => (store.panel = '') }}>
       <div class="modal-h">인생 기록 전체 보기<span class="spacer"></span><button class="btn sm" onclick={() => (store.panel = '')}>닫기 (Esc)</button></div>
       <div class="modal-b"><LifeLog limit={1500} full={true} /></div>
     </div>
@@ -57,7 +61,9 @@
 {/if}
 {#if store.panel === 'saves'}<SaveModal />{/if}
 {#if store.reviewOpen}<SeasonReview />{/if}
-{#if store.ceremonyOpen && !store.reviewOpen}<BallonCeremony />{/if}
+{#if store.ceremonyOpen}<BallonCeremony />{/if}
+<ResultModal />
+<Toasts />
 {#if store.tableOpen}<TableModal />{/if}
 
 <style>

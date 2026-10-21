@@ -10,6 +10,7 @@
   import Chips from './Chips.svelte';
   import { onMount, tick } from 'svelte';
   import Icon from './Icon.svelte';
+  import { dialogCount } from './dialog';
   import { isIrreversible, pctRange } from './decisionRules';
 
   const g = $derived(store.game!);
@@ -47,6 +48,7 @@
 
   function onKey(e: KeyboardEvent) {
     if (!d || d.kind === 'offer') return;
+    if (dialogCount() > 0) return;
     const t = e.target as HTMLElement;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
     const n = Number(e.key);

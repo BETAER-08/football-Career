@@ -3,7 +3,7 @@ import { ensureContent } from '../engine/content';
 import { secPerYear, swOf } from '../engine/time';
 import { defaultFocus } from '../engine/lifestyle';
 import { playerGrade, coachGrade, percentileOf } from '../engine/scoring';
-import type { Decision, GameConfig, GameState, ResultPanel, Toast } from '../engine/types';
+import type { AgeRec, Decision, GameConfig, GameState, NatStage, ResultPanel, Toast } from '../engine/types';
 import type { RouletteResult } from '../engine/roulette';
 import { clearSave, exportSave, hasSave, importSave, loadGame, loadPrefs, pushArchive, saveGame, savePrefs, exportEntry, type Prefs, type ArchiveEntry } from './save';
 import { setMusic, chime, click, sfx } from './audio';
@@ -14,6 +14,12 @@ import { formatKRW } from '../engine/finance';
 import { netWorth } from '../engine/finance';
 import { beginSkip, cancelSkip, endSkip, newPlayState, settle, stepPlayback, type PlayState } from './playback';
 import BaselineWorker from './baseline.worker?worker';
+
+export type ModalItem =
+  | { key: string; kind: 'review'; idx: number; engine: boolean }
+  | { key: string; kind: 'ceremony' }
+  | { key: string; kind: 'age'; rec: AgeRec }
+  | { key: string; kind: 'squad'; stage: NatStage };
 
 export type Screen = 'menu' | 'setup' | 'roulette' | 'card' | 'game' | 'end' | 'vault';
 
@@ -29,9 +35,12 @@ class Store {
   legacy = $state.raw<{ raw: string; reason: string } | null>(null);
   end = $state.raw<EndData | null>(null);
   archiveFail = $state(false);
-  reviewOpen = $state(false);
-  reviewIdx = $state(-1);
-  ceremonyOpen = $state(false);
+  modalQueue = $state.raw<ModalItem[]>([]);
+  batchTotal = $state(0);
+  batchIndex = $state(1);
+  private modalTimer: number | null = null;
+  private seenAge = 0;
+  private seenStage: NatStage = 'none';
   tableOpen = $state(false);
   private epiSpeedFor = '';
   result = $state.raw<ResultPanel | null>(null);
@@ -68,6 +77,23 @@ class Store {
 
   set speed(v: number) {
     this.ps.speed = v;
+  }
+
+  get activeModal(): ModalItem | null {
+    return this.modalQueue[0] ?? null;
+  }
+
+  get reviewOpen(): boolean {
+    return this.activeModal?.kind === 'review';
+  }
+
+  get ceremonyOpen(): boolean {
+    return this.activeModal?.kind === 'ceremony';
+  }
+
+  get reviewIdx(): number {
+    const m = this.activeModal;
+    return m && m.kind === 'review' ? m.idx : -1;
   }
 
   get skipping(): boolean {
@@ -118,8 +144,8 @@ class Store {
     this.archived = false;
     this.archiveFail = false;
     this.end = null;
-    this.reviewOpen = false;
-    this.ceremonyOpen = false;
+    this.clearModals();
+    this.syncSeen(state);
     this.epiSpeedFor = '';
     cancelSkip(this.ps);
     this.ps.resume = null;
@@ -190,7 +216,7 @@ class Store {
       this.notify();
     }
     this.checkModals(g);
-    if (this.reviewOpen || this.ceremonyOpen) {
+    if (this.activeModal) {
       if (this.ps.skipping) endSkip(this.ps, 'modal');
       return;
     }
@@ -222,48 +248,85 @@ class Store {
     this.relSnap = Object.fromEntries(Object.entries(g.people).map(([k, p]) => [k, p.rel]));
   }
 
-  private reviewTimer: number | null = null;
+  clearModals(): void {
+    if (this.modalTimer !== null) window.clearTimeout(this.modalTimer);
+    this.modalTimer = null;
+    this.modalQueue = [];
+    this.batchTotal = 0;
+    this.batchIndex = 1;
+  }
+
+  syncSeen(g: GameState): void {
+    this.seenAge = g.nat.ageRecs.length;
+    this.seenStage = g.nat.stage;
+  }
+
+  pushModal(item: ModalItem): void {
+    if (this.modalQueue.some((m) => m.key === item.key)) return;
+    this.modalQueue = [...this.modalQueue, item];
+    this.batchTotal += 1;
+    if (this.modalQueue.length === 1) this.activate();
+  }
+
+  private activate(): void {
+    if (this.modalTimer !== null) window.clearTimeout(this.modalTimer);
+    this.modalTimer = null;
+    const g = this.game;
+    const m = this.activeModal;
+    if (!g || !m) return;
+    if (m.kind === 'review' && !g.auto) this.playing = false;
+    if (g.auto) this.modalTimer = window.setTimeout(() => this.closeActive(), 8000);
+  }
+
+  closeActive(): void {
+    const g = this.game;
+    const m = this.activeModal;
+    if (!m) return;
+    if (this.modalTimer !== null) window.clearTimeout(this.modalTimer);
+    this.modalTimer = null;
+    if (g) {
+      if (m.kind === 'review' && m.engine) g.pendingReview = -1;
+      if (m.kind === 'ceremony') g.wld.ceremonyDue = false;
+    }
+    this.modalQueue = this.modalQueue.slice(1);
+    if (this.modalQueue.length) {
+      this.batchIndex += 1;
+      this.activate();
+    } else {
+      this.batchTotal = 0;
+      this.batchIndex = 1;
+      if (g) settle(this.ps, g, false, m.kind === 'review');
+    }
+    this.notify();
+  }
 
   checkModals(g: GameState): void {
-    if (g.pendingReview >= 0 && !this.reviewOpen) {
-      this.reviewIdx = g.reviews.length - 1;
-      this.reviewOpen = true;
-      this.playing = this.playing && !g.auto ? false : this.playing;
-      if (g.auto) {
-        if (this.reviewTimer !== null) window.clearTimeout(this.reviewTimer);
-        this.reviewTimer = window.setTimeout(() => this.closeReview(), 8000);
-      }
-    } else if (g.wld.ceremonyDue && !this.ceremonyOpen && !this.reviewOpen) {
-      this.ceremonyOpen = true;
-      if (g.auto) window.setTimeout(() => this.closeCeremony(), 8000);
+    if (g.pendingReview >= 0) {
+      const idx = g.reviews.length - 1;
+      this.pushModal({ key: `review:${idx}:engine`, kind: 'review', idx, engine: true });
+    }
+    if (g.wld.ceremonyDue) this.pushModal({ key: `ceremony:${g.wld.ceremony?.s ?? 0}`, kind: 'ceremony' });
+    if (g.nat.ageRecs.length > this.seenAge) {
+      for (let i = this.seenAge; i < g.nat.ageRecs.length; i++) this.pushModal({ key: `age:${i}`, kind: 'age', rec: g.nat.ageRecs[i] });
+      this.seenAge = g.nat.ageRecs.length;
+    } else if (g.nat.ageRecs.length < this.seenAge) this.seenAge = g.nat.ageRecs.length;
+    if (g.nat.stage !== this.seenStage) {
+      const rank = { none: 0, prelim: 1, called: 2, starter: 3 };
+      if (rank[g.nat.stage] > rank[this.seenStage] && g.nat.stage !== 'none') this.pushModal({ key: `squad:${g.week}:${g.nat.stage}`, kind: 'squad', stage: g.nat.stage });
+      this.seenStage = g.nat.stage;
     }
   }
 
   openReviewAt(i: number): void {
-    this.reviewIdx = i;
-    this.reviewOpen = true;
+    this.pushModal({ key: `review:${i}:manual`, kind: 'review', idx: i, engine: false });
   }
 
   closeReview(): void {
-    const g = this.game;
-    if (this.reviewTimer !== null) window.clearTimeout(this.reviewTimer);
-    this.reviewTimer = null;
-    this.reviewOpen = false;
-    if (g) {
-      g.pendingReview = -1;
-      settle(this.ps, g, this.ceremonyOpen, true);
-    }
-    this.notify();
+    this.closeActive();
   }
 
   closeCeremony(): void {
-    const g = this.game;
-    this.ceremonyOpen = false;
-    if (g) {
-      g.wld.ceremonyDue = false;
-      settle(this.ps, g, this.reviewOpen, false);
-    }
-    this.notify();
+    this.closeActive();
   }
 
   pullCues(): void {
@@ -280,8 +343,7 @@ class Store {
     if (!fresh.length) return;
     this.seenToast = fresh[fresh.length - 1].id;
     for (const t of fresh) {
-      this.toasts = [...this.toasts.slice(-3), t];
-      window.setTimeout(() => { this.toasts = this.toasts.filter((x) => x.id !== t.id); }, 5200);
+      this.toasts = [...this.toasts.slice(-2), t];
     }
     g.toasts.length = 0;
   }
@@ -333,10 +395,13 @@ class Store {
     this.logFocus = hit.id;
   }
 
+  dismissToast(id: number): void {
+    this.toasts = this.toasts.filter((x) => x.id !== id);
+  }
+
   toast(text: string): void {
     const t: Toast = { id: Date.now() + Math.random(), w: 0, text, chips: [] };
-    this.toasts = [...this.toasts.slice(-3), t];
-    window.setTimeout(() => { this.toasts = this.toasts.filter((x) => x.id !== t.id); }, 3200);
+    this.toasts = [...this.toasts.slice(-2), t];
   }
 
   choose(idx: number, demands = ''): void {
@@ -344,7 +409,7 @@ class Store {
     if (!g || !g.decision) return;
     const r = resolveDecision(g, idx, demands);
     this.showResult(r);
-    settle(this.ps, g, this.reviewOpen || this.ceremonyOpen, true);
+    settle(this.ps, g, this.activeModal !== null, true);
     chime();
     this.pullToasts();
     this.pullCues();
@@ -499,8 +564,7 @@ class Store {
     const g = this.game;
     if (!g) return;
     endSkip(this.ps, 'ended');
-    this.reviewOpen = false;
-    this.ceremonyOpen = false;
+    this.clearModals();
     const pg = this.grade();
     const data = buildEndData(g, pg.grade, pg.percentile, this.baseline);
     this.end = data;

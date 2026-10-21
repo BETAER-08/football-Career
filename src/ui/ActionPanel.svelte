@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { dialog } from './dialog';
   import { store } from './store.svelte';
   import { allActions, actionStatus } from '../engine/actions';
   import { formatKRW } from '../engine/finance';
@@ -29,8 +30,8 @@
   }
 </script>
 
-<div class="modal-bg" role="presentation" onclick={() => (store.panel = '')}>
-  <div class="modal" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
+<div class="modal-bg" role="presentation">
+  <div class="modal" role="dialog" aria-label={title} tabindex="-1" use:dialog={{ close: () => (store.panel = '') }}>
     <div class="modal-h">{title}<span class="spacer"></span><span class="mini-hint">현금 {formatKRW(g.fin.cash)} · 예금 {formatKRW(g.fin.deposit)}</span><button class="btn sm" onclick={() => (store.panel = '')}>닫기</button></div>
     <div class="modal-b col" style="gap:8px">
       {#if last}
