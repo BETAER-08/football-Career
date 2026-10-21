@@ -279,7 +279,7 @@ class Store {
     const m = this.activeModal;
     if (!g || !m) return;
     if (m.kind === 'review' && !g.auto) this.playing = false;
-    if (g.auto) this.modalTimer = window.setTimeout(() => this.closeActive(), 8000);
+    if (g.auto) this.modalTimer = window.setTimeout(() => this.closeActive(), m.kind === 'review' || m.kind === 'ceremony' ? 8000 : 2500);
   }
 
   closeActive(): void {

@@ -5,7 +5,7 @@ import { pushDecision } from '../engine/events';
 import { ensureContent } from '../engine/content';
 import type { Decision, GameState } from '../engine/types';
 
-export type FixtureName = 'youth' | 'decision' | 'irreversible' | 'injury' | 'fa' | 'coach' | 'modals';
+export type FixtureName = 'youth' | 'decision' | 'irreversible' | 'injury' | 'fa' | 'coach' | 'modals' | 'review' | 'end';
 
 export const FIXTURES: { id: FixtureName; label: string }[] = [
   { id: 'youth', label: '유스' },
@@ -14,7 +14,9 @@ export const FIXTURES: { id: FixtureName; label: string }[] = [
   { id: 'injury', label: '부상' },
   { id: 'fa', label: 'FA' },
   { id: 'coach', label: '지도자' },
-  { id: 'modals', label: '모달 대기열' }
+  { id: 'modals', label: '모달 대기열' },
+  { id: 'review', label: '시즌 결산' },
+  { id: 'end', label: '종료 화면' }
 ];
 
 function base(weeks: number): GameState {
@@ -63,10 +65,24 @@ function synthetic(s: GameState, irreversible: boolean): Decision {
   };
 }
 
+function untilDecision(s: GameState): void {
+  let guard = 0;
+  while (!s.decision && !s.ended && guard++ < 600) {
+    autoWeek(s);
+    if (!tickState(s)) break;
+    const cur = s.decision as Decision | null;
+    if (cur && cur.kind === 'offer') {
+      const { idx, demands } = autoDecide(s, rngOf(s), cur);
+      resolveDecision(s, idx, demands, false);
+    }
+  }
+}
+
 export function buildFixture(name: FixtureName): GameState {
   if (name === 'decision') {
     const s = base(110);
-    pushDecision(s, synthetic(s, false));
+    untilDecision(s);
+    if (!s.decision) pushDecision(s, synthetic(s, false));
     return s;
   }
   if (name === 'irreversible') {
@@ -104,5 +120,6 @@ export function buildFixture(name: FixtureName): GameState {
     s.p.birth = { ...s.p.birth, y: s.p.birth.y - 22 };
     return s;
   }
+  if (name === 'review' || name === 'end') return base(160);
   return base(60);
 }

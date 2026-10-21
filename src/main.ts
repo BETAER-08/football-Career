@@ -23,6 +23,8 @@ async function boot(root: HTMLElement) {
       store.pushModal({ key: 'dev:squad', kind: 'squad', stage: 'called' });
       store.pushModal({ key: 'dev:age', kind: 'age', rec: { year: g.week > 0 ? 2028 : 2027, id: 'u17wc', name: 'U-17 월드컵', result: '8강 진출', apps: 5, goals: 2, assists: 1, awards: ['조별리그 최우수 선수'] } });
     }
+    if (name === 'review' && store.game.reviews.length) store.openReviewAt(store.game.reviews.length - 1);
+    if (name === 'end') store.finish();
     mount(App, { target: root });
     return;
   }
