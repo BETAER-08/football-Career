@@ -197,17 +197,17 @@
       <button class="btn sm" class:on={filter === k} aria-pressed={filter === k} onclick={() => (filter = k)}>{label}</button>
     {/each}
   </div>
+  {#if rows.length}<div class="pin" aria-hidden="true">{pinned}</div>{/if}
   {#if !full}
     {#if store.game?.decision}
       <div class="slot"><DecisionCard /></div>
     {/if}
   {/if}
   <div class="logs scroll" bind:this={scroller} onscroll={onScroll}>
-    {#if rows.length}<div class="pin" aria-hidden="true">{pinned}</div>{/if}
     <div style="height:{topPad}px"></div>
     {#each slice as r (r.key)}
       {#if r.head}
-        <div class="head" use:measure={r.key}>{r.head}</div>
+        <div class="head" class:dup={r.key === rows[0]?.key} use:measure={r.key}>{r.head}</div>
       {:else if r.e}
         {@const e = r.e}
         {@const lk = linkId(e)}
@@ -285,7 +285,8 @@
   .logs { height: 520px; position: relative; }
   .panel:not(.fullp) .logs { flex: 1; height: auto; min-height: 320px; }
   .fullp .logs { height: calc(70vh / var(--z, 1)); }
-  .pin { position: sticky; top: 0; z-index: 3; padding: var(--s1) var(--s3); background: color-mix(in srgb, var(--accent) 18%, var(--panel2)); border-bottom: 1px solid var(--line); font-size: var(--fs-panel); font-weight: 800; letter-spacing: 0.04em; }
+  .head.dup { display: none; }
+  .pin { flex: none; padding: var(--s1) var(--s3); background: color-mix(in srgb, var(--accent) 18%, var(--panel2)); border-bottom: 1px solid var(--line); font-size: var(--fs-panel); font-weight: 800; letter-spacing: 0.04em; }
   .head { padding: var(--s2) var(--s3); background: var(--panel2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: var(--fs-panel); font-weight: 800; color: var(--muted); letter-spacing: 0.04em; }
   .srch { display: inline-flex; align-items: center; gap: var(--s1); color: var(--muted); }
   .srch input { width: 120px; padding: var(--s1) var(--s2); font-size: var(--fs-panel); }
