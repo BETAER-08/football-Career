@@ -14,6 +14,10 @@ import { emptyRec } from './records';
 import { setupClubSeason } from './transfer';
 import { marketValue } from './finance';
 
+const PRO_HEIGHT_BONUS = 2;
+
+const POS_HEIGHT_BONUS: Record<Pos, number> = { GK: 7, CB: 5, ST: 3, DM: 3, CM: 1, LB: 0, RB: 0, AM: -1, LW: -1, RW: -1 };
+
 export const TRAIT_LABEL: Record<string, string> = {
   fkSpec: '프리킥 스페셜리스트', physical: '몸싸움 선호', runner: '침투형', playmaker: '플레이메이커', shooter: '강한 슈팅',
   aerial: '헤더 강자', sweeper: '스위퍼 키퍼', bigMatch: '큰 경기 강자', ambi: '약발 무시', ironman: '철인', leaderT: '그라운드의 리더',
@@ -147,13 +151,14 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   const supportive = clamp(Math.round(rng.normal(66, 18)), 5, 98);
   const foot = rng.weighted<'R' | 'L' | 'B'>(['R', 'L', 'B'], [77, 20, 3]);
   const growth = rng.weighted<'early' | 'normal' | 'late'>(['early', 'normal', 'late'], [25, 50, 25]);
-  const finalHeight = Math.round(clamp(rng.normal(country.height, 6.5), 150, 205));
+  const heightZ = rng.normal(0, 6.5);
   const frac = (growth === 'early' ? 0.935 : growth === 'late' ? 0.87 : 0.905) + rng.normal(0, 0.008);
-  const height = Math.round(finalHeight * frac);
   const bmi = clamp(rng.normal(18.6, 1.5), 14.5, 26);
-  const weight = Math.round(bmi * (height / 100) * (height / 100));
   const build = bmi < 17.4 ? '마름' : bmi > 20.2 ? '건장' : '보통';
   const pos: Pos = cfg.pos === 'random' ? randomPos(rng) : cfg.pos;
+  const finalHeight = Math.round(clamp(country.height + PRO_HEIGHT_BONUS + POS_HEIGHT_BONUS[pos] + heightZ, 155, 205));
+  const height = Math.round(finalHeight * frac);
+  const weight = Math.round(bmi * (height / 100) * (height / 100));
   const startLo = START_MIN[origin.level] ?? 40;
   const tier = rng.weighted([0, 1, 2, 3], [15, 35, 35, 15]);
   const cap = Math.round((60 + tier * 10 + rng.float(0, tier === 3 ? 9 : 9.9)) * 10) / 10;
