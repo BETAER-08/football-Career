@@ -257,7 +257,14 @@ export function resolveDecision(s: GameState, idx: number, demands = '', record 
         acceptCoachJob(s, rng, o);
         panel = { title: '부임', grade: 'ok', roll: 0, need: 100, text: '새로운 자리에서 지도자의 새 장이 시작된다.', changes: [], later: false, w: s.week };
       }
-    } else panel = resolveOffer(s, rng, d, idx, demands);
+    } else {
+      panel = resolveOffer(s, rng, d, idx, demands);
+      if (panel.grade !== 'ok' && panel.grade !== 'great') {
+        const o = d.offers[idx];
+        const pick = o ? `${getClub(o.clubId).name} 제안 수락` : d.choices[d.choices.length - 1]?.label ?? '제안 거절';
+        addLog(s, 'system', panel.title, panel.text, panel.changes, { mine: true, grade: panel.grade, pick, result: panel.text, roll: panel.roll, need: panel.need });
+      }
+    }
   } else if (d.kind === 'career' && d.ref === 'path') {
     const paths: PathId[] = ['coach', 'pundit', 'admin', 'business', 'left'];
     setPath(s, rng, paths[idx]);

@@ -5,7 +5,6 @@
   import Chips from './Chips.svelte';
   import Lines from './Lines.svelte';
   import DecisionCard from './DecisionCard.svelte';
-  import ResultCard from './ResultCard.svelte';
   import Icon from './Icon.svelte';
   import type { Grade, LogEntry } from '../engine/types';
 
@@ -199,10 +198,9 @@
     {/each}
   </div>
   {#if !full}
-    <div class="slot scroll">
-      {#if store.game?.decision}<DecisionCard />{/if}
-      <ResultCard />
-    </div>
+    {#if store.game?.decision}
+      <div class="slot"><DecisionCard /></div>
+    {/if}
   {/if}
   <div class="logs scroll" bind:this={scroller} onscroll={onScroll}>
     {#if rows.length}<div class="pin" aria-hidden="true">{pinned}</div>{/if}
@@ -253,8 +251,9 @@
 </div>
 
 <style>
-  .slot { flex: none; max-height: 58%; overflow-y: auto; display: flex; flex-direction: column; gap: var(--s2); padding: 0 var(--s2); }
-  .slot:empty { display: none; }
+  .slot { flex: none; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--amber) 7%, var(--panel)); border-left: 3px solid var(--amber); }
+  .slot :global(.panel) { background: transparent; border: none; border-radius: 0; box-shadow: none; animation: none; }
+  .slot :global(.panel-h) { border-bottom: none; padding-bottom: 0; }
   .sub { margin: var(--s2) var(--s3); align-self: flex-start; }
   .entry { display: flex; gap: var(--s3); padding: 9px var(--s3); border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
   .entry:last-child { border-bottom: none; }
