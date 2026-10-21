@@ -26,7 +26,7 @@ export function darken(c: string, t: number): string {
   return mix(c, '#0b0710', t);
 }
 
-export function lighten(c: string, t: number): string {
+export function paler(c: string, t: number): string {
   return mix(c, '#ffffff', t);
 }
 
@@ -57,7 +57,7 @@ export function skinTone(level: number): Tone {
   return {
     base,
     shadow: mix(base, '#6a2f2a', deep ? 0.3 : 0.22),
-    high: lighten(base, deep ? 0.2 : 0.24),
+    high: paler(base, deep ? 0.2 : 0.24),
     line: mix(base, '#1d0d0c', 0.62)
   };
 }
@@ -71,7 +71,7 @@ export function hairTone(index: number, age: number, grayRoll: number): Tone {
   const gray = '#a6a8b0';
   const white = '#e2e4ea';
   let b = base;
-  let hi = lighten(base, index === 0 ? 0.2 : 0.24);
+  let hi = paler(base, index === 0 ? 0.2 : 0.24);
   if (index === 0) hi = '#4c4a56';
   if (age >= 45) {
     hi = mix(hi, gray, 0.8);

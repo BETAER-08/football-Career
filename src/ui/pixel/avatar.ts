@@ -15,7 +15,7 @@ import {
   distributionOf,
   hairTone,
   hexToRgb,
-  lighten,
+  paler,
   luminance,
   mix,
   pickWeighted,
@@ -173,7 +173,7 @@ function resolveOutfit(input: LookInput): Outfit {
   }
   if (outfit.kind === 'shirt') {
     const shirt = SHIRT_COLORS[Math.floor(rnd(seed, 15) * SHIRT_COLORS.length)];
-    return { kind: 'shirt', primary: shirt, secondary: lighten(shirt, 0.4), pattern: 0, collar: 0, accent: tie };
+    return { kind: 'shirt', primary: shirt, secondary: paler(shirt, 0.4), pattern: 0, collar: 0, accent: tie };
   }
   const tee = TEE_COLORS[Math.floor(rnd(seed, 15) * TEE_COLORS.length)];
   return { kind: 'tee', primary: tee, secondary: darken(tee, 0.22), pattern: 0, collar: 0, accent: tie };
@@ -334,9 +334,9 @@ function outfitPalette(o: Outfit): Palette {
     base.c = '#f2f3f6';
   }
   if (o.kind === 'shirt') {
-    base.c = luminance(p) > 0.8 ? darken(p, 0.1) : lighten(p, 0.55);
+    base.c = luminance(p) > 0.8 ? darken(p, 0.1) : paler(p, 0.55);
     base.x = darken(p, 0.28);
-    base.w = lighten(p, 0.7);
+    base.w = paler(p, 0.7);
   }
   if (o.kind === 'tee') {
     base.c = o.secondary;

@@ -54,17 +54,6 @@ class Store {
   constructor() {
     ensureContent();
     this.speed = this.prefs.speed;
-    this.applyTheme();
-  }
-
-  applyTheme(): void {
-    document.documentElement.dataset.theme = this.prefs.theme;
-  }
-
-  toggleTheme(): void {
-    this.prefs.theme = this.prefs.theme === 'dark' ? 'light' : 'dark';
-    this.applyTheme();
-    savePrefs(this.prefs);
   }
 
   toggleMusic(): void {

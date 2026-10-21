@@ -24,30 +24,6 @@
   --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   color-scheme: dark;
 }
-:root[data-theme='light'] {
-  --bg: #f1f3f8;
-  --bg2: #e8ebf2;
-  --panel: #ffffff;
-  --panel2: #f6f7fb;
-  --line: #d9dde8;
-  --text: #1a1f2e;
-  --muted: #5b6479;
-  --faint: #8a93a8;
-  --accent: #14a85a;
-  --accent-ink: #ffffff;
-  --amber: #c27b00;
-  --danger: #d7343a;
-  --info: #1f6fd1;
-  --up: #14a85a;
-  --down: #d7343a;
-  --g-great: #b8860b;
-  --g-ok: #14a85a;
-  --g-bad: #d7343a;
-  --g-worst: #8f1319;
-  --g-none: #1f6fd1;
-  --shadow: 0 6px 24px rgba(40, 50, 80, 0.12);
-  color-scheme: light;
-}
 * { box-sizing: border-box; }
 html, body, #app { height: 100%; margin: 0; }
 body {

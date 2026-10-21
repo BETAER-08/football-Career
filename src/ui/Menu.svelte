@@ -47,7 +47,6 @@
       <button class="btn big" onclick={() => { store.screen = 'vault'; }}>지난 커리어 보관함 ({archiveCount})</button>
       <button class="btn ghost" onclick={() => (info = true)}>확률과 보정 안내</button>
     </div>
-    <div class="foot"><button class="btn sm ghost" onclick={() => store.toggleTheme()}>{store.prefs.theme === 'dark' ? '라이트 테마' : '다크 테마'}</button></div>
   </div>
 </div>
 
@@ -92,5 +91,4 @@
   .btns { display: flex; flex-direction: column; gap: 10px; align-items: center; }
   .legacy { font-size: 12.5px; max-width: 280px; padding: 8px 10px; border: 1px solid var(--amber); border-radius: 8px; color: var(--amber); }
   .big { width: 280px; padding: 12px 16px; font-size: 15px; }
-  .foot { margin-top: 28px; }
 </style>
