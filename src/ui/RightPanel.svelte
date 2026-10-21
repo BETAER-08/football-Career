@@ -171,7 +171,7 @@
   <div class="panel">
     <div class="panel-h"><Icon name="trophy" size={14} /> 발롱도르 기록</div>
     <div class="panel-b col" style="gap:var(--s2)">
-      {#each [...g.wld.ballon].reverse() as b}
+      {#each [...g.wld.ballon].filter((b) => b.s < curSeason - 1 || (b.s === curSeason - 1 && g.week % 52 >= 25)).reverse() as b}
         <div class="bl"><span class="mono">{b.year}</span><span class="grow">{b.top[0]?.name ?? '-'} <em class="faint">{b.top[0] ? getClub(b.top[0].club).name : ''}</em></span><span class="tag" class:up={b.winnerIsPlayer}>{b.winnerIsPlayer ? '내가 수상' : b.player ? `나 ${b.player}위` : '-'}</span></div>
       {:else}<div class="muted">아직 시상식이 열리지 않았어요.</div>{/each}
     </div>

@@ -133,7 +133,7 @@ export interface Face {
   told: string;
 }
 
-export interface BallonRec { s: number; year: number; top: { name: string; club: string; country: string }[]; player: number; playerScore: number; winnerIsPlayer: boolean }
+export interface BallonRec { s: number; year: number; top: { name: string; club: string; country: string }[]; player: number; playerScore: number; winnerIsPlayer: boolean; runnerAward?: boolean; awarded?: boolean }
 
 export interface TournRec { s: number; year: number; id: string; ko: string; winner: string; runner: string; semis: string[]; player: string }
 

@@ -100,7 +100,6 @@
         {/each}
         <div class="kv"><span>명성</span><span class="mono">{Math.round(g.coach.fame)} <span class="faint">(최고 {Math.round(g.coach.peakFame)})</span></span></div>
         <div class="kv"><span>입지</span><span class="mono">{Math.round(g.coach.standing)}</span></div>
-        <div class="kv"><span>능력치 상한 (추정)</span><span class="mono">{Math.round(g.coach.cap - 6)}~{Math.round(g.coach.cap + 6)}</span></div>
         <div class="sep"></div>
         {#each ['C', 'B', 'A', 'P'] as k}
           <div class="kv"><span>{licenseLabel(g.p.country, k as 'C' | 'B' | 'A' | 'P')}</span><span class={g.coach.licenses[k as 'C' | 'B' | 'A' | 'P'] ? 'up' : 'faint'}>{g.coach.licenses[k as 'C' | 'B' | 'A' | 'P'] ? '취득' : g.coach.studying === k ? '이수 중' : '미취득'}</span></div>

@@ -357,12 +357,8 @@ function ballon(s: GameState, season: number, year: number, core: WorldCore, tou
   s.wld.ballon.push(rec);
   if (s.wld.ballon.length > 40) s.wld.ballon.shift();
   s.wld.ceremony = rec;
-  if (my && rank >= 2 && rank <= 3 && my.avg >= 7.2 && r.chance(0.5)) {
-    const conf = getCountry(s.p.country).confed;
-    ballonRunnerAward(s, conf);
-  }
+  if (my && rank >= 2 && rank <= 3 && my.avg >= 7.2 && r.chance(0.5)) rec.runnerAward = true;
   if (my && rank >= 1 && rank <= 3) s.extra.podium += 1;
-  if (winnerIsPlayer) ballonWin(s);
 }
 
 function ballonRunnerAward(s: GameState, conf: string): void {
@@ -506,6 +502,11 @@ export function ceremonyWeek(s: GameState): void {
   if (!c || s.wld.ceremonyDue || c.s >= seasonOf(s.week)) return;
   if (c.player < 1 || c.player > 3) return;
   s.wld.ceremonyDue = true;
+  if (!c.awarded) {
+    c.awarded = true;
+    if (c.winnerIsPlayer) ballonWin(s);
+    else if (c.runnerAward) ballonRunnerAward(s, getCountry(s.p.country).confed);
+  }
   if (!isCosmetic()) return;
   const t = c.top;
   addLog(s, 'world', `${c.year} 발롱도르 시상식`, `${c.year} 발롱도르 시상식이 열렸다. 3위 ${t[2].name}, 2위 ${t[1].name}, 그리고 수상자는 ${t[0].name}(${getClub(t[0].club).name})!${c.player ? ` ${s.p.name}은(는) ${c.player}위에 올랐다.` : ''}`, [], { star: true });
