@@ -3,7 +3,6 @@
   import { store } from './store.svelte';
   import { dateOf, fmtDate, seasonLabel, seasonOf } from '../engine/time';
   import Chips from './Chips.svelte';
-  import Lines from './Lines.svelte';
   import DecisionCard from './DecisionCard.svelte';
   import Icon from './Icon.svelte';
   import type { Grade, LogEntry } from '../engine/types';
@@ -237,7 +236,6 @@
             {:else}
               <div class="body">{e.text}</div>
             {/if}
-            <Lines lines={e.lines} />
             {#if e.chips.length}<Chips chips={e.chips} />{/if}
             {#if e.heavy && e.help}<div class="help">도움받을 곳 · {e.help}</div>{/if}
             {#if e.note}<div class="note">{e.note}</div>{/if}

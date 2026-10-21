@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Lines from './Lines.svelte';
   import CountryBadge from './CountryBadge.svelte';
   import { store } from './store.svelte';
   import { getClub, getCountry, getLeague, academyGrade } from '../engine/data';
@@ -87,7 +86,6 @@
     <div class="panel-b col" style="gap:10px">
       {#if d.quote}<div class="quote">{d.quote}</div>{/if}
       <div class="txt">{d.text}</div>
-      <Lines lines={d.lines} />
       {#if d.ctx}<div class="mini-hint">{d.ctx}</div>{/if}
       {#if d.heavy && d.help}<div class="help">도움받을 곳 · {d.help}</div>{/if}
 
