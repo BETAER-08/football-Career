@@ -73,6 +73,8 @@ export function allEventDefs(): EventDef[] {
   return [...registry.values()];
 }
 
+import { upperClubPick } from './upper';
+
 export function render(s: GameState, tpl: string): string {
   const club = s.phase === 'coach' && s.coach.clubId ? s.coach.clubId : s.career.clubId;
   const clubName = club ? getClub(club).name : '무적';
@@ -111,6 +113,14 @@ export function render(s: GameState, tpl: string): string {
       case 'nat': return getCountry(s.p.country).natTeam;
       case 'age': return String(ageAt(s.p.birth, s.week));
       case 'opp': return s.decCtx.opp ?? '상대 팀';
+      case 'upclub': {
+        const id = upperClubPick(s, false);
+        return id ? getClub(id).name : '상위 구단';
+      }
+      case 'upabroad': {
+        const id = upperClubPick(s, true);
+        return id ? getClub(id).name : '해외 구단';
+      }
       case 'wk': return formatKRW(con ? con.wage / 52 : 100);
       case 'yr': return formatKRW(con ? con.wage : 1000);
       case 'amt': return formatKRW(Number(s.decCtx.amt ?? 1000));

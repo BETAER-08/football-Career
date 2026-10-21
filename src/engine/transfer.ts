@@ -3,7 +3,7 @@ import { LEVEL_STARTER_OVR, LEVEL_WAGE_MULT } from '../data/countries';
 import { Rng, clamp } from './rng';
 import { getCal, effM } from './calibration';
 import { allCountries, getClub, getCountry, getLeague, leaguesOf, type ClubStatic } from './data';
-import { curOvr } from './attributes';
+import { curOvr, shownOvr } from './attributes';
 import { clubLvl, clubStd, clubSt, dyn, ensureCountry, startLeagueSeason, buildRounds, simScore, record, membersOf, clubLeagueId, roundRng } from './world';
 import { ageAt, seasonOf, swOf } from './time';
 import { genName, makePerson, randomPos } from './relations';
@@ -15,6 +15,8 @@ import type { Contract, GameState, Offer, OfferMode, Role } from './types';
 import { emptyRec } from './records';
 import { CONT_LP_WEEKS, CONT_COMPS } from '../data/competitions';
 import { leagueWeek, profileOf, windowIdx } from './calendar';
+import { firstContractOffers } from './market';
+import { makeGoals } from './goals';
 
 export const ROLE_VAL: Record<Role, number> = { starter: 3, rotation: 2, prospect: 1, backup: 0 };
 
@@ -80,13 +82,13 @@ export function pickClubIn(s: GameState, rng: Rng, code: string, L: number, ovr:
   return rng.weighted(cands, w);
 }
 
-export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string, opts: { loan?: boolean; trial?: boolean; first?: boolean; renew?: boolean; shift?: number; wageMul?: number; mode?: OfferMode } = {}): Offer | null {
+export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string, opts: { loan?: boolean; trial?: boolean; first?: boolean; renew?: boolean; anyRole?: boolean; shift?: number; wageMul?: number; mode?: OfferMode } = {}): Offer | null {
   const ovr = curOvr(s.ab) - (opts.shift ?? 0);
   const age = ageAt(s.p.birth, s.week);
   const std = clubStd(s, clubId);
   const margin = ovr - std;
   let role = roleFor(margin, age, s.ab.pot, std);
-  if (opts.renew && role === null) role = 'backup';
+  if ((opts.renew || opts.anyRole) && role === null) role = 'backup';
   if (!role) return null;
   const promised = role;
   const wage = Math.max(300, Math.round((wageFor(s, clubId, promised, ovr, age) * (opts.wageMul ?? 1)) / 10) * 10);
@@ -129,6 +131,10 @@ export function transferFee(s: GameState, rng: Rng): number {
   return Math.max(0, Math.round(val * timeF * rng.float(0.85, 1.25)));
 }
 
+export function compFee(s: GameState): number {
+  return Math.max(30, Math.round(marketValue(s) * 0.12));
+}
+
 export function freeTerms(o: Offer, rng: Rng): void {
   o.fee = 0;
   o.signing = Math.round(o.wage * rng.float(0.2, 0.6));
@@ -137,38 +143,80 @@ export function freeTerms(o: Offer, rng: Rng): void {
 const RICH = ['SA', 'TR', 'CN'];
 
 const FREE_YOUTH = 0.2;
+const ALL_LEVELS = [2, 3, 4, 5, 6];
 
-export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count: number, adj: { shift?: number; wageMul?: number; noTrial?: boolean } = {}): Offer[] {
-  const ovr = curOvr(s.ab) - (adj.shift ?? 0);
+export const EU_EEA = new Set(['FR', 'DE', 'IT', 'ES', 'NL', 'PT', 'HR']);
+
+export function originCountry(s: GameState): string {
+  return s.career.clubId ? getClub(s.career.clubId).country : s.p.country;
+}
+
+export function foreignAllowed(s: GameState, to: string, age: number): boolean {
+  const from = originCountry(s);
+  if (to === from || to === s.p.country) return true;
+  if (age >= 18) return true;
+  return age >= 16 && EU_EEA.has(from) && EU_EEA.has(to);
+}
+
+export function targetLevel(ovr: number, pot: number, age: number): number {
+  const eff = ovr + (age <= 22 ? Math.max(0, pot - ovr) * 0.25 : 0);
+  let m = 2;
+  for (const L of ALL_LEVELS) if (eff >= LEVEL_STARTER_OVR[L] - 4) m = L;
+  return m;
+}
+
+export interface PickOpts {
+  kind: OfferGen['kind'] | 'youth';
+  ovr: number;
+  used: Set<string>;
+  gate: boolean;
+  tight: boolean;
+  levels?: number[];
+  waited?: number;
+}
+
+function leagueClubCount(code: string, L: number): number {
+  let n = 0;
+  for (const lg of leaguesOf(code)) if (lg.lvl === L || lg.lvl + 1 === L) n += lg.clubIds.length;
+  return Math.max(1, n);
+}
+
+export const pickStats = { calls: 0 };
+
+export function pickOne(s: GameState, rng: Rng, o: PickOpts): ClubStatic | null {
+  pickStats.calls += 1;
   const age = ageAt(s.p.birth, s.week);
-  const curLvl = s.career.clubId ? clubLvl(s, s.career.clubId) : 1;
-  const mf = effM(s.p.country, ovr);
-  const out: Offer[] = [];
-  const used = new Set<string>();
-  if (s.career.clubId) used.add(s.career.clubId);
-  const fameBoost = 1 + s.fame.dom / 120 + s.fame.abroad / 80;
-  const potBoost = age <= 22 ? 1 + Math.max(0, s.ab.pot - ovr) / 40 : 1;
-  const levels = [2, 3, 4, 5, 6];
-  const expLvl = levels.reduce((b, L) => (ovr >= LEVEL_STARTER_OVR[L] - 4 ? L : b), 2);
   const home = getCountry(s.p.country);
-  for (let i = 0; i < count; i++) {
-    const w = levels.map((L) => {
-      const gap = ovr + (age <= 22 ? (s.ab.pot - ovr) * 0.25 : 0) - LEVEL_STARTER_OVR[L];
-      let v = levelFit(gap) * (L > curLvl ? 1 + s.career.upBias : 1);
-      if (L >= 5) v *= mf * fameBoost * potBoost;
-      if (L < curLvl - 1 && kind !== 'free' && kind !== 'first' && kind !== 'trial') v *= 0.25;
-      if (gap > 8 && L < expLvl - 1) v *= Math.exp(-(expLvl - 1 - L) * 1.2);
-      return Math.max(0, v) + (L === 2 ? 0.02 : 0);
-    });
-    const L = levels[rng.weightedIndex(w)];
-    const dom = countriesWithLevel(L).includes(home.code);
+  const curLvl = s.career.clubId ? clubLvl(s, s.career.clubId) : 1;
+  const maxL = targetLevel(o.ovr, s.ab.pot, age);
+  const view = shownOvr(s.ab, age) - (o.kind === 'youth' ? 0 : curOvr(s.ab) - o.ovr);
+  const mf = effM(s.p.country, view);
+  const fameBoost = 1 + s.fame.dom / 120 + s.fame.abroad / 80;
+  const potBoost = age <= 22 ? 1 + Math.max(0, s.ab.pot - o.ovr) / 40 : 1;
+  const lowW = o.kind === 'window' ? 0.04 : o.kind === 'free' ? 0.1 + Math.min(0.35, (o.waited ?? 0) / 60) : o.kind === 'trial' ? 0.35 : 0.15;
+  const lvls = o.levels ?? ALL_LEVELS;
+  const gateF = (L: number): number => (L >= 5 ? Math.min(1.5, mf * fameBoost * potBoost) : 1.5);
+  let top = maxL;
+  while (top > 2 && gateF(top) < 0.05) top--;
+  const w = lvls.map((L) => {
+    let v: number;
+    if (o.levels) v = levelFit(o.ovr - LEVEL_STARTER_OVR[L]) + 0.001;
+    else if (L > maxL) v = 0;
+    else if (L > top) v = gateF(L);
+    else v = L === top ? 1 : L === top - 1 ? 0.7 : lowW;
+    if (L > curLvl) v *= 1 + s.career.upBias;
+    return Math.max(0, v) + (L === 2 && !o.levels ? 0.02 : 0);
+  });
+  for (let i = 0; i < 16; i++) {
+    const L = lvls[rng.weightedIndex(w.map((x) => x + 1e-6))];
+    const list = countriesWithLevel(L).filter((c) => foreignAllowed(s, c, age));
+    if (!list.length) continue;
     let code: string;
-    if (dom && rng.chance(L >= 5 ? 0.45 : 0.8)) code = home.code;
+    if (list.includes(home.code) && rng.chance(L >= 5 ? 0.45 : 0.8)) code = home.code;
     else {
-      const list = countriesWithLevel(L);
       const cw = list.map((c) => {
         const cc = getCountry(c);
-        let v = Math.sqrt(cc.pros + 400);
+        let v = Math.sqrt(leagueClubCount(c, L)) * (0.6 + cc.econ) * Math.sqrt(cc.pros + 400) / 20;
         if (cc.confed === home.confed) v *= 1.6;
         if (cc.lang === home.lang) v *= 1.8;
         if (c === home.code) v *= 1.4;
@@ -176,10 +224,22 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
       });
       code = list[rng.weightedIndex(cw)];
     }
-    if (code !== home.code && L >= 4 && rng.next() > Math.min(1, Math.pow(Math.max(mf, 1e-6), 0.6))) continue;
-    const club = pickClubIn(s, rng, code, L, ovr, s.career.clubId, kind === 'window' || kind === 'free');
-    if (!club || used.has(club.id)) continue;
-    if (s.phase === 'youth' && kind === 'free' && !rng.chance(FREE_YOUTH)) continue;
+    if (o.gate && code !== home.code && L >= 4 && rng.next() > Math.min(1, Math.pow(Math.max(mf, 1e-6), 0.6))) continue;
+    const club = pickClubIn(s, rng, code, L, o.ovr, s.career.clubId, o.tight && i < 8);
+    if (!club || o.used.has(club.id)) continue;
+    return club;
+  }
+  return null;
+}
+
+export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count: number, adj: { shift?: number; wageMul?: number; noTrial?: boolean; waited?: number } = {}): Offer[] {
+  const ovr = curOvr(s.ab) - (adj.shift ?? 0);
+  const age = ageAt(s.p.birth, s.week);
+  const out: Offer[] = [];
+  const used = new Set<string>();
+  if (s.career.clubId) used.add(s.career.clubId);
+  const home = getCountry(s.p.country);
+  for (let i = 0; i < count; i++) {
     if (kind === 'window' && age >= 22 && age <= 34 && ovr >= 52 && rng.chance(0.05)) {
       const rc = rng.pick(RICH);
       if (rc !== s.career.clubId?.split(':')[0]) {
@@ -197,11 +257,15 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
         }
       }
     }
-    const trial = kind === 'trial' || (kind === 'free' && !adj.noTrial && code !== home.code && rng.chance(0.3));
+    const club = pickOne(s, rng, { kind, ovr, used, gate: true, tight: kind === 'window' || kind === 'free', waited: adj.waited });
+    if (!club) continue;
+    if (s.phase === 'youth' && kind === 'free' && !rng.chance(FREE_YOUTH)) continue;
+    const trial = kind === 'trial' || (kind === 'free' && !adj.noTrial && club.country !== home.code && rng.chance(0.3));
     const offer = makeOfferFor(s, rng, club.id, kind, { trial, first: kind === 'first', shift: adj.shift, wageMul: adj.wageMul });
     if (!offer) continue;
     if ((kind === 'window' || kind === 'free') && s.career.contract && !s.career.contract.youth && s.career.contract.wage > clubWageCap(s, club.id) * 0.9) continue;
     if (kind === 'window' && s.career.clubId) offer.fee = transferFee(s, rng);
+    if (kind === 'first' && s.career.clubId && club.id !== s.career.clubId) offer.fee = compFee(s);
     if (kind === 'free' && !s.career.clubId && s.career.signed) {
       offer.mode = 'free';
       freeTerms(offer, rng);
@@ -212,21 +276,39 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
   return out;
 }
 
-export function fallbackOffer(s: GameState, rng: Rng, kind: OfferGen['kind']): Offer | null {
+export function fallbackOffer(s: GameState, rng: Rng, kind: OfferGen['kind'], used: Set<string> = new Set()): Offer | null {
+  const ovr = curOvr(s.ab);
+  const age = ageAt(s.p.birth, s.week);
+  const maxL = targetLevel(ovr, s.ab.pot, age);
+  const home = getCountry(s.p.country);
+  const excl = s.career.clubId;
+  for (let L = maxL; L >= 2; L--) {
+    const list = countriesWithLevel(L).filter((c) => foreignAllowed(s, c, age));
+    if (!list.length) continue;
+    const order = list.slice().sort((a, b) => (b === home.code ? 1 : 0) - (a === home.code ? 1 : 0) || (getCountry(b).confed === home.confed ? 1 : 0) - (getCountry(a).confed === home.confed ? 1 : 0) || (a < b ? -1 : 1));
+    for (const code of order) {
+      for (let k = 0; k < 6; k++) {
+        const club = pickClubIn(s, rng, code, L, ovr, excl, false);
+        if (!club || used.has(club.id)) continue;
+        const o = makeOfferFor(s, rng, club.id, 'fallback', { first: kind === 'first', anyRole: true, trial: kind !== 'first' && maxL <= 2 });
+        if (o) {
+          o.exp = s.week + 8;
+          return o;
+        }
+      }
+    }
+  }
   const lgs = leaguesOf(s.p.country);
   const low = lgs[lgs.length - 1];
   ensureCountry(s, s.p.country);
-  const ids = membersOf(s, low.id);
-  const excl = s.career.clubId;
-  const pool = ids.filter((id) => id !== excl);
+  const pool = membersOf(s, low.id).filter((id) => id !== excl && !used.has(id));
   if (!pool.length) return null;
   const id = rng.pick(pool);
-  const age = ageAt(s.p.birth, s.week);
-  const wage = Math.max(300, Math.round(wageFor(s, id, 'backup', curOvr(s.ab), age) * 0.8));
+  const wage = Math.max(300, Math.round(wageFor(s, id, 'backup', ovr, age) * 0.8));
   const cn = genName(rng, getClub(id).country);
   return {
-    id: s.ev.nextId++, clubId: id, role: 'backup', wage, years: 1, signing: 0, appBonus: 0, goalBonus: 0, buyout: 0, loan: false, trial: true,
-    exp: s.week + 8, coachName: cn.name, coachStyle: '선수를 시험해 보는 타입', first: kind === 'first', fromAgent: false, tag: 'fallback'
+    id: s.ev.nextId++, clubId: id, role: 'backup', wage, years: 1, signing: 0, appBonus: 0, goalBonus: 0, buyout: 0, loan: false, trial: kind !== 'first',
+    exp: s.week + 8, coachName: cn.name, coachStyle: '선수를 시험해 보는 타입', first: kind === 'first', fromAgent: false, tag: 'fallback', mode: 'transfer', fee: 0
   };
 }
 
@@ -260,7 +342,7 @@ export function trialPass(s: GameState, rng: Rng, o: Offer): { ok: boolean; roll
   const gap = curOvr(s.ab) - std;
   const foreign = getClub(o.clubId).country !== s.p.country;
   let p = 0.55 + gap / 22 + (foreign ? (s.hid.adapt - 50) / 400 : 0) + s.fame.dom / 400;
-  const mf = effM(s.p.country, curOvr(s.ab));
+  const mf = effM(s.p.country, shownOvr(s.ab, ageAt(s.p.birth, s.week)));
   if (L >= 5) p *= mf;
   else if (foreign && L >= 4) p *= Math.min(1, Math.pow(Math.max(mf, 1e-6), 0.3));
   if (s.phase === 'youth') p *= TRIAL_YOUTH;
@@ -391,7 +473,14 @@ export function scheduleCup(s: GameState, rng: Rng, clubId: string, lgId: string
   });
 }
 
+export function closeRes(s: GameState): void {
+  const r = s.career.resCur;
+  if (!r.done && (r.apps > 0 || r.mins > 0 || r.avail > 0)) s.career.resSeasons.push({ ...r, done: true });
+  r.done = true;
+}
+
 export function closeCurrent(s: GameState): void {
+  closeRes(s);
   const cur = s.career.cur;
   if (!cur.done && (cur.apps > 0 || cur.mins > 0 || cur.avail > 0)) s.career.seasons.push({ ...cur, done: true });
   cur.done = true;
@@ -403,6 +492,15 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   const cs = getClub(o.clubId);
   const firstPro = !s.career.signed && !o.loan;
   const hadPrev = !!prev;
+  if (firstPro && s.phase === 'youth') {
+    closeYouthCurrent(s);
+    s.yt = null;
+    s.phase = 'pro';
+    const e = s.career.entry;
+    e.step = 2;
+    if (e.trainW < 0) e.trainW = s.week;
+    if (e.squadW < 0) e.squadW = Math.max(s.week, e.trainW);
+  }
   if (hadPrev) {
     s.career.clubsHist[s.career.clubsHist.length - 1].toS = seasonOf(s.week);
     closeCurrent(s);
@@ -426,7 +524,12 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   }
   closeMarket(s);
   dropQueuedOffers(s);
+  if (firstPro && s.phase === 'pro') {
+    s.goals = makeGoals(s);
+    addLog(s, 'milestone', '1군 선수단 등록', `${cs.name} 1군 선수단에 이름이 올랐다. 유스 리그를 떠나 1군 경기 주차마다 출전 판정을 받고, 명단에서 빠지는 주에는 리저브 경기에 나선다.`, []);
+  }
   s.career.cur = emptyRec(seasonOf(s.week), o.clubId, cs.name, '', '', 2, o.loan);
+  s.career.resCur = emptyRec(seasonOf(s.week), o.clubId, cs.name, '', '', 2);
   s.career.seasonMinsAcc = 0;
   s.career.seasonAvailAcc = 0;
   let restage = false;
@@ -455,7 +558,7 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   const lvl = clubLvl(s, o.clubId);
   s.career.cur.lvl = lvl;
   s.career.maxLvl = Math.max(s.career.maxLvl, lvl);
-  s.career.bigClub = o.tag === 'renew' ? s.career.bigClub : lvl >= 5 && hunit(`${s.cfg.seed}|big`) < Math.min(1, Math.pow(Math.max(effM(s.p.country, curOvr(s.ab)), 1e-6), 0.5));
+  s.career.bigClub = o.tag === 'renew' ? s.career.bigClub : lvl >= 5 && hunit(`${s.cfg.seed}|big`) < Math.min(1, Math.pow(Math.max(effM(s.p.country, shownOvr(s.ab, ageAt(s.p.birth, s.week))), 1e-6), 0.5));
   if (cs.country !== s.p.country) {
     s.ev.flags.abroad = s.week;
     s.fame.abroad = clamp(s.fame.abroad + 1.5 + lvl, 0, 100);
@@ -527,6 +630,7 @@ export function leaveToFree(s: GameState, reason: string): void {
     s.career.clubsHist[s.career.clubsHist.length - 1].toS = seasonOf(s.week);
     closeCurrent(s);
     s.career.cur = emptyRec(seasonOf(s.week), '', '', '', '', 2);
+    s.career.resCur = emptyRec(seasonOf(s.week), '', '', '', '', 2);
   }
   s.career.clubId = '';
   s.career.track = 'pro';
@@ -548,12 +652,7 @@ export function genYouthJudgement(s: GameState, rng: Rng): { pass: boolean; scor
   const need = 60;
   const pass = score >= need;
   if (!pass) return { pass, score, need, offers: [] };
-  const n = rng.int(1, 4);
-  let offers = genOffers(s, rng, 'first', n);
-  if (!offers.length) {
-    const fb = fallbackOffer(s, rng, 'first');
-    if (fb) { fb.trial = false; offers = [fb]; }
-  }
+  const offers = firstContractOffers(s, rng);
   return { pass, score, need, offers };
 }
 

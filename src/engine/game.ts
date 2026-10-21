@@ -33,6 +33,7 @@ import { getClub } from './data';
 import { clubLvl } from './world';
 import { curOvr } from './attributes';
 import { setCondEnv } from './fx';
+import { hasUpperClub } from './upper';
 import { isCosmetic } from './flags';
 
 setCondEnv({
@@ -50,7 +51,9 @@ setCondEnv({
   offseason: (s) => isOffseason(s),
   seasonEnd: (s) => isSeasonEnd(s),
   winterBreak: (s) => hasWinterBreak(s),
-  springAutumn: (s) => calKindOf(s) === 'sa'
+  springAutumn: (s) => calKindOf(s) === 'sa',
+  upperClub: (s) => hasUpperClub(s, false),
+  upperAbroad: (s) => hasUpperClub(s, true)
 });
 
 export function newGame(cfg: GameConfig, forced?: import('./roulette').RouletteResult): GameState {

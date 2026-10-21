@@ -7,6 +7,7 @@ import { applyFx } from './fx';
 import { fireEvent, getEvent } from './events';
 import { playPlayerMatch, playTeamOnly, natTeamBase } from './match';
 import { awardPrize, awardTrophy, trigMoment } from './season';
+import { natSelect, ensureNatCoach } from './natsel';
 import { yearOf } from './time';
 import type { Fixture, GameState } from './types';
 
@@ -32,13 +33,6 @@ function stageLabel(t: AgeTournament, idx: number): string {
 
 function meetsCall(s: GameState, age: number): boolean {
   return shownOvr(s.ab, age) >= youthCallMin(natTeamBase(s.p.country));
-}
-
-function callScore(s: GameState, t: AgeTournament): number {
-  const base = natTeamBase(s.p.country) + ADJ[t.level];
-  const form = s.st.form.length ? s.st.form.reduce((a, b) => a + b, 0) / s.st.form.length : 6.3;
-  const stageBonus = s.phase === 'pro' ? 0.8 : s.career.track === 'school' ? -0.3 : s.career.entry.step >= 1 ? 0.5 : 0;
-  return (curOvr(s.ab) - (base - 18)) / 3 + (form - 6.3) * 0.6 + Math.min(1, s.nat.youthCaps * 0.15) + stageBonus + s.fame.dom / 100;
 }
 
 function qualifies(s: GameState, t: AgeTournament, year: number, rng: Rng): boolean {
@@ -117,7 +111,12 @@ export function ageTournamentWeek(s: GameState, rng: Rng, sw: number): void {
       const age = year - s.p.birth.y;
       const eligible = ageEligible(t, s.p.birth.y, year);
       const wild = !eligible && t.wild > 0 && age <= t.ageMax + 8 && curOvr(s.ab) >= natTeamBase(s.p.country) - 10 && rng.chance(0.12);
-      const roll = (eligible || wild) && !s.st.injury && meetsCall(s, age) ? rng.next() < logistic(callScore(s, t) - (wild ? 1.5 : 0)) : false;
+      ensureNatCoach(s, rng);
+      let roll = false;
+      if ((eligible || wild) && !s.st.injury && meetsCall(s, age)) {
+        const res = natSelect(s, rng, t.level);
+        roll = (res.stage === 'called' || res.stage === 'starter') && (!wild || rng.chance(0.5));
+      }
       f[`${key}:squad`] = roll ? 1 : 0;
       if (f[`${key}:q`]) {
         addLog(s, 'world', t.ko, `${year} ${t.ko}이(가) 개막했다. ${c.natTeam}이(가) 출전한다.`, []);

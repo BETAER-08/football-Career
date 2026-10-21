@@ -56,8 +56,8 @@ export const youthStages: RawEvent[] = [
     cc('결과를 받아들이고 훈련에 집중한다', ['장학 계약이 전부는 아니라고 스스로를 다독였다. 그래도 마음 한구석이 쓰리다.', 'fx:scholar=none morale-4 stress+3 hid.ambition-1'], { pv: '방출 위험↑' })
   ], { sched: true, cd: 0, max: 1, xg: 'scholar', note: 'youth_stage' }),
   ch('ys_poach_up', Y, 3, [
-    '상위 구단 아카데미 스카우트가 직접 찾아왔다. {name}의 움직임이 인상적이었다며 입단 테스트를 제안했다. 소속팀 모르게 이루어진 접촉이다.',
-    '큰 구단 유스 책임자가 부모님께 전화를 걸어 왔다. 더 높은 수준에서 뛰어 볼 생각이 없느냐는 이야기였다.'
+    '{upclub} 아카데미 스카우트가 직접 찾아왔다. {name}의 움직임이 인상적이었다며 입단 테스트를 제안했다. 소속팀 모르게 이루어진 접촉이다.',
+    '{upclub} 유스 책임자가 부모님께 전화를 걸어 왔다. 더 높은 수준에서 뛰어 볼 생각이 없느냐는 이야기였다.'
   ], [
     cc('이적을 받아들인다', ['짐을 꾸려 새 도시로 옮겼다. 훈련의 속도와 동기들의 수준이 한 단계 다르다.', 'fx:youthMove=up flag:moved_up morale+5 stress+4 rel.mates-3'], {
       chk: '55 ovr*0.35 hid.adapt*0.1 hid.ambition*0.1', pv: '수준↑ 환경 변화 스트레스↑',
@@ -66,7 +66,7 @@ export const youthStages: RawEvent[] = [
     }),
     cc('지금 팀에 남는다', ['이 팀에서 더 증명하기로 했다. {coach} 감독이 조용히 고개를 끄덕였다.', 'rel.coach+3 hid.loyalty+2 hid.ambition-2 morale-2'], { pv: '감독 관계↑ 기회 상실' }),
     cc('시간을 달라고 말한다', ['부모님과 길게 이야기했다. 결정은 미뤄졌다.', 'rel.father+2 stress+3 fu:ys_poach_late@8-16'], { pv: '결정 보류 기회 만료 가능' })
-  ], { cond: ['ovr>=38', 'lvl<=5', '!flag:moved_up'], cd: 80, max: 2, xg: 'academy_move', tier: 'major' }),
+  ], { cond: ['ovr>=38', 'lvl<=5', '!flag:moved_up', 'upperClub'], cd: 80, max: 2, xg: 'academy_move', tier: 'major' }),
   pa('ys_poach_late', Y, 1, [
     '답을 미루는 사이 상위 구단은 다른 선수를 택했다. 한 번의 기회가 조용히 지나갔다.',
     '뒤늦게 연락해 본 구단은 이미 명단을 확정한 뒤였다. 아쉬움이 한동안 가시지 않았다.'

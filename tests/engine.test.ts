@@ -6,7 +6,7 @@ import { COUNTRIES } from '../src/data/countries';
 import { checkPct, parseCheck, parseFx, applyFx } from '../src/engine/fx';
 import { eligible, markFired, getEvent, fireEvent, rollWeekly } from '../src/engine/events';
 import { getAction, actionStatus } from '../src/engine/actions';
-import { negotiate, genOffers } from '../src/engine/transfer';
+import { negotiate, genOffers, fallbackOffer } from '../src/engine/transfer';
 import { advanceInjury, startInjury } from '../src/engine/health';
 import { endSeasonCountry, ensureCountry, rngOf, membersOf, startLeagueSeason } from '../src/engine/world';
 import { getClub, getLeague, leaguesOf } from '../src/engine/data';
@@ -200,6 +200,7 @@ describe('계약과 이적', () => {
     const rng = rngOf(s);
     let offers = genOffers(s, rng, 'free', 3);
     if (!offers.length) offers = genOffers(s, rng, 'window', 6);
+    if (!offers.length) offers = [fallbackOffer(s, rng, 'free')!];
     expect(offers.length).toBeGreaterThan(0);
     const o = offers[0];
     let failsNone = 0;

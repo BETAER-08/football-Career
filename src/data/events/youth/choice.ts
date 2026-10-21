@@ -13,10 +13,10 @@ export const youthChoice: RawEvent[] = [
     cc('시험공부에 집중한다', ['책상 앞에서 밤을 보냈다. 시험은 무난했지만 경기 감각은 조금 무뎌졌다.', 'edu+6 fatigue+3 sharp-3'], { chk: '55 hid.pro*0.2 sleep*0.2 fatigue*-0.2', pv: '학력↑ 경기 감각↓', bad: ['밤샘 공부에도 집중이 흐트러져 성적이 기대에 못 미쳤다.', 'edu-2 stress+4 fatigue+4'] }),
     cc('훈련과 경기를 우선한다', ['시험은 대충 넘겼다. 대신 경기에서는 몸이 가벼웠다.', 'sharp+4 edu-3 stress+3'], { pv: '경기 감각↑ 학력↓' })
   ], { cond: ['age<=17'], cd: 52, max: 4, xg: 'study', note: 'edu', tier: 'minor' }),
-  ch('yc_scout_contact', Y, 3, ['낯선 구단 스카우트가 부모님을 통해 조심스럽게 접촉해 왔다. 더 큰 구단의 유스로 옮길 기회라고 했다.', '더 높은 수준의 구단에서 유스 이적 이야기가 흘러나왔다. {coach} 감독에게는 아직 말하지 않았다.'], [
+  ch('yc_scout_contact', Y, 3, ['{upclub}의 스카우트가 부모님을 통해 조심스럽게 접촉해 왔다. 더 큰 구단의 유스로 옮길 기회라고 했다.', '{upclub}에서 유스 이적 이야기가 흘러나왔다. {coach} 감독에게는 아직 말하지 않았다.'], [
     cc('이야기를 들어 본다', ['관계자와 직접 만났다. 훈련 참관 결과가 좋았다.', 'fx:youthMove=up flag:moved_up morale+6 stress+3 fu:fu_career@10-26'], { chk: '45 ovr*0.35 hid.ambition*0.1 hid.adapt*0.1', bad: ['테스트에서 기대한 인상을 남기지 못했다. 돌아오는 길이 길었다.', 'morale-6 stress+3 rel.coach-2 fu:fu_career@10-26'] }),
     cc('지금 팀에 남는다', ['이 팀에서 더 증명하기로 했다. {coach} 감독이 조용히 고개를 끄덕였다.', 'rel.coach+4 hid.loyalty+2 hid.ambition-2 morale-1 fu:fu_career@10-26'])
-  ], { cond: ['age<=17', 'ovr>=44', '!flag:moved_up'], cd: 104, max: 1, xg: 'academy_move', note: 'scout', tier: 'major' }),
+  ], { cond: ['age<=16', 'ovr>=44', '!flag:moved_up', 'upperClub'], cd: 104, max: 1, xg: 'academy_move', note: 'scout', tier: 'major' }),
   ch('yc_skip_grade', Y, 3, ['상위 연령팀에서 {name}에게 월반 제안이 왔다. 수준 높은 경쟁이 기다리지만 몸싸움과 속도가 부담이다.', '{coach} 감독이 한 학년 위 팀에서 뛰어 보겠느냐고 물었다.'], [
     cc('월반을 받아들인다', ['형들 틈에서 뛰며 속도와 판단이 눈에 띄게 빨라졌다.', 'sharp+4 attr.pace+0.2 attr.strength+0.2 morale+4'], { chk: '48 ovr*0.4 attr.strength*1 hid.bigGame*0.1', bad: ['형들의 속도에 밀렸다. 몸이 따라오지 않아 자신감이 흔들렸다.', 'morale-6 stress+4'] }),
     cc('또래들과 계속 뛴다', ['익숙한 동료들 속에서 안정적으로 시즌을 보냈다.', 'happy+2 sharp-2 hid.ambition-1'])
@@ -117,8 +117,8 @@ export const youthChoice: RawEvent[] = [
     cc('멘토링을 받는다', ['선배의 훈련표를 따랐다. 몸은 힘들었지만 눈이 트이는 기분이었다.', 'attr.positioning+0.25 attr.composure+0.2 fatigue+6 hid.pro+2'], { chk: '55 hid.pro*0.25 hid.social*0.1', bad: ['선배의 방식은 너무 가혹했다. 몸이 지쳐 갔다.', 'fatigue+12 morale-4'] }),
     cc('내 방식대로 간다', ['고마움을 전하며 정중히 사양했다.', 'stress-1 morale-2 rel.coach-1'])
   ], { cond: ['ftTrain', 'age<=19'], cd: 100, max: 1, xg: 'coach_relation', tier: 'minor' }),
-  ch('yc_trial_abroad', Y, 2, ['해외 구단 유스 테스트 초청장이 도착했다. 언어도 낯설고 기간도 길지만 가능성은 크다.', '해외의 한 구단이 유소년 입단 테스트를 제안했다. 부모님의 의견이 갈린다.'], [
-    cc('도전한다', ['낯선 도시에서 일주일을 보냈다. 구단 관계자의 반응이 좋았다.', 'fx:youthMove=up fameA+1 hid.adapt+2 stress+4 fu:fu_career@10-26'], { chk: '35 ovr*0.4 hid.adapt*0.2', bad: ['테스트는 낙방이었지만 값진 경험이었다. 해외 무대의 속도를 느꼈다.', 'morale-3 hid.adapt+1 fu:fu_career@10-26'] }),
+  ch('yc_trial_abroad', Y, 2, ['{upabroad}의 유스 테스트 초청장이 도착했다. 언어도 낯설고 기간도 길지만 가능성은 크다.', '해외의 {upabroad}이(가) 유소년 입단 테스트를 제안했다. 부모님의 의견이 갈린다.'], [
+    cc('도전한다', ['낯선 도시에서 일주일을 보냈다. 구단 관계자의 반응이 좋았다.', 'fx:youthMove=upabroad fameA+1 hid.adapt+2 stress+4 fu:fu_career@10-26'], { chk: '35 ovr*0.4 hid.adapt*0.2', bad: ['테스트는 낙방이었지만 값진 경험이었다. 해외 무대의 속도를 느꼈다.', 'morale-3 hid.adapt+1 fu:fu_career@10-26'] }),
     cc('지금은 때가 아니다', ['더 준비하고 가겠다고 했다. 한동안 아쉬운 마음이 이어졌다.', 'stress-1 hid.ambition-2 fameA-0.2 fu:fu_career@10-26'])
-  ], { cond: ['age<=17', 'ovr>=50', 'tier>=2'], cd: 200, max: 1, xg: 'academy_move', tier: 'major' })
+  ], { cond: ['age<=16', 'ovr>=50', 'tier>=2', 'upperAbroad'], cd: 200, max: 1, xg: 'academy_move', tier: 'major' })
 ];

@@ -2,9 +2,11 @@ import { Rng, clamp } from './rng';
 import { clubLvl } from './world';
 import { getClub, getCountry } from './data';
 import { formatKRW } from './finance';
-import { negotiate, trialPass, joinClub, roleLabel, genOffers, fallbackOffer, leaveToFree, feeNote } from './transfer';
-import { clubDeal, extendContract, signPre, modeLabel, expireToFree } from './market';
+import { moveYouthTo } from './youthmove';
+import { closeMarket, negotiate, trialPass, joinClub, roleLabel, genOffers, fallbackOffer, leaveToFree, feeNote } from './transfer';
+import { clubDeal, youthDeal, extendContract, signPre, modeLabel, expireToFree } from './market';
 import { addLog } from './log';
+import { isSchoolId } from '../data/schools';
 import { pushDecision } from './events';
 import { coachOfferLabel } from './coach';
 import type { Chip, Decision, GameState, Offer, ResultPanel } from './types';
@@ -71,8 +73,9 @@ export function resolveOffer(s: GameState, rng: Rng, d: Decision, idx: number, d
   }
   const o = offers[idx];
   const rest = offers.filter((x) => x.id !== o.id);
-  if (o.mode === 'transfer' && s.career.clubId) {
-    const deal = clubDeal(s, rng, o);
+  const youthMove = !!s.career.clubId && !!s.career.contract?.youth && !isSchoolId(s.career.clubId) && o.clubId !== s.career.clubId && o.mode === 'transfer' && d.ref !== 'coachjob';
+  if ((o.mode === 'transfer' && s.career.clubId) || youthMove) {
+    const deal = youthMove ? youthDeal(s, rng, o) : clubDeal(s, rng, o);
     if (!deal.ok) {
       const from = getClub(s.career.clubId).name;
       const to = getClub(o.clubId).name;
@@ -80,7 +83,7 @@ export function resolveOffer(s: GameState, rng: Rng, d: Decision, idx: number, d
       if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel - 2, -100, 100);
       addLog(s, 'system', '구단 간 협상 결렬', `${from}이(가) ${to}의 제안을 받아들이지 않았다.`, [{ k: '사기', d: -3 }]);
       repush(s, d, rest);
-      return { title: '구단 간 협상 결렬', grade: 'bad', roll: Math.round(deal.roll * 100), need: Math.round(deal.p * 100), text: `${from}이(가) ${to}의 이적 제안을 거절했다. 구단 간 이적료 합의가 이뤄지지 않았다.`, changes: [{ k: '사기', d: -3 }], later: false, w };
+      return { title: '구단 간 협상 결렬', grade: 'bad', roll: Math.round(deal.roll * 100), need: Math.round(deal.p * 100), text: `${from}이(가) ${to}의 ${youthMove ? '유스 이적' : '이적'} 제안을 거절했다. 구단 간 ${youthMove ? '육성 보상금' : '이적료'} 합의가 이뤄지지 않았다.`, changes: [{ k: '사기', d: -3 }], later: false, w };
     }
   }
   const demands = { wage: demandsStr.includes('wage'), role: demandsStr.includes('role'), buyout: demandsStr.includes('buyout') };
@@ -101,6 +104,12 @@ export function resolveOffer(s: GameState, rng: Rng, d: Decision, idx: number, d
     final = { ...final, trial: false };
   }
   const club = getClub(final.clubId).name;
+  if (final.yth === 'youth' || final.yth === 'scholar') {
+    moveYouthTo(s, rng, final.clubId, `${club}의 ${final.yth === 'scholar' ? '장학 계약' : 'U19·리저브 합류'} 제안을 받아들여 유스 이적했다. 육성 보상금 ${formatKRW(final.fee ?? 0)}.`, final.yth === 'scholar');
+    if (final.yth === 'scholar' && s.career.contract) s.career.contract.wage = final.wage;
+    closeMarket(s);
+    return { title: `${club} 유스 이적`, grade: 'ok', roll: Math.round(neg.roll * 100), need: Math.round(neg.need * 100), text: `${neg.text} ${club}에서 ${final.note ?? '새 도전을 시작한다'}.`, changes: [], later: false, w };
+  }
   if (final.mode === 'renew') {
     extendContract(s, final);
     return { title: `${club} 재계약`, grade: 'ok', roll: Math.round(neg.roll * 100), need: Math.round(neg.need * 100), text: `${neg.text} ${club}와(과) ${final.years}년 재계약을 맺었다. 약속된 역할은 ${roleLabel(final.role)}.`, changes: [], later: false, w };

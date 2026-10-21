@@ -90,6 +90,17 @@
       </div></div>
     </div>
 
+    {#if d.natMatches && d.natMatches.length}
+      <div class="panel"><div class="panel-h">A매치 기록 <span class="faint" style="font-weight:500">(최근 {d.natMatches.length}경기)</span></div>
+        <div class="panel-b" style="max-height:260px;overflow:auto">
+          <table class="ag">
+            <thead><tr><th>대회</th><th>상대</th><th>결과</th><th>선발</th><th>출전</th><th>골</th><th>도움</th><th>평점</th></tr></thead>
+            <tbody>{#each [...d.natMatches].reverse() as m}<tr><td>{m.comp}</td><td>{m.opp}</td><td>{m.result === 'W' ? '승' : m.result === 'D' ? '무' : '패'}</td><td>{m.mins ? (m.started ? '선발' : '교체') : '미출전'}</td><td class="mono">{m.mins}'</td><td class="mono">{m.goals}</td><td class="mono">{m.assists}</td><td class="mono">{m.mins ? m.rating.toFixed(1) : '-'}</td></tr>{/each}</tbody>
+          </table>
+        </div>
+      </div>
+    {/if}
+
     {#if d.ageRecs && d.ageRecs.length}
       <div class="panel"><div class="panel-h">연령별 국제대회 기록</div>
         <div class="panel-b">

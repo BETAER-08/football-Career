@@ -70,10 +70,12 @@ export interface PlayOpts {
   mySt?: number;
   stage?: YouthStage;
   std?: number;
+  reserve?: boolean;
+  natRole?: Role;
 }
 
-export function selectionX(s: GameState, margin: number, role: Role, youth: boolean): number {
-  const coachRel = s.people.coach ? s.people.coach.rel : 0;
+export function selectionX(s: GameState, margin: number, role: Role, youth: boolean, relOverride?: number): number {
+  const coachRel = relOverride ?? (s.people.coach ? s.people.coach.rel : 0);
   const fit = s.people.coach ? s.people.coach.traitVal : 0;
   const frm = s.st.form.length ? s.st.form.reduce((a, b) => a + b, 0) / s.st.form.length - 6.5 : 0;
   let x = margin / 3.4 + (youth ? 0.8 - jumpDrag(s) : ROLE_BONUS[role]) + coachRel / 70 + fit + frm * 0.5;
@@ -150,7 +152,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   else if (youth) margin = effOvr(s) - stageStd(s, clubId, opts.stage ?? s.career.youthStage);
   else margin = effOvr(s) - clubStd(s, clubId);
   if (fx.kind === 'cup' || fx.kind === 'friendly') margin += 1.5;
-  let x = selectionX(s, margin, fx.kind === 'intl' ? 'rotation' : role, youth);
+  let x = selectionX(s, margin, fx.kind === 'intl' ? opts.natRole ?? 'rotation' : role, youth, fx.kind === 'intl' ? s.people.natcoach?.rel ?? 0 : undefined);
   if (!youth && fx.kind !== 'intl' && myClub.country === 'KR' && ageAt(s.p.birth, s.week) <= 22 && getLeague(clubLeagueId(s, clubId)).tier === 1) x += 0.55;
   const pStart = opts.bench ? 0 : logistic(x);
   const pSub = opts.bench ? clamp(logistic((margin + 1) / 3.4) * 0.9, 0.03, 0.85) : logistic(x + 1.3) * 0.85;
@@ -200,7 +202,7 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   out.cs = cs;
   out.yc = yc;
   out.rc = rc;
-  const cur = youth ? s.career.yCur : s.career.cur;
+  const cur = opts.reserve ? s.career.resCur : youth ? s.career.yCur : s.career.cur;
   const first = !s.career.debuted && !youth && (fx.kind === 'league' || fx.kind === 'cup' || fx.kind === 'cont');
   out.firstPro = first;
   if (first) {

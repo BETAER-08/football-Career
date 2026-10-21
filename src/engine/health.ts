@@ -88,6 +88,7 @@ export function advanceInjury(s: GameState, rng: Rng): 'none' | 'recovered' {
   if (inj.weeksLeft <= 0) {
     const def = INJURY_BY_ID[inj.id];
     s.st.injury = null;
+    s.nat.injEndW = s.week;
     const rp = def.recur * (s.st.rehabEarly ? 2.4 : 1) * (1 + (s.st.chronic[def.part] ?? 0) * 0.12) * clamp(s.hid.injuryProne / 50, 0.7, 1.4);
     s.st.rehabEarly = false;
     if (s.ev.flags.reinjure !== undefined) {

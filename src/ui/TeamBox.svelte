@@ -15,6 +15,7 @@
   import { STAGE_LABEL } from '../engine/stages';
   import { DREAM_LABEL } from '../engine/goals';
   import { nextWindowText } from '../engine/market';
+  import { STAGE_TEXT } from '../engine/natsel';
   import { nextWindowW, windowNow } from '../engine/calendar';
 
   const g = $derived(store.game!);
@@ -107,7 +108,7 @@
       {#if g.goals && !g.goals.settled && (g.phase === 'pro' || g.phase === 'youth')}
         {#each [{ lab: '구단 기대', gd: g.goals.club }, { lab: '개인 목표', gd: g.goals.personal }] as { lab, gd }}
           {@const v = goalValue(g, gd)}
-          <div class="goal" title="시즌 결산에서 달성 여부와 보상을 처리해요"><span>{lab} · {gd.label}</span><div class="gauge"><i style="width:{Math.min(100, (v / gd.target) * 100)}%"></i></div><b class="mono">{gd.metric === 'rating' ? v.toFixed(1) : Math.round(v)}/{gd.target}</b></div>
+          <div class="goal" title="시즌 결산에서 달성 여부와 보상을 처리해요"><span>{lab} · {gd.label}</span><div class="gauge"><i style="width:{Math.min(100, (v / gd.target) * 100)}%"></i></div><b class="mono">{gd.metric === 'rating' || gd.metric === 'resrating' ? v.toFixed(1) : Math.round(v)}/{gd.target}</b></div>
         {/each}
       {/if}
       {#if g.dream}<div class="mini-hint">✦ 꿈 · {DREAM_LABEL[g.dream]}{g.dreamHits.includes(g.dream) ? ' (이룰 조짐!)' : ''}</div>{/if}
@@ -152,6 +153,9 @@
         <div class="mini-hint">이적시장이 닫혀 있어도 계약할 수 있어요. 무적 기간이 길어질수록 제안 수준과 연봉이 떨어지고 경기 감각이 무뎌져요.</div>
       {:else}
         <div class="muted">계약 없음</div>
+      {/if}
+      {#if g.phase === 'pro' && g.career.clubId}
+        <div class="kv" title={g.nat.lastWhy.length ? `최근 탈락 이유: ${g.nat.lastWhy.join(' / ')}` : '대표팀 선발 점수는 실력·소속팀 수준·출전 시간·폼·이력·몸 상태·나이로 정해져요'}><span>대표팀 상태</span><span>{STAGE_TEXT[g.nat.stage]}{g.nat.lastWhy.length && g.nat.stage !== 'called' && g.nat.stage !== 'starter' ? ` · ${g.nat.lastWhy[0]}` : ''}</span></div>
       {/if}
       {#if g.nat.caps > 0 || g.nat.youthCaps > 0}
         <div class="kv"><span>대표팀</span><span class="mono">A매치 {g.nat.caps}경기 {g.nat.goals}골{g.nat.youthCaps ? ` · 연령별 ${g.nat.youthCaps}` : ''}</span></div>

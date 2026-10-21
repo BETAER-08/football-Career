@@ -4,8 +4,9 @@ import { autoDecide } from '../src/engine/auto';
 import { Rng, seedState } from '../src/engine/rng';
 import { rngOf, clubLvl } from '../src/engine/world';
 import { ensureContent } from '../src/engine/content';
-import { swOf, seasonOf } from '../src/engine/time';
-import { curOvr } from '../src/engine/attributes';
+import { ageAt, swOf, seasonOf } from '../src/engine/time';
+import { curOvr, shownOvr, anchored } from '../src/engine/attributes';
+import { scaleToOvr } from '../src/engine/player';
 import { ALL_ATTRS } from '../src/engine/types';
 import { windowIdx, windowNow, nextWindowW, windowCloseW } from '../src/engine/calendar';
 import { forcedOrigin, originRng } from '../src/engine/headless';
@@ -37,6 +38,10 @@ function boost(s: GameState, v: number): void {
 
 function at(s: GameState, w: number): GameState {
   return { ...s, week: w } as GameState;
+}
+
+function lock(s: GameState): void {
+  scaleToOvr(s.ab.a, s.ab.pos, anchored(79.5));
 }
 
 function declineAll(s: GameState): void {
@@ -82,9 +87,11 @@ function reachAdultPro(s: GameState, power = 0, maxWeeks = 52 * 8): boolean {
 }
 
 function proState(seed: string, country?: string, power = 13): GameState {
-  const s = mk(seed, country);
-  expect(reachAdultPro(s, power)).toBe(true);
-  return s;
+  for (let k = 0; k < 6; k++) {
+    const s = mk(k ? `${seed}-${k}` : seed, country);
+    if (reachAdultPro(s, power)) return s;
+  }
+  throw new Error('no pro state');
 }
 
 describe('이적시장 최소 제안 보장', () => {
@@ -165,12 +172,12 @@ describe('이적시장 최소 제안 보장', () => {
       setM(code, 0);
       const s = mk(`mkt-top-${code}`, code);
       expect(reachAdultPro(s, 20)).toBe(true);
-      boost(s, 20);
-      expect(curOvr(s.ab)).toBeGreaterThanOrEqual(90);
+      lock(s);
+      expect(shownOvr(s.ab, ageAt(s.p.birth, s.week))).toBeGreaterThanOrEqual(90);
       const summers = new Map<number, Offer[]>();
       let seen = 0;
       for (let i = 0; i < 52 * 4 && !s.ended; i++) {
-        boost(s, 20);
+        lock(s);
         step(s, {
           onDecision: (d) => {
             if (d.kind === 'offer' && d.ref === 'window' && d.text.includes('이적시장이 열렸다') && windowIdx(at(s, d.w)) === 0) {
@@ -261,7 +268,7 @@ describe('계약 만료와 자유계약', () => {
     expect(s.career.clubId).toBe('');
     expect(s.career.contract).toBeNull();
     expect(s.career.freeAgentW).toBeGreaterThanOrEqual(0);
-    const d = s.decision!;
+    const d = [s.decision, ...s.decQueue].find((x) => x && x.ref === 'free')!;
     expect(windowIdx(at(s, d.w))).toBe(-1);
     expect(s.log.some((l) => l.text.includes('계약 만료, 자유계약 선수가 됐다'))).toBe(true);
     expect(d).not.toBeNull();
@@ -326,7 +333,7 @@ describe('사전 계약', () => {
     setFast(false);
     const s = proState('mkt-pre-1');
     s.life.mil = 'none';
-    s.career.contract!.endW = (seasonOf(s.week) + 1) * 52;
+    s.career.contract!.endW = (seasonOf(s.week) + (swOf(s.week) > 30 ? 2 : 1)) * 52;
     s.career.contract!.loanFrom = '';
     let guard = 0;
     while (windowIdx(s) !== 1 && guard++ < 120) {

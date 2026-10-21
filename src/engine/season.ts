@@ -13,12 +13,14 @@ import { Rng, clamp } from './rng';
 import { curOvr, shownOvr, youthCallMin } from './attributes';
 import { addLog, toast } from './log';
 import { ageAt, seasonOf, swOf, START_YEAR, yearOf } from './time';
-import { clubLvl, clubSt, clubStd, endSeasonCountry, playRoundOthers, ranking, ensureCountry, roundRng, simScore } from './world';
+import { clubLvl, clubSt, clubStd, endSeasonCountry, playRoundOthers, ranking, ensureCountry, roundRng, simScore, membersOf, dyn } from './world';
 import { getClub, getCountry, getLeague } from './data';
 import { playPlayerMatch, playTeamOnly, recordLeagueResult, natTeamBase, type MatchOut } from './match';
 import { finishYouthSeason, openYouthSeason, rollListing } from './yleague';
 import { buildYouthReview } from './review';
-import { setupClubSeason, scheduleCup, updateRole } from './transfer';
+import { setupClubSeason, scheduleCup, updateRole, closeRes } from './transfer';
+import { natSelect, applyStage, ensureNatCoach, natRoleOf, pushMins } from './natsel';
+import { BTEAM_COUNTRIES, YOUTH_NAMES } from './stages';
 import { yearEndFinance, marketValue } from './finance';
 import { seasonEndGrowth } from './growth';
 import { emptyRec } from './records';
@@ -33,6 +35,7 @@ export function openSeason(s: GameState): void {
   if (s.career.clubId) {
     const club = getClub(s.career.clubId);
     s.career.cur = emptyRec(seasonOf(s.week), s.career.clubId, club.name, '', '', 2, !!s.career.contract?.loanFrom);
+    s.career.resCur = emptyRec(seasonOf(s.week), s.career.clubId, club.name, '', '', 2);
     if (isSchoolId(s.career.clubId)) s.career.fixtures.length = 0;
     else setupClubSeason(s, s.career.clubId, false);
     openYouthSeason(s);
@@ -209,6 +212,55 @@ function playFirstTeamAsYouth(s: GameState, rng: Rng, fx: Fixture, pre: { hg: nu
   afterPlayed(s, rng, fx, out);
 }
 
+const RES_P: Record<string, number> = { prospect: 0.85, backup: 0.85, rotation: 0.4, starter: 0.1 };
+
+export function reserveName(country: string): string {
+  if (country === 'GB') return 'U21 리저브 리그';
+  const yn = YOUTH_NAMES[country]?.league.RES;
+  return yn && BTEAM_COUNTRIES.has(country) ? yn : `${getCountry(country).ko} 리저브 리그`;
+}
+
+function squadCheck(s: GameState, rng: Rng, fx: Fixture, out: MatchOut): void {
+  if (s.phase !== 'pro' || !s.career.signed || s.st.injury || (fx.kind !== 'league' && fx.kind !== 'cup' && fx.kind !== 'cont')) return;
+  if (s.ev.flags.intlAway === s.week) return;
+  const lg = fx.kind === 'league';
+  if (out.played) {
+    s.career.entry.squadN += 1;
+    if (lg) pushMins(s, out.mins / 90);
+    return;
+  }
+  const role = s.career.contract?.role ?? 'prospect';
+  if (!rng.chance(RES_P[role] ?? 0.5)) {
+    s.career.entry.squadN += 1;
+    if (lg) pushMins(s, 0);
+    return;
+  }
+  if (lg) {
+    pushMins(s, -1);
+    playReserve(s, rng, fx);
+  }
+}
+
+function playReserve(s: GameState, rng: Rng, fx: Fixture): void {
+  const clubId = s.career.clubId;
+  const lgId = s.career.cur.leagueId;
+  const rr = roundRng(s, `res:${clubId}`, s.week);
+  const pool = lgId ? membersOf(s, lgId).filter((id) => id !== clubId) : [];
+  const oppId = pool.length ? rr.pick(pool) : '';
+  const mySt = clamp(clubSt(s, clubId) - 9 + rr.normal(0, 2), 15, 95);
+  const oppSt = clamp((oppId ? dyn(s, oppId).st : 50) - 9 + rr.normal(0, 4), 15, 95);
+  const country = getClub(clubId).country;
+  const name = reserveName(country);
+  const rfx: Fixture = { w: fx.w, comp: name, kind: 'yleague', opp: `${oppId ? getClub(oppId).name : '상대'} 리저브`, oppSt, ko: false, stage: '리저브', home: rr.chance(0.5), big: false, final: false, round: -1, oppId };
+  const out = playPlayerMatch(s, rng, rfx, true, { stage: 'RES', mySt, reserve: true });
+  const cur = s.career.resCur;
+  cur.avail += 1;
+  cur.leagueName = name;
+  if (out.played && (out.goals >= 2 || out.rc > 0 || out.rating >= 9)) {
+    addLog(s, 'match', `${name} 리저브 경기`, `${out.line}. ${out.mins}분 출전, ${out.goals}골 ${out.assists}도움.`, [], { tier: 'r' });
+  }
+}
+
 export function playFixtureToday(s: GameState, rng: Rng, fx: Fixture, youth: boolean): void {
   const clubId = s.career.clubId;
   const lgId = s.career.cur.leagueId;
@@ -227,7 +279,10 @@ export function playFixtureToday(s: GameState, rng: Rng, fx: Fixture, youth: boo
   }
   let out: MatchOut;
   if (s.phase === 'coach' || s.ev.flags.intlAway === s.week) out = playTeamOnly(s, rng, fx, clubSt(s, clubId), pre);
-  else out = playPlayerMatch(s, rng, fx, false, pre ? { pre } : {});
+  else {
+    out = playPlayerMatch(s, rng, fx, false, pre ? { pre } : {});
+    squadCheck(s, rng, fx, out);
+  }
   if (fx.kind === 'league') recordLeagueResult(s, lgId, clubId, fx, out);
   if (fx.kind === 'cup' || fx.kind === 'cont') nextCupOrCont(s, fx, out, clubId);
   s.career.cur.avail += fx.kind === 'friendly' ? 0 : 1;
@@ -270,11 +325,16 @@ function nearestOpp(s: GameState, rng: Rng): { name: string; st: number } {
   return { name: '상대 대표팀', st };
 }
 
+export function recordNat(s: GameState, out: MatchOut): void {
+  s.nat.matches.push({ w: s.week, comp: out.fx.comp, opp: out.fx.opp, started: out.started, mins: out.mins, goals: out.goals, assists: out.assists, rating: out.rating, result: out.result, squad: true });
+  if (s.nat.matches.length > 200) s.nat.matches.shift();
+}
+
 export function playIntl(s: GameState, rng: Rng, label: string, ko = false, final = false): MatchOut {
   const opp = nearestOpp(s, rng);
   const fx: Fixture = { w: swOf(s.week), comp: label, kind: 'intl', opp: opp.name, oppSt: opp.st, ko, stage: label, home: rng.chance(0.5), big: false, final, round: -1, oppId: '' };
-  s.nat.caps += 0;
-  const out = playPlayerMatch(s, rng, fx, false);
+  const out = playPlayerMatch(s, rng, fx, false, { natRole: natRoleOf(s) });
+  recordNat(s, out);
   if (out.played) {
     s.nat.caps += 1;
     s.nat.goals += out.goals;
@@ -305,18 +365,24 @@ export function natCallScore(s: GameState): number {
 
 export function intlWindow(s: GameState, rng: Rng, sw: number): void {
   if (!INTL_WINDOWS.includes(sw)) return;
-  if (s.st.injury || s.phase !== 'pro' || !s.career.clubId) return;
+  if (s.phase !== 'pro' || !s.career.clubId) return;
+  if (s.st.injury) {
+    s.nat.stage = 'none';
+    return;
+  }
   const age = ageAt(s.p.birth, s.week);
   if (s.week - s.nat.lastCallW < 6) return;
-  const x = natCallScore(s);
-  const p = 1 / (1 + Math.exp(-x));
-  if (rng.next() < p) {
+  ensureNatCoach(s, rng);
+  let called = false;
+  if (age >= 18) {
+    const res = natSelect(s, rng, 'A');
+    applyStage(s, res);
+    called = res.stage === 'called' || res.stage === 'starter';
+  }
+  if (called) {
     s.nat.lastCallW = s.week;
     const id = s.nat.caps === 0 ? 'nat_first_call' : 'nat_call';
     const def = getEvent(id);
-    if (!s.people.natcoach) {
-      s.people.natcoach = makeNatCoach(s, rng);
-    }
     s.decCtx = {};
     pushDecision(s, buildDecision(s, rng, def));
     markFired(s, def);
@@ -331,11 +397,6 @@ export function intlWindow(s: GameState, rng: Rng, sw: number): void {
       else toast(s, '연령별 대표팀 소집에 응했다.');
     }
   }
-}
-
-import { makePerson } from './relations';
-function makeNatCoach(s: GameState, rng: Rng) {
-  return makePerson(rng, s.ev, 'natcoach', s.p.country, { age: rng.int(45, 66), refYear: yearOf(s.week), job: '대표팀 감독', rel: 0 });
 }
 
 export function tournamentWeek(s: GameState, rng: Rng, sw: number): void {
@@ -362,8 +423,22 @@ export function tournamentWeek(s: GameState, rng: Rng, sw: number): void {
     }
     if (s.ev.flags[`${key}:alive`] !== 1) continue;
     const age = ageAt(s.p.birth, s.week);
-    const x = natCallScore(s) + 0.6;
-    const inSquad = age >= 18 && !s.st.injury && (s.ev.flags[`${key}:squad`] !== undefined ? s.ev.flags[`${key}:squad`] === 1 : (() => { const v = rng.next() < 1 / (1 + Math.exp(-x)) ? 1 : 0; s.ev.flags[`${key}:squad`] = v; return v === 1; })());
+    if (s.ev.flags[`${key}:squad`] === undefined) {
+      ensureNatCoach(s, rng);
+      const res = age >= 18 ? natSelect(s, rng, 'A') : null;
+      const v = res && (res.stage === 'called' || res.stage === 'starter') ? 1 : 0;
+      s.ev.flags[`${key}:squad`] = v;
+      if (res && (v === 1 || res.stage === 'prelim')) {
+        applyStage(s, res);
+        if (v === 1) {
+          addLog(s, 'milestone', `${t.ko} 최종 명단 발표`, `${c.natTeam}의 ${t.ko} 최종 명단이 발표됐다. 호명이 이어지고, ${s.p.name}의 이름이 불렸다!`, [], { star: true });
+          toast(s, `${t.ko} 최종 명단 포함`);
+        } else addLog(s, 'milestone', `${t.ko} 최종 명단 발표`, `${c.natTeam}의 ${t.ko} 최종 명단이 발표됐다. 예비 명단에는 올랐지만 ${s.p.name}의 이름은 끝내 불리지 않았다. (${res.reasons.join(' · ') || '포지션 경쟁'})`, [], { star: true });
+      } else if (res && s.nat.caps > 0) {
+        applyStage(s, res);
+      }
+    }
+    const inSquad = age >= 18 && !s.st.injury && s.ev.flags[`${key}:squad`] === 1;
     const grp = stageIdx < 3;
     const stagesKo = t.stages.length - 1;
     const koIdx = stageIdx - 3;
@@ -374,7 +449,8 @@ export function tournamentWeek(s: GameState, rng: Rng, sw: number): void {
     let res: 'W' | 'D' | 'L';
     if (inSquad) {
       const fx: Fixture = { w: sw, comp: label, kind: 'intl', opp: '상대', oppSt, ko: !grp, stage: label, home: false, big: false, final: finalStage, round: -1, oppId: '' };
-      const out = playPlayerMatch(s, rng, fx, false);
+      const out = playPlayerMatch(s, rng, fx, false, { natRole: natRoleOf(s) });
+      recordNat(s, out);
       if (out.played) { s.nat.caps += 1; s.nat.goals += out.goals; if (!s.nat.debut) s.nat.debut = true; }
       trigMoment(s, rng, out);
       res = out.result;
@@ -428,7 +504,7 @@ export function endSeason(s: GameState, rng: Rng): void {
   const yth = s.phase === 'youth' && !!s.yt;
   if (yth) finishYouthSeason(s, rng);
   const shareGames = yth && s.yt ? s.yt.games : games;
-  const shareMins = yth ? s.career.yCur.mins + cur.mins : cur.mins;
+  const shareMins = yth ? s.career.yCur.mins + cur.mins : cur.mins + s.career.resCur.mins * 0.7;
   s.ab.playShare = clamp(0.6 * s.ab.playShare + 0.4 * (shareGames > 0 ? shareMins / (shareGames * 90) : 0), 0, 1);
   if (clubId && cur.apps > 0 && s.phase !== 'youth') seasonAwards(s, rng, cur.pos, games, age);
   clubAwards(s);
@@ -442,6 +518,7 @@ export function endSeason(s: GameState, rng: Rng): void {
       s.score += calcSeasonScore(s, cur, games);
     }
     cur.done = true;
+    closeRes(s);
   }
   if (clubId) {
     const rankSet = finalRank;

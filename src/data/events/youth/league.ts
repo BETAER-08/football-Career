@@ -148,12 +148,12 @@ export const youthLeague: RawEvent[] = [
     })
   ], { sched: true, cd: 0, max: 99, xg: 'age_call', tier: 'major' }),
   ch('ys_top_scout', Y, 1, [
-    '리그 최상위 구단의 유스 디렉터가 직접 찾아왔다. 또래 중에서는 비교 대상이 없다는 평가와 함께 아카데미 입단을 제안했다.',
-    '전국 스카우트들이 {name}의 경기를 보러 다닌다. 최상위 구단이 이적을 서두르고 있다.'
+    '{upclub}의 유스 디렉터가 직접 찾아왔다. 또래 중에서는 비교 대상이 없다는 평가와 함께 아카데미 입단을 제안했다.',
+    '전국 스카우트들이 {name}의 경기를 보러 다닌다. {upclub}이(가) 이적을 서두르고 있다.'
   ], [
     cc('최상위 구단 아카데미로 옮긴다', ['짐을 꾸려 리그 최고의 아카데미에 들어갔다. 훈련 시설이 완전히 다르다.', 'fx:youthMove=top morale+6 fameD+0.5 stress+3 fu:fu_career@10-26'], { chk: '75 ovr*0.3 hid.adapt*0.15', pv: '성장↑↑ 사기↑ 스트레스↑', bad: ['적응이 쉽지 않다. 그래도 환경만큼은 최고였다.', 'fx:youthMove=top morale-2 stress+5 fu:fu_career@10-26'] }),
     cc('지금 팀에 남는다', ['이 팀에서 더 증명하기로 했다. 감독이 환히 웃었다.', 'rel.coach+4 hid.loyalty+2 hid.ambition-1'], { pv: '안정↑' })
-  ], { sched: true, cd: 0, max: 2, xg: 'academy_move', tier: 'major' }),
+  ], { sched: true, cd: 0, max: 2, xg: 'academy_move', tier: 'major', cond: ['upperClub'] }),
   pa('ys_squad_unused', Y, 2, [
     '1군 경기에 명단으로 동행했지만 끝내 이름이 불리지 않았다. 경기장 조명이 꺼진 뒤 혼자 라커룸에 남아 있었다.',
     '명단에는 올랐으나 교체 사인은 나오지 않았다. 팀이 이겨서 기뻤지만 내 경기는 아니었다는 생각이 지워지지 않았다.'

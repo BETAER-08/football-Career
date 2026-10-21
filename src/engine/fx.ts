@@ -377,6 +377,8 @@ export interface CondEnv {
   seasonEnd: (s: GameState) => boolean;
   winterBreak: (s: GameState) => boolean;
   springAutumn: (s: GameState) => boolean;
+  upperClub: (s: GameState) => boolean;
+  upperAbroad: (s: GameState) => boolean;
 }
 let condEnv: CondEnv | null = null;
 export function setCondEnv(e: CondEnv): void {
@@ -427,6 +429,8 @@ const getters: Record<string, Getter> = {
   seasonEnd: (s) => (condEnv!.seasonEnd(s) ? 1 : 0),
   winterBreak: (s) => (condEnv!.winterBreak(s) ? 1 : 0),
   springAutumn: (s) => (condEnv!.springAutumn(s) ? 1 : 0),
+  upperClub: (s) => (condEnv!.upperClub(s) ? 1 : 0),
+  upperAbroad: (s) => (condEnv!.upperAbroad(s) ? 1 : 0),
   dorm: (s) => (s.p.dorm && s.fin.housing === 'dorm' ? 1 : 0),
   retired: (s) => (s.career.retired ? 1 : 0),
   caps: (s) => s.nat.caps,

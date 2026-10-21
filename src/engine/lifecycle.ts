@@ -6,6 +6,7 @@ import { curOvr, shownOvr } from './attributes';
 import { clubLvl, clubSt, clubStd } from './world';
 import { getClub, getCountry, leaguesOf } from './data';
 import { genOffers, genYouthJudgement, joinClub, leaveToFree, fallbackOffer, makeOfferFor, closeCurrent, freeTerms } from './transfer';
+import { hasUpperClub } from './upper';
 import { executePre, expireToFree, freeOffers } from './market';
 import { presentOffers, hasPendingOffer } from './offers';
 import { fireEvent, getEvent, pushDecision } from './events';
@@ -200,7 +201,7 @@ export function topClubScout(s: GameState, rng: Rng, age: number): void {
   const top = leaguesOf(country)[0];
   const ranked = top.clubIds.slice().sort((a, b) => clubSt(s, b) - clubSt(s, a))  .filter((id) => id !== s.career.clubId).slice(0, 10);
   const topLvl = clubLvl(s, ranked[0] ?? s.career.clubId);
-  const gate = topLvl >= 5 ? Math.min(1, Math.pow(Math.max(effM(s.p.country, curOvr(s.ab)), 1e-6), 0.6)) : 1;
+  const gate = topLvl >= 5 ? Math.min(1, Math.pow(Math.max(effM(s.p.country, shownOvr(s.ab, age)), 1e-6), 0.6)) : 1;
   if (!ranked.length || !rng.chance(0.3 * gate)) return;
   s.ev.flags.topScoutS = season;
   if (age >= 16) {
@@ -211,5 +212,5 @@ export function topClubScout(s: GameState, rng: Rng, age: number): void {
       return;
     }
   }
-  fireEvent(s, rng, getEvent('ys_top_scout'));
+  if (hasUpperClub(s, false)) fireEvent(s, rng, getEvent('ys_top_scout'));
 }
