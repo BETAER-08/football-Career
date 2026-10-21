@@ -6,6 +6,7 @@
   import { clubLvl } from '../engine/world';
   import { coachOfferLabel } from '../engine/coach';
   import { modeLabel } from '../engine/market';
+  import { demandOdds } from '../engine/transfer';
   import Chips from './Chips.svelte';
   import { onMount, tick } from 'svelte';
   import Icon from './Icon.svelte';
@@ -68,7 +69,12 @@
   function demandStr(): string {
     return [demands.wage ? 'wage' : '', demands.role ? 'role' : '', demands.buyout ? 'buyout' : ''].filter(Boolean).join(',');
   }
-  const risk = $derived(Math.round(Math.min(70, 4 + (demands.wage ? 14 : 0) + (demands.role ? 17 : 0) + (demands.buyout ? 10 : 0) - g.fin.agentSkill / 6)));
+  const odds = $derived(picked >= 0 && d && d.offers[picked] && d.ref !== 'coachjob' ? demandOdds(g, d.offers[picked]) : null);
+  function range(p: number): string {
+    const lo = Math.max(1, Math.round(p * 100 - 4));
+    const hi = Math.min(99, Math.round(p * 100 + 4));
+    return `${lo}~${hi}%`;
+  }
 </script>
 
 {#if d}
@@ -99,14 +105,21 @@
               {/if}
               <div class="row" style="margin-top:6px">
                 {#if picked === i && d.ref !== 'coachjob'}
-                  <label class="dm"><input type="checkbox" bind:checked={demands.wage} /> 연봉 인상 요구</label>
-                  <label class="dm"><input type="checkbox" bind:checked={demands.role} /> 역할 보장 요구</label>
-                  <label class="dm"><input type="checkbox" bind:checked={demands.buyout} /> 바이아웃 삽입</label>
-                  <span class="mini-hint">결렬 확률 약 {Math.max(2, risk)}%</span>
+                  {#if o.renego}
+                    <span class="mini-hint">원래 조건으로만 계약할 수 있어요</span>
+                  {:else}
+                    <label class="dm"><input type="checkbox" bind:checked={demands.wage} /> 연봉 인상 요구{#if odds && demands.wage}<i class="mini-hint"> 성공 약 {range(odds.wage)}</i>{/if}</label>
+                    {#if odds && odds.role === null}
+                      <span class="dm off" title="이미 주전 보장">역할 상향 불가 · 이미 주전 보장</span>
+                    {:else}
+                      <label class="dm"><input type="checkbox" bind:checked={demands.role} /> 역할 상향 요구{#if odds && odds.role !== null}<i class="mini-hint"> 성공 약 {range(odds.role)}</i>{/if}</label>
+                    {/if}
+                    <label class="dm"><input type="checkbox" bind:checked={demands.buyout} /> 바이아웃 삽입{#if odds && demands.buyout}<i class="mini-hint"> 성공 약 {range(odds.buyout)}</i>{/if}</label>
+                  {/if}
                 {/if}
                 <span class="spacer"></span>
                 {#if d.ref !== 'coachjob' && picked !== i}<button class="btn sm" onclick={() => (picked = i)}>협상</button>{/if}
-                <button class="btn primary sm" onclick={() => store.choose(i, picked === i ? demandStr() : '')}>{o.trial ? '테스트 응시' : d.ref === 'coachjob' ? '수락' : '서명'}</button>
+                <button class="btn primary sm" onclick={() => store.choose(i, picked === i && !o.renego ? demandStr() : '')}>{o.trial ? '테스트 응시' : d.ref === 'coachjob' ? '수락' : '서명'}</button>
               </div>
             </div>
           {/each}
@@ -172,4 +185,5 @@
   .ocl { font-size: 16px; }
   .og { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px var(--s4); font-size: 12.5px; margin: 6px 0; color: var(--muted); }
   .dm { font-size: 12.5px; display: flex; align-items: center; gap: var(--s1); }
+  .dm.off { color: var(--faint); }
 </style>

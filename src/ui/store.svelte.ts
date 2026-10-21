@@ -1,4 +1,4 @@
-import { newGame, tickState, resolveDecision, setFocusInput, actionInput, autoStep, autoWeek, pushInput } from '../engine/game';
+import { newGame, resolveDecision, setFocusInput, actionInput, autoStep, pushInput } from '../engine/game';
 import { ensureContent } from '../engine/content';
 import { secPerYear, swOf } from '../engine/time';
 import { defaultFocus } from '../engine/lifestyle';
@@ -12,6 +12,7 @@ import { isEpiPath } from '../engine/postcareer';
 import { getClub } from '../engine/data';
 import { formatKRW } from '../engine/finance';
 import { netWorth } from '../engine/finance';
+import { beginSkip, cancelSkip, endSkip, newPlayState, settle, stepPlayback, type PlayState } from './playback';
 import BaselineWorker from './baseline.worker?worker';
 
 export type Screen = 'menu' | 'setup' | 'roulette' | 'card' | 'game' | 'end' | 'vault';
@@ -21,8 +22,7 @@ class Store {
   game = $state.raw<GameState | null>(null);
   origin = $state.raw<RouletteResult | null>(null);
   prefs = $state<Prefs>(loadPrefs());
-  playing = $state(false);
-  speed = $state(1);
+  ps = $state<PlayState>(newPlayState(1));
   toasts = $state<Toast[]>([]);
   banner = $state('');
   bannerExport = $state(false);
@@ -41,7 +41,6 @@ class Store {
   private relSnapWeek = -99;
   baseline = $state.raw<number[]>([]);
   baselineProgress = $state(0);
-  skipping = $state(false);
   hasSaved = $state(hasSave());
   archived = $state(false);
   savedAt = $state(0);
@@ -49,16 +48,35 @@ class Store {
   saveFailed = $state(false);
   private pendingNotify = false;
   private lastFlush = 0;
-  private acc = 0;
   private last = 0;
   private timer: number | null = null;
   private lastSave = 0;
   private seenToast = 0;
   private worker: Worker | null = null;
 
+  get playing(): boolean {
+    return this.ps.playing;
+  }
+
+  set playing(v: boolean) {
+    this.ps.playing = v;
+  }
+
+  get speed(): number {
+    return this.ps.speed;
+  }
+
+  set speed(v: number) {
+    this.ps.speed = v;
+  }
+
+  get skipping(): boolean {
+    return this.ps.skipping;
+  }
+
   constructor() {
     ensureContent();
-    this.speed = this.prefs.speed;
+    this.ps.speed = this.prefs.speed;
   }
 
   toggleMusic(): void {
@@ -103,8 +121,10 @@ class Store {
     this.reviewOpen = false;
     this.ceremonyOpen = false;
     this.epiSpeedFor = '';
+    cancelSkip(this.ps);
+    this.ps.resume = null;
+    this.ps.acc = 0;
     this.playing = true;
-    this.skipping = false;
     this.screen = 'game';
     this.startBaseline();
     this.startLoop();
@@ -160,6 +180,7 @@ class Store {
     const g = this.game;
     if (!g || this.screen !== 'game') return;
     if (g.ended) {
+      endSkip(this.ps, 'ended');
       this.playing = false;
       this.finish();
       return;
@@ -170,36 +191,20 @@ class Store {
     }
     this.checkModals(g);
     if (this.reviewOpen || this.ceremonyOpen) {
-      this.skipping = false;
+      if (this.ps.skipping) endSkip(this.ps, 'modal');
       return;
     }
     if (g.decision) {
-      this.skipping = false;
+      if (this.ps.skipping) endSkip(this.ps, 'decision');
       return;
     }
-    if (!this.playing && !this.skipping) return;
-    this.acc += this.skipping ? 1e9 : dt;
-    let n = 0;
-    const phase = g.phase;
-    const limit = this.skipping ? 150 : 40;
-    const wms = this.weekMs();
-    while ((this.skipping || this.acc >= wms) && n < limit) {
-      if (!this.skipping) this.acc -= wms;
-      if (g.auto) autoWeek(g);
-      if (!tickState(g)) {
-        this.skipping = false;
-        break;
-      }
-      n++;
-      const hadDecision = !!g.decision;
-      if (g.auto && g.decision) autoStep(g);
-      if (hadDecision || g.decision || g.ended || g.phase !== phase) {
-        this.skipping = false;
-        if (g.decision) this.playing = false;
-        break;
-      }
+    if (!this.ps.playing && !this.ps.skipping) return;
+    const res = stepPlayback(this.ps, g, dt, this.weekMs());
+    const n = res.weeks;
+    if (res.ended) {
+      this.last = performance.now();
+      if (res.ended === 'quiet') this.toast('1년 동안 결정할 일이 없었어요');
     }
-    if (this.skipping && n >= limit) this.acc = 0;
     if (n > 0) {
       this.snapRel();
       this.pullToasts();
@@ -246,7 +251,7 @@ class Store {
     this.reviewOpen = false;
     if (g) {
       g.pendingReview = -1;
-      if (!g.decision && !g.ended) this.playing = true;
+      settle(this.ps, g, this.ceremonyOpen, true);
     }
     this.notify();
   }
@@ -254,7 +259,10 @@ class Store {
   closeCeremony(): void {
     const g = this.game;
     this.ceremonyOpen = false;
-    if (g) g.wld.ceremonyDue = false;
+    if (g) {
+      g.wld.ceremonyDue = false;
+      settle(this.ps, g, this.reviewOpen, false);
+    }
     this.notify();
   }
 
@@ -282,12 +290,13 @@ class Store {
     const g = this.game;
     if (!g || g.ended) return;
     if (g.decision) return;
+    cancelSkip(this.ps);
     this.playing = !this.playing;
-    this.skipping = false;
     click();
   }
 
   setSpeed(v: number): void {
+    cancelSkip(this.ps);
     this.speed = v;
     this.prefs.speed = v;
     savePrefs(this.prefs);
@@ -303,13 +312,13 @@ class Store {
   skipToDecision(): void {
     const g = this.game;
     if (!g || g.decision || g.ended) return;
-    if (this.skipping) {
-      this.skipping = false;
+    if (cancelSkip(this.ps)) {
+      this.last = performance.now();
       click();
       return;
     }
-    this.skipping = true;
-    this.playing = true;
+    beginSkip(this.ps);
+    this.last = performance.now();
     click();
   }
 
@@ -335,7 +344,7 @@ class Store {
     if (!g || !g.decision) return;
     const r = resolveDecision(g, idx, demands);
     this.showResult(r);
-    if (!g.decision && !g.ended) this.playing = true;
+    settle(this.ps, g, this.reviewOpen || this.ceremonyOpen, true);
     chime();
     this.pullToasts();
     this.pullCues();
@@ -400,6 +409,7 @@ class Store {
   toggleAuto(): void {
     const g = this.game;
     if (!g) return;
+    cancelSkip(this.ps);
     g.auto = !g.auto;
     pushInput(g, { t: 'auto', a: '', b: g.auto ? 1 : 0, c: '' });
     this.toast(g.auto ? '자동 결정을 켰어요' : '자동 결정을 껐어요');
@@ -488,8 +498,7 @@ class Store {
   finish(): void {
     const g = this.game;
     if (!g) return;
-    this.playing = false;
-    this.skipping = false;
+    endSkip(this.ps, 'ended');
     this.reviewOpen = false;
     this.ceremonyOpen = false;
     const pg = this.grade();
@@ -543,8 +552,7 @@ class Store {
 
   quitToMenu(): void {
     this.saveNow();
-    this.playing = false;
-    this.skipping = false;
+    endSkip(this.ps, 'ended');
     this.screen = 'menu';
   }
 
