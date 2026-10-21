@@ -6,7 +6,7 @@
   import { getClub, getCountry } from '../engine/data';
   import { POS_LABEL, ATTR_LABEL, TECH_KEYS, GK_KEYS, PHYS_KEYS, MENTAL_KEYS, HIDDEN_KEYS, type AttrKey } from '../engine/types';
   import { anchored, shownOvr } from '../engine/attributes';
-  import { TRAIT_LABEL } from '../engine/player';
+  import { TRAIT_LABEL, scoutLine } from '../engine/player';
   import { mrz, seed32, whyText } from './format';
   import { licenseLabel, licenseLevel, LICENSE_NAME } from '../engine/coach';
   import { hashString } from '../engine/rng';
@@ -58,6 +58,7 @@
     <div class="rows">
       <div class="kv"><span>출신 가정</span><span class="mono dots" title="소득 분위">{dots(g.p.incomeTier)}</span></div>
       {#if g.phase === 'youth' || g.phase === 'pro'}<div class="kv"><span>시장가치</span><span class="mono">{formatMarket(g.fame.value)}<small class={valDelta >= 0 ? 'up' : 'down'}> {valDelta >= 0 ? '▲' : '▼'}{Math.abs(valDelta)}%</small></span></div>{/if}
+      {#if g.phase === 'youth' || ageAt(g.p.birth, g.week) <= 21}<div class="kv"><span>스카우트 평가</span><span>{scoutLine(g)}</span></div>{/if}
       <div class="kv"><span>학력</span><span>{eduLabels[Math.min(3, g.life.eduLevel)]}</span></div>
       <div class="kv"><span>포지션</span><span>{POS_LABEL[g.ab.pos]}{secondary.length ? ` · 부: ${secondary.map(([k, v]) => `${k} ${v}`).join(', ')}` : ''}</span></div>
       <div class="kv"><span>주발 · 체격</span><span>{{ R: '오른발', L: '왼발', B: '양발' }[g.p.foot]} · {g.ab.height}cm {g.ab.weight}kg</span></div>

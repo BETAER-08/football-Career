@@ -64,7 +64,7 @@
       <div class="sect reveal" style="--d:0ms">
         <b>구단 · {club.name} U15</b>
         <div class="kv"><span>연고 · 아카데미 등급 · 시설</span><span>{club.city} · {academyGrade(club.acad)}등급 · {club.facil}점</span></div>
-        <div class="kv"><span>시작 오버롤 · 잠재력</span><span class="mono">{Math.round(s.p.startOvr)} · {Math.round(s.ab.pot)}</span></div>
+        <div class="kv"><span>시작 오버롤</span><span class="mono">{Math.round(s.p.startOvr)}</span></div>
         <div class="kv"><span>유스 감독</span><span title={s.people.coach.en}>{s.people.coach.name} · {s.people.coach.style}</span></div>
         <div class="kv"><span>동기</span><span>{kids.map((k) => `${s.people[k].name} (${s.people[k].pos})`).join(' · ')}</span></div>
       </div>
