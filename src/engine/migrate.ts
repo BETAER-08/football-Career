@@ -92,8 +92,6 @@ export function migrateState(raw: unknown): Migrated {
     const cc = st.career as unknown as Record<string, unknown>;
     if (cc.feeSum === undefined) cc.feeSum = 0;
     if (cc.feeMax === undefined) cc.feeMax = 0;
-    const ww = st.wld as unknown as Record<string, unknown>;
-    if (!ww.feeRec) ww.feeRec = { club: {}, league: {} };
     st.fame.value = marketValue(st);
     st.fame.peakValue = st.fame.value;
     st.snap.val = st.fame.value;

@@ -1,4 +1,3 @@
-import { CLUB_FEE_RECORD, CLUB_FEE_DEFAULT, LEAGUE_FEE_RECORD, LEAGUE_FEE_DEFAULT } from '../data/feeRecords';
 import { hunit } from './streams';
 import { LEVEL_STARTER_OVR, LEVEL_WAGE_MULT } from '../data/countries';
 import { Rng, clamp } from './rng';
@@ -603,7 +602,7 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   dropQueuedOffers(s);
   if (o.loan && o.optionFee) con.opt = o.optionFee;
   const paid = !o.loan && (o.mode === 'transfer' || o.first) && prev && prev !== o.clubId ? o.fee ?? 0 : 0;
-  if (paid > 0) recordFee(s, o.clubId, paid);
+  if (paid > 0) recordFee(s, paid);
   if (firstPro && s.phase === 'pro') {
     s.goals = makeGoals(s);
     addLog(s, 'milestone', '1군 선수단 등록', `${cs.name} 1군 선수단에 이름이 올랐다. 유스 리그를 떠나 1군 경기 주차마다 출전 판정을 받고, 명단에서 빠지는 주에는 리저브 경기에 나선다.`, []);
@@ -659,19 +658,9 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   s.fame.peakValue = Math.max(s.fame.peakValue, s.fame.value);
 }
 
-export function recordFee(s: GameState, clubId: string, fee: number): void {
-  const cs = getClub(clubId);
-  const rec = s.wld.feeRec;
-  const clubBase = CLUB_FEE_RECORD[clubId] ?? CLUB_FEE_DEFAULT[clamp(cs.lvl0, 2, 6)];
-  const lgBase = LEAGUE_FEE_RECORD[cs.lg0] ?? LEAGUE_FEE_DEFAULT[clamp(getLeague(cs.lg0).lvl, 2, 6)];
-  const pc = rec.club[clubId] ?? clubBase;
-  const pl = rec.league[cs.lg0] ?? lgBase;
+export function recordFee(s: GameState, fee: number): void {
   s.career.feeSum += fee;
   s.career.feeMax = Math.max(s.career.feeMax, fee);
-  if (fee > pc) addLog(s, 'milestone', '구단 역대 최고 이적료', `${cs.name} 역대 최고 이적료(${formatMarket(fee)})로 영입됐다. 종전 기록은 ${formatMarket(pc)}.`, [], { star: true });
-  if (fee > pl) addLog(s, 'milestone', '리그 역대 최고 이적료', `${getLeague(cs.lg0).ko} 역대 최고 이적료(${formatMarket(fee)}) 기록을 새로 썼다. 종전 기록은 ${formatMarket(pl)}.`, [], { star: true });
-  rec.club[clubId] = Math.max(pc, fee);
-  rec.league[cs.lg0] = Math.max(pl, fee);
 }
 
 export function feeNote(o: Offer): string {

@@ -77,7 +77,7 @@ export function expireContracts(s: GameState, rng: Rng): void {
       if (bo) {
         bo.fee = fee;
         bo.years = rng.int(3, 5);
-        recordFee(s, buyer, fee);
+        recordFee(s, fee);
         joinClub(s, rng, { ...bo, loan: false }, '완전 이적 옵션 행사');
         return;
       }

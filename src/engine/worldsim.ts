@@ -80,8 +80,7 @@ export function initWorld(seed: string, people: Record<string, Person>, startClu
   }
   return {
     stars, nextStarId: 41, faces, ballon: [], tourn: [], champs: { s: -1, leagues: {}, cups: {}, cont: {} }, ceremony: null, ceremonyDue: false,
-    youthCoach: { name: people.coach ? people.coach.name : '', retireS: r.int(5, 9) },
-    feeRec: { club: {}, league: {} }
+    youthCoach: { name: people.coach ? people.coach.name : '', retireS: r.int(5, 9) }
   };
 }
 

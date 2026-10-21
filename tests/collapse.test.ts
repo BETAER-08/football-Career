@@ -5,8 +5,6 @@ import { getEvent, fireEvent } from '../src/engine/events';
 import { applyFx } from '../src/engine/fx';
 import { forcedOrigin, originRng } from '../src/engine/headless';
 import { rngOf } from '../src/engine/world';
-import { recordFee } from '../src/engine/transfer';
-import { LEAGUE_FEE_RECORD } from '../src/data/feeRecords';
 import type { GameConfig } from '../src/engine/types';
 
 ensureContent();
@@ -42,15 +40,5 @@ describe('구단 간 협상 결렬 이벤트', () => {
     const before = s.fin.cash;
     applyFx(s, { rng }, 'fx:fine=3');
     expect(before - s.fin.cash).toBe(300);
-  });
-
-  it('리그 최고 이적료 기록은 실제 기록에서 시작한다', () => {
-    const seed = 'collapse-3';
-    const s = newGame(cfgOf(seed), forcedOrigin(originRng(seed), 'GB', 6));
-    const club = 'GB:Arsenal';
-    recordFee(s, club, 1000000);
-    expect(s.wld.feeRec.league.GB1).toBe(LEAGUE_FEE_RECORD.GB1);
-    recordFee(s, club, LEAGUE_FEE_RECORD.GB1 + 1);
-    expect(s.wld.feeRec.league.GB1).toBe(LEAGUE_FEE_RECORD.GB1 + 1);
   });
 });

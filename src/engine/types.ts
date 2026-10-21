@@ -154,7 +154,6 @@ export interface WorldInfo {
   ceremony: BallonRec | null;
   ceremonyDue: boolean;
   youthCoach: { name: string; retireS: number };
-  feeRec: { club: Record<string, number>; league: Record<string, number> };
 }
 
 export interface GoalDef { id: string; label: string; metric: 'apps' | 'starts' | 'goals' | 'assists' | 'cs' | 'rating' | 'promo' | 'scholar' | 'train' | 'squad' | 'debut' | 'squadReg' | 'resrating'; target: number; done?: boolean; base?: number }
