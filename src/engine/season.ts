@@ -28,6 +28,7 @@ import { getEvent, momentFor, pushDecision, buildDecision, markFired } from './e
 import { calcSeasonScore } from './scoring';
 import type { Fixture, GameState } from './types';
 import { TRAIT_LABEL } from './player';
+import { josa } from './josa';
 
 export function openSeason(s: GameState): void {
   s.career.seasonMinsAcc = 0;
@@ -124,7 +125,7 @@ export function awardTrophy(s: GameState, name: string, clubId: string): void {
   s.st.happy = clamp(s.st.happy + 6, 0, 100);
   s.extra.champs += 1;
   if (isCosmetic()) s.cues.push('trophy');
-  addLog(s, 'milestone', '트로피', `${club}에서 ${name}을(를) 들어 올렸다!`, [], { star: true });
+  addLog(s, 'milestone', '트로피', `${club}에서 ${josa(name, '을')} 들어 올렸다!`, [], { star: true });
   toast(s, `🏆 ${name}`);
 }
 
@@ -411,8 +412,8 @@ export function tournamentWeek(s: GameState, rng: Rng, sw: number): void {
       const qualP = t.id === 'WC' ? 1 / (1 + Math.exp(-(c.natBase - 66) / 5)) : 1 / (1 + Math.exp(-(c.natBase - 58) / 6));
       s.ev.flags[key] = s.week;
       s.ev.flags[`${key}:q`] = rng.chance(qualP) ? s.week : -1;
-      if (s.ev.flags[`${key}:q`] >= 0) addLog(s, 'system', t.ko, `${c.natTeam}이(가) ${year} ${t.ko} 본선에 진출했다.`, []);
-      else if (s.nat.caps > 0 || natCallScore(s) > 0) addLog(s, 'system', t.ko, `${c.natTeam}은(는) ${year} ${t.ko} 본선 진출에 실패했다.`, []);
+      if (s.ev.flags[`${key}:q`] >= 0) addLog(s, 'system', t.ko, `${josa(c.natTeam, '이')} ${year} ${t.ko} 본선에 진출했다.`, []);
+      else if (s.nat.caps > 0 || natCallScore(s) > 0) addLog(s, 'system', t.ko, `${josa(c.natTeam, '은')} ${year} ${t.ko} 본선 진출에 실패했다.`, []);
     }
     if (s.ev.flags[`${key}:q`] === undefined || s.ev.flags[`${key}:q`] < 0) continue;
     const stageIdx = sw - 44;
@@ -465,16 +466,16 @@ export function tournamentWeek(s: GameState, rng: Rng, sw: number): void {
       if (stageIdx === 2) {
         if (s.ev.flags[`${key}:pts`] < 4) {
           s.ev.flags[`${key}:alive`] = 0;
-          addLog(s, 'system', t.ko, `${c.natTeam}은(는) ${t.ko} 조별리그에서 탈락했다.`, []);
+          addLog(s, 'system', t.ko, `${josa(c.natTeam, '은')} ${t.ko} 조별리그에서 탈락했다.`, []);
         }
       }
     } else if (!resultWin) {
       s.ev.flags[`${key}:alive`] = 0;
-      addLog(s, 'system', t.ko, `${c.natTeam}은(는) ${t.ko} ${t.stages[Math.min(t.stages.length - 1, t.stages.length - stagesKo + koIdx)]}에서 탈락했다.`, []);
+      addLog(s, 'system', t.ko, `${josa(c.natTeam, '은')} ${t.ko} ${t.stages[Math.min(t.stages.length - 1, t.stages.length - stagesKo + koIdx)]}에서 탈락했다.`, []);
     } else if (finalStage) {
       s.ev.flags[`${key}:alive`] = 0;
       if (inSquad) awardTrophy(s, `${t.ko} 우승 (${year})`, '');
-      else addLog(s, 'system', t.ko, `${c.natTeam}이(가) ${t.ko}에서 우승했다!`, []);
+      else addLog(s, 'system', t.ko, `${josa(c.natTeam, '이')} ${t.ko}에서 우승했다!`, []);
       s.ev.flags[`T:won:${t.id}:${year}`] = s.week;
     }
     if (sw === 44 && inSquad) {
@@ -525,8 +526,8 @@ export function endSeason(s: GameState, rng: Rng): void {
     ensureCountry(s, country);
     const info = endSeasonCountry(s, country, lgId, rankSet);
     s.world.countries[country].initS = season + 1;
-    if (info.promoted.includes(clubId)) addLog(s, 'milestone', '승격', `${getClub(clubId).name}이(가) 상위 리그로 승격했다!`, [], { star: true });
-    if (info.relegated.includes(clubId)) addLog(s, 'milestone', '강등', `${getClub(clubId).name}이(가) 강등됐다.`, [], { star: true });
+    if (info.promoted.includes(clubId)) addLog(s, 'milestone', '승격', `${josa(getClub(clubId).name, '이')} 상위 리그로 승격했다!`, [], { star: true });
+    if (info.relegated.includes(clubId)) addLog(s, 'milestone', '강등', `${josa(getClub(clubId).name, '이')} 강등됐다.`, [], { star: true });
   }
   seasonEndGrowth(s, age);
   if (isCosmetic()) for (const k of ALL_ATTRS) recordWhy(s, `attr.${k}`, '시즌 훈련·성장', s.ab.a[k] - s.ab.prev[k]);

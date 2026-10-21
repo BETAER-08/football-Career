@@ -347,6 +347,7 @@ export function coachMatchWeek(s: GameState, rng: Rng): void {
 import { playRoundOthers, record } from './world';
 import { nextCupOrCont } from './season';
 import type { Fixture } from './types';
+import { josa } from './josa';
 
 function playCoachFixture(s: GameState, rng: Rng, fx: Fixture, mySt: number): void {
   const c = s.coach;
@@ -465,7 +466,7 @@ function nationalSeasonPerf(s: GameState, rng: Rng): number {
     const qualP = t.id === 'WC' ? 1 / (1 + Math.exp(-(cc.natBase - 66) / 5)) : 1 / (1 + Math.exp(-(cc.natBase - 58) / 6));
     if (!rng.chance(qualP)) {
       perf -= 0.5;
-      addLog(s, 'system', t.ko, `${cc.natTeam}이(가) ${year} ${t.ko} 본선에 오르지 못했다.`, []);
+      addLog(s, 'system', t.ko, `${josa(cc.natTeam, '이')} ${year} ${t.ko} 본선에 오르지 못했다.`, []);
       continue;
     }
     const stages = t.stages.length;
@@ -483,7 +484,7 @@ function nationalSeasonPerf(s: GameState, rng: Rng): number {
       c.trophies.push({ year, name: `${t.ko} 우승`, club: cc.natTeam });
       perf += 0.6;
     }
-    addLog(s, 'system', t.ko, `${cc.natTeam}은(는) ${year} ${t.ko}에서 ${t.stages[Math.min(stages - 1, Math.max(0, reached - 1))]}까지 올랐다.`, []);
+    addLog(s, 'system', t.ko, `${josa(cc.natTeam, '은')} ${year} ${t.ko}에서 ${t.stages[Math.min(stages - 1, Math.max(0, reached - 1))]}까지 올랐다.`, []);
   }
   if (!any) perf = (rng.normal(0, 0.15) + coachBonus(s) * 0.03);
   c.fame = clamp(c.fame * 0.93 + Math.max(0, perf * 14) + 1.5, 0, 100);

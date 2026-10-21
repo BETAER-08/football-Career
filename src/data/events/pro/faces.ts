@@ -8,7 +8,7 @@ const PC: ('pro' | 'coach' | 'postcareer')[] = ['pro', 'coach', 'postcareer'];
 export const faceEvents: RawEvent[] = [
   ch('fc_reunion_opp', P, 3, [
     '다음 상대 팀 명단에 {oldmate}의 이름이 있다. 유스 시절 같은 방을 쓰던 친구가 이제는 적으로 마주 선다.',
-    '경기 전 터널에서 {oldmate}과(와) 눈이 마주쳤다. 둘 다 웃었지만 오늘만큼은 봐주지 않기로 했다.'
+    '경기 전 터널에서 {oldmate:과} 눈이 마주쳤다. 둘 다 웃었지만 오늘만큼은 봐주지 않기로 했다.'
   ], [
     cc('경기 전에 먼저 다가가 인사한다', ['어색함은 금세 녹았다. 경기 후 저녁을 먹기로 약속했다.', 'rel.mates+3 happy+3 sharp-2'], {
       chk: '55 hid.social*0.2 hid.pro*0.1 morale*0.1', pv: '추억 사기↑ 집중 위험',
@@ -27,8 +27,8 @@ export const faceEvents: RawEvent[] = [
     cc('축전과 선물만 보낸다', ['아쉬운 마음을 담아 선물을 보냈다. 친구는 이해한다고 했지만 목소리가 서운했다.', 'rel.mates-3 happy-2 cashw-1'], { pv: '일정 보호 우정↓ 비용' })
   ], { cond: ['faceWedding'], cd: 120, max: 1, xg: 'old_faces', tier: 'minor' }),
   ch('fc_mate_coach', PC, 3, [
-    '은퇴한 옛 동료 {oldmate}이(가) 지도자가 되었다며 연락을 해 왔다. "내 팀에 와서 얘기 좀 들려줄래?"',
-    '뜻밖의 전화였다. 같은 라커룸을 쓰던 {oldmate}이(가) 이제는 코치 명찰을 달고 있다고 한다.'
+    '은퇴한 옛 동료 {oldmate:이} 지도자가 되었다며 연락을 해 왔다. "내 팀에 와서 얘기 좀 들려줄래?"',
+    '뜻밖의 전화였다. 같은 라커룸을 쓰던 {oldmate:이} 이제는 코치 명찰을 달고 있다고 한다.'
   ], [
     cc('훈련장을 찾아가 후배들에게 조언한다', ['낯선 풍경이었지만 옛 동료와 나란히 서 있는 느낌이 묘했다. 후배들이 질문을 쏟아냈다.', 'rel.mates+5 happy+4 hid.social+1 fatigue+3'], {
       chk: '55 hid.social*0.2 attr.leadership*1', pv: '우정↑ 지도자 인맥',
@@ -37,7 +37,7 @@ export const faceEvents: RawEvent[] = [
     cc('바쁘다며 정중히 다음을 기약한다', ['"다음에 꼭." 전화를 끊고 한참 창밖을 바라봤다.', 'rel.mates-3 stress+2'], { pv: '일정 보호 우정↓' })
   ], { cond: ['faceCoach'], cd: 120, max: 1, xg: 'old_faces', tier: 'minor' }),
   ch('fc_rival_injury', YP, 3, [
-    '라이벌 {oldrival}이(가) 큰 부상을 당했다는 소식이 들렸다. 같은 포지션을 놓고 다투던 사이였다.',
+    '라이벌 {oldrival:이} 큰 부상을 당했다는 소식이 들렸다. 같은 포지션을 놓고 다투던 사이였다.',
     '{oldrival}의 부상 기사를 보았다. 한동안 연락이 끊겼지만 마음 한구석이 복잡하다.'
   ], [
     cc('먼저 메시지를 보내 쾌유를 빈다', ['짧은 메시지에 곧 답장이 왔다. 오랜만에 경쟁이 아닌 이야기를 나눴다.', 'rel.rival+8 happy+2'], {
@@ -47,8 +47,8 @@ export const faceEvents: RawEvent[] = [
     cc('반응하지 않고 내 훈련에 집중한다', ['감정을 접고 훈련에 몰두했다. 이상하게 공이 무겁게 느껴졌다.', 'sharp+2 happy-2 rel.rival-2'], { pv: '집중↑ 마음 무거움' })
   ], { cond: ['rivalInjured'], cd: 100, max: 1, xg: 'old_faces', tier: 'minor' }),
   ch('fc_rival_team', P, 3, [
-    '뜻밖의 소식이다. 라이벌 {oldrival}이(가) 같은 팀으로 이적해 왔다. 라커룸에서 마주친 첫 눈빛이 날카로웠다.',
-    '{oldrival}이(가) 우리 클럽 유니폼을 입고 훈련장에 나타났다. 이제는 같은 편이면서 같은 자리를 노리는 사이다.'
+    '뜻밖의 소식이다. 라이벌 {oldrival:이} 같은 팀으로 이적해 왔다. 라커룸에서 마주친 첫 눈빛이 날카로웠다.',
+    '{oldrival:이} 우리 클럽 유니폼을 입고 훈련장에 나타났다. 이제는 같은 편이면서 같은 자리를 노리는 사이다.'
   ], [
     cc('손을 내밀고 같은 팀으로서 시작한다', ['어색한 악수 뒤에 훈련이 이어졌다. 서로 이를 악물고 뛰었다.', 'rel.rival+8 morale+3 sharp+2'], {
       chk: '52 hid.social*0.15 hid.pro*0.15 rel.coach*0.1', pv: '관계↑ 경쟁 자극',

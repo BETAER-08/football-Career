@@ -5,7 +5,7 @@ const P: ('pro')[] = ['pro'];
 
 export const proChoice2: RawEvent[] = [
   ch('kr_mil_notice', P, 6, ['병무청에서 입영 통지서가 도착했다. 축구 인생에서 가장 큰 공백이 될 수 있는 결정의 순간이다. 김천 상무에서 뛰며 복무할 수도, 국제대회 메달로 면제를 노릴 수도 있다.', '대한민국 남자라면 피할 수 없는 문제다. 군 문제를 어떻게 풀지 결정해야 한다.'], [
-    cc('김천 상무에 입대한다', ['{name}은(는) 머리를 짧게 깎고 김천 상무 유니폼을 입었다. 78주의 복무가 시작된다.', 'fx:enlist happy-4 stress+4'], { pv: '약 1년 반 복무 출전 기회 유지 행복↓ 스트레스↑' }),
+    cc('김천 상무에 입대한다', ['{name:은} 머리를 짧게 깎고 김천 상무 유니폼을 입었다. 78주의 복무가 시작된다.', 'fx:enlist happy-4 stress+4'], { pv: '약 1년 반 복무 출전 기회 유지 행복↓ 스트레스↑' }),
     cc('입대를 연기한다', ['법이 허용하는 범위에서 입대를 미루기로 했다. 시간이 많지는 않다.', 'fx:milDefer fu:kr_mil_notice@40-60 stress+4']),
     cc('국제대회 메달에 도전한다', ['대표팀 선발과 메달이 필요하다. 쉽지 않은 길이지만 성공하면 커리어에 큰 도움이 된다.', 'fx:milDefer flag:mil_medal fu:kr_mil_notice@120-156 hid.ambition+2 stress+3'], { chk: '40 ovr*0.3 fameD*0.2', pv: '선발과 입상 필요 실패 시 입대 압박', bad: ['지금은 대표팀 소집이 요원하다. 그래도 다음 대회까지 기다려 보기로 했다.', 'fx:milDefer flag:mil_medal fu:kr_mil_notice@120-156 morale-3'] })
   ], { cond: ['country:KR', 'mil:pending', 'age>=24', 'age<=28', '!flag:mil_defer'], cd: 0, max: 1, xg: 'military', note: 'military', tier: 'major' }),
@@ -37,7 +37,7 @@ export const proChoice2: RawEvent[] = [
     cc('심리 상담을 받는다', ['상담사와의 대화에서 무엇이 마음을 누르는지 정리됐다.', 'stress-10 attr.composure+0.15 happy+3 cashw-1'], { pv: '스트레스↓' }),
     cc('훈련량을 늘려 돌파한다', ['더 뛰고 더 때렸다. 몸이 먼저 반응했다.', 'attr.firstTouch+0.1 attr.shooting+0.1 fatigue+8'], { chk: '50 hid.pro*0.25 fatigue*-0.25', bad: ['과한 훈련이 오히려 독이 됐다.', 'fatigue+12 morale-4'] }),
     cc('동료들과 어울려 기분 전환한다', ['웃고 떠들다 보니 한결 가벼워졌다.', 'happy+4 rel.mates+3 stress-5 drink+4'])
-  ], { cond: ['form<=5.6', 'ovr>=40'], cd: 50, max: 4, xg: 'form_mental', note: 'burnout', tier: 'minor', again: '지난번 슬럼프 때는 "{prev}"(으)로 버텼다.' }),
+  ], { cond: ['form<=5.6', 'ovr>=40'], cd: 50, max: 4, xg: 'form_mental', note: 'burnout', tier: 'minor', again: '지난번 슬럼프 때는 "{prev}" 쪽으로 버텼다.' }),
   ch('pc_return_pressure', P, 3, ['부상에서 복귀할 시점이 다가오자 감독이 은근히 복귀 일정을 압박한다. 몸은 아직 불안하다.', '의무팀은 "조금 더"라고 하고 감독은 "이번 경기"를 이야기한다.'], [
     cc('의무팀의 일정을 따른다', ['조급해하지 않고 재활을 마무리했다.', 'health+3 rel.coach-1 fx:fullRehab'], { pv: '재발 위험↓' }),
     cc('감독의 요청에 응한다', ['팀을 위해 서둘러 복귀했다.', 'fx:earlyReturn morale+3 rel.coach+3'], { chk: '48 health*0.3 attr.recovery*1.5 hid.injuryProne*-0.2', pv: '재발 위험↑↑', bad: ['서두른 복귀가 통증으로 돌아왔다. 의무팀은 고개를 저었다.', 'fx:earlyReturn fx:reinjure morale-5'] })
@@ -47,7 +47,7 @@ export const proChoice2: RawEvent[] = [
     cc('해외 전문 클리닉에 간다', ['해외 클리닉은 첨단 장비와 노하우를 갖추고 있었다.', 'health+6 fatigue-5 cashw-6 stress+2'], { pv: '회복↑ 지출↑↑' }),
     cc('집에서 가족과 보낸다', ['가족 곁에서 마음이 편해졌다.', 'happy+5 rel.mother+4 health+1 sharp-4 rel.coach-3'])
   ], { cond: ['injured', 'injweeks>=8'], cd: 100, max: 4, xg: 'injury_care', note: 'inj_acl', tier: 'minor' }),
-  ch('pc_rival_olive', P, 2, ['{rival}이(가) 어색한 표정으로 다가와 지난 일을 사과하겠다고 했다.', '{rival}이(가) 훈련 후 먼저 말을 걸었다. "저번 일은 내 잘못이야."'], [
+  ch('pc_rival_olive', P, 2, ['{rival:이} 어색한 표정으로 다가와 지난 일을 사과하겠다고 했다.', '{rival:이} 훈련 후 먼저 말을 걸었다. "저번 일은 내 잘못이야."'], [
     cc('사과를 받아들인다', ['"서로 열심히 하자." 어색한 악수가 오갔다.', 'rel.rival+10 stress-3'], { chk: '50 hid.social*0.15 rel.rival*0.2', pv: '라이벌 관계↑', bad: ['사과가 진심이 아니었음을 곧 알게 됐다. 뒤끝만 남았다.', 'rel.rival-6 stress+4'] }),
     cc('아직은 마음을 열지 못한다', ['"시간이 필요해." 짧은 침묵이 흘렀다.', 'rel.rival+1 stress+1'])
   ], { cond: ['rel.rival<=-8'], cd: 150, max: 1, xg: 'rival', tier: 'minor' }),
@@ -55,12 +55,12 @@ export const proChoice2: RawEvent[] = [
     cc('에이전트에게 알아보게 한다', ['비공식 접촉이 이어졌다. 제안이 올지는 알 수 없다.', 'fx:offers=up rel.agent+2 stress+2 fu:fu_career@10-26'], { chk: '45 agent*0.2 fameD*0.2 form*0.2', bad: ['소문이 언론에 흘러 팬들의 비난을 샀다.', 'rel.fans-5 stress+4 fu:fu_career@10-26'] }),
     cc('경기에만 집중한다', ['"소문은 소문일 뿐입니다." 평소처럼 훈련했다.', 'hid.pro+1 stress-1 val-2 fameD-0.3 fu:fu_career@10-26'])
   ], { cond: ['lvl>=3', 'fameD>=15', 'form>=7', 'hasAgent'], cd: 100, max: 3, xg: 'transfer_talk', tier: 'major' }),
-  ch('pc_dating_public', P, 2, ['연인과의 사이가 언론에 알려질 기세다. 먼저 공개할까, 조용히 둘까?', '파파라치가 {partner}과(와) 함께 있는 모습을 찍었다고 한다.'], [
+  ch('pc_dating_public', P, 2, ['연인과의 사이가 언론에 알려질 기세다. 먼저 공개할까, 조용히 둘까?', '파파라치가 {partner:과} 함께 있는 모습을 찍었다고 한다.'], [
     cc('SNS에서 먼저 공개한다', ['공개한 뒤 오히려 마음이 가벼워졌다.', 'followers+40 rel.partner+4 rel.fans+1 happy+3'], { chk: '55 hid.controversy*-0.2 rel.partner*0.1', bad: ['팬들 사이에서 의견이 갈렸다. 악플도 달렸다.', 'rel.fans-3 stress+4 rel.partner-2'] }),
     cc('조용히 둔다', ['사생활은 지키기로 했다. 다행히 보도는 흐지부지됐다.', 'stress+1'])
   ], { cond: ['dating', 'fameD>=12'], cd: 150, max: 1, xg: 'romance', tier: 'minor' }),
-  ch('pc_wedding_plan', P, 2, ['오래 사귀어 온 {partner}과(와) 결혼 이야기가 나왔다. 양가 가족도 기대하는 눈치다.', '시즌이 끝나가는 시점. 프러포즈를 준비할 수 있을 것 같다.'], [
-    cc('청혼한다', ['반지를 꺼내자 {partner}은(는) 환하게 웃었다.', 'fx:marry'], { chk: '52 rel.partner*0.3 hid.family*0.1', bad: ['"조금 더 시간이 필요해." 눈빛이 흔들렸다.', 'rel.partner-5 stress+4'] }),
+  ch('pc_wedding_plan', P, 2, ['오래 사귀어 온 {partner:과} 결혼 이야기가 나왔다. 양가 가족도 기대하는 눈치다.', '시즌이 끝나가는 시점. 프러포즈를 준비할 수 있을 것 같다.'], [
+    cc('청혼한다', ['반지를 꺼내자 {partner:은} 환하게 웃었다.', 'fx:marry'], { chk: '52 rel.partner*0.3 hid.family*0.1', bad: ['"조금 더 시간이 필요해." 눈빛이 흔들렸다.', 'rel.partner-5 stress+4'] }),
     cc('조금 더 미룬다', ['지금은 커리어에 집중하고 싶다고 했다.', 'rel.partner-3 stress+1'])
   ], { cond: ['dating', 'age>=22'], cd: 100, max: 2, xg: 'romance', tier: 'minor' }),
   ch('pc_boot_deal', P, 2, ['두 개의 용품 브랜드가 후원 제안을 해 왔다. A사는 금액이 크고 B사는 장기 파트너십을 강조한다.', '용품 후원 계약을 고민한다. 계약 기간과 금액이 다르다.'], [
@@ -76,16 +76,16 @@ export const proChoice2: RawEvent[] = [
     cc('수락한다', ['인터뷰와 정리를 거쳐 책이 나왔다. 책을 받아든 순간 감회가 깊었다.', 'cashw+6 fameD+1 followers+50 stress+3 fu:fu_money@12-30'], { chk: '55 hid.controversy*-0.2 hid.social*0.1 fameD*0.2', pv: '수입↑ 명성↑', bad: ['대필 작가와의 이견으로 원고가 늦어졌다. 출판사가 불만이다.', 'stress+6 cashw-1 fu:fu_money@12-30'] }),
     cc('아직 이르다고 사양한다', ['"은퇴하고 나서 이야기하겠습니다."', 'hid.pro+1 fameD-0.5 fu:fu_money@12-30'])
   ], { cond: ['fameD>=40', 'age>=26'], cd: 200, max: 1, xg: 'publishing', tier: 'major' }),
-  ch('pc_hometown_fund', P, 2, ['고향 아마추어 클럽이 재정난으로 해체 위기에 놓였다. {name}이(가) 후원해 주면 살아날 수 있다.', '어릴 적 첫 소속 팀이 후원자를 찾는다는 소식을 들었다.'], [
+  ch('pc_hometown_fund', P, 2, ['고향 아마추어 클럽이 재정난으로 해체 위기에 놓였다. {name:이} 후원해 주면 살아날 수 있다.', '어릴 적 첫 소속 팀이 후원자를 찾는다는 소식을 들었다.'], [
     cc('후원한다', ['클럽이 되살아났다. 아이들이 환호하며 이름을 외쳤다.', 'cashy-0.25 happy+6 rel.fans+4 fameD+0.5'], { chk: '50 hid.thrift*-0.1 hid.family*0.1', pv: '행복↑ 명성↑ 현금↓', bad: ['후원금 사용처 논란이 일었다. 기사가 부정확하게 나갔다.', 'rel.media-3 stress+4'] }),
     cc('응원 메시지만 보낸다', ['직접 도울 형편은 아니라고 사양했다.', 'stress+1 rel.fans-2'])
   ], { cond: ['cash>=4000', 'age>=22'], cd: 150, max: 1, xg: 'family_money', tier: 'minor' }),
-  ch('pc_fan_abuse', P, 2, ['원정 경기에서 상대 팬들이 {name}을(를) 향해 모욕적인 구호를 외쳤다. 모두가 들었다.', '원정 관중석에서 선수들을 겨냥한 모욕적인 구호가 쏟아졌다.'], [
+  ch('pc_fan_abuse', P, 2, ['원정 경기에서 상대 팬들이 {name:을} 향해 모욕적인 구호를 외쳤다. 모두가 들었다.', '원정 관중석에서 선수들을 겨냥한 모욕적인 구호가 쏟아졌다.'], [
     cc('심판에게 알려 경기를 중단시킨다', ['경기가 일시 중단됐다. 구단과 리그는 조사를 약속했다.', 'rel.coach+2 rel.fans+4 stress+3'], { chk: '50 hid.pro*0.15 hid.bigGame*0.15', pv: '팬 관계↑', bad: ['항의가 받아들여지지 않았다. 감정이 앞서 경기에 집중하지 못했다.', 'stress+6 rel.coach-2'] }),
     cc('경기에 집중한다', ['이를 악물고 뛰었다. 경기 후 마음이 쉬이 가라앉지 않았다.', 'stress+6 hid.pro+1']),
     cc('경기 후 구단에 정식으로 보고한다', ['구단 법무팀이 사안을 정리해 공식 대응했다.', 'rel.coach+2 stress+2'])
   ], { cond: ['lvl>=3'], cd: 150, max: 2, xg: 'press', heavy: true, help: '차별적이거나 모욕적인 언행을 겪었다면 혼자 감당하지 말고 구단·협회의 상담 창구, 가까운 사람, 전문 기관에 도움을 요청할 수 있습니다.', tier: 'minor' }),
-  ch('pc_training_snub', P, 3, ['{coach} 감독이 훈련에서 {name}을(를) 주전조에서 뺐다. 이유는 말해 주지 않았다.', '훈련 조 편성에서 두 주째 비주전 조에 이름이 올라 있다.'], [
+  ch('pc_training_snub', P, 3, ['{coach} 감독이 훈련에서 {name:을} 주전조에서 뺐다. 이유는 말해 주지 않았다.', '훈련 조 편성에서 두 주째 비주전 조에 이름이 올라 있다.'], [
     cc('감독에게 이유를 묻는다', ['감독은 전술 변화와 체력 안배를 이유로 들었다.', 'rel.coach+1 stress-1'], { chk: '46 rel.coach*0.25 hid.pro*0.1', bad: ['"스스로 알아야지." 대답은 쌀쌀했다.', 'rel.coach-4 stress+3'] }),
     cc('훈련으로 증명한다', ['말 대신 가장 먼저 나와 가장 늦게 남았다.', 'hid.pro+2 attr.stamina+0.1 fatigue+5']),
     cc('에이전트를 통해 구단에 의견을 전한다', ['에이전트가 구단에 입장을 전했다. 분위기가 미묘해졌다.', 'rel.agent+1 rel.coach-3'])

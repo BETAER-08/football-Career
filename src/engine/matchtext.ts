@@ -3,6 +3,7 @@ import { hashString } from './rng';
 import { getClub } from './data';
 import type { Fixture, GameState, MatchLine } from './types';
 import type { MatchOut } from './match';
+import { josa } from './josa';
 
 function pick<T>(arr: T[], key: string): T {
   return arr[hashString(key) % arr.length];
@@ -40,7 +41,7 @@ function oldMateNote(s: GameState, fx: Fixture): string {
   if (!fx.oppId) return '';
   const f = s.wld.faces.find((x) => x.status === 'pro' && x.clubId === fx.oppId);
   if (!f) return '';
-  return ` · 상대 ${getClub(fx.oppId).name}에는 ${f.role === 'rival' ? '라이벌' : '옛 동료'} ${f.name}이(가) 있었다`;
+  return ` · 상대 ${getClub(fx.oppId).name}에는 ${f.role === 'rival' ? '라이벌' : '옛 동료'} ${josa(f.name, '이')} 있었다`;
 }
 
 export function pushMatchLine(s: GameState, fx: Fixture, out: MatchOut): void {

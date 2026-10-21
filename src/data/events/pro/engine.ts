@@ -69,7 +69,7 @@ export const engineEvents: RawEvent[] = [
     id: 'retire_nudge', kind: 'choice', phase: ['pro'], weight: 1, scheduledOnly: true, max: 12, cooldown: 26, exclusiveGroup: 'retire_path',
     text: [
       '몸이 예전 같지 않다. 아침마다 무릎이 먼저 하루를 알려준다. 에이전트와 가족 사이에서 "이제 슬슬"이라는 말이 오간다.',
-      '라커룸 막내들이 어느새 아들뻘이다. 계약서를 앞에 두고 {name}은(는) 한참 창밖을 바라보았다.'
+      '라커룸 막내들이 어느새 아들뻘이다. 계약서를 앞에 두고 {name:은} 한참 창밖을 바라보았다.'
     ],
     note: 'retire_age',
     choices: [
@@ -101,7 +101,7 @@ export const engineEvents: RawEvent[] = [
   {
     id: 'deal_collapse_pro', kind: 'choice', phase: ['pro'], weight: 1, scheduledOnly: true, max: 99, cooldown: 26,
     text: [
-      '{club}이(가) 이적 제안을 끝내 거절했다는 소식이 에이전트를 통해 전해졌다. 라커룸에서도 이야기가 새어 나간 눈치다.',
+      '{club:이} 이적 제안을 끝내 거절했다는 소식이 에이전트를 통해 전해졌다. 라커룸에서도 이야기가 새어 나간 눈치다.',
       '구단 간 협상이 결렬됐다. 새 팀을 향해 이미 마음이 기울어 있던 터라 훈련장에 서 있는 것조차 어색하다.'
     ],
     choices: [

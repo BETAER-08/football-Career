@@ -19,6 +19,7 @@ import { makePerson } from './relations';
 import { trigMoment } from './season';
 import { makeGoals } from './goals';
 import type { Fixture, GameState, LeaderRow, YouthRT, YouthStage } from './types';
+import { josa } from './josa';
 
 const CUP_ROUNDS = ['16강', '8강', '4강', '결승'];
 
@@ -251,7 +252,7 @@ export function youthTrophy(s: GameState, name: string): void {
   s.st.morale = clamp(s.st.morale + 6, 0, 100);
   s.st.happy = clamp(s.st.happy + 4, 0, 100);
   if (isCosmetic()) s.cues.push('trophy');
-  addLog(s, 'milestone', '유스 트로피', `${club} ${STAGE_LABEL[s.career.youthStage]}에서 ${name}을(를) 들어 올렸다.`, [], { star: true });
+  addLog(s, 'milestone', '유스 트로피', `${club} ${STAGE_LABEL[s.career.youthStage]}에서 ${josa(name, '을')} 들어 올렸다.`, [], { star: true });
 }
 
 function readiness(s: GameState): number {

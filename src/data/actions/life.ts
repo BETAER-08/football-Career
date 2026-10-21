@@ -37,13 +37,13 @@ export const lifeActions: RawAction[] = [
   {
     id: 'propose', group: 'life', label: '청혼', desc: '오래 만난 연인에게 청혼한다.', phase: ADULT, cond: ['dating', 'age>=21'], cooldown: 52, pv: '결혼 / 거절 가능',
     check: '50 rel.partner*0.35 hid.family*0.15',
-    ok: { t: '반지를 건네자 {partner}이(가) 눈물을 글썽이며 고개를 끄덕였다.', fx: 'fx:marry' },
-    bad: { t: '{partner}은(는) "조금 더 시간이 필요하다"고 말했다.', fx: 'rel.partner-6 stress+4' }
+    ok: { t: '반지를 건네자 {partner:이} 눈물을 글썽이며 고개를 끄덕였다.', fx: 'fx:marry' },
+    bad: { t: '{partner:은} "조금 더 시간이 필요하다"고 말했다.', fx: 'rel.partner-6 stress+4' }
   },
   {
     id: 'plan_child', group: 'life', label: '자녀 계획', desc: '아이를 갖기로 마음먹는다. 소식은 시간이 걸려 찾아온다.', phase: ADULT, cond: ['married'], cooldown: 52, pv: '가족 관계↑ 아이 탄생 예정',
     check: '68 rel.partner*0.15',
-    ok: { t: '{partner}와(과) 함께 가족을 늘리기로 했다. 설렘과 걱정이 섞인 날들이 이어진다.', fx: 'happy+4 fu:child_birth@36-48' },
+    ok: { t: '{partner:과} 함께 가족을 늘리기로 했다. 설렘과 걱정이 섞인 날들이 이어진다.', fx: 'happy+4 fu:child_birth@36-48' },
     bad: { t: '아직은 때가 아닌 듯하다. 서로를 위로하며 시간을 두기로 했다.', fx: 'stress+3' }
   },
   {

@@ -11,6 +11,7 @@ import { pushDecision, fireEvent, getEvent } from './events';
 import { coachOfferLabel } from './coach';
 import type { Chip, Decision, GameState, Offer, ResultPanel } from './types';
 import { ageAt } from './time';
+import { josa } from './josa';
 
 export function offerLabel(s: GameState, o: Offer): string {
   const c = getClub(o.clubId);
@@ -81,11 +82,11 @@ export function resolveOffer(s: GameState, rng: Rng, d: Decision, idx: number, d
       const to = getClub(o.clubId).name;
       s.st.morale = clamp(s.st.morale - 3, 0, 100);
       if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel - 2, -100, 100);
-      addLog(s, 'system', '구단 간 협상 결렬', `${from}이(가) ${to}의 제안을 받아들이지 않았다.`, [{ k: '사기', d: -3 }]);
+      addLog(s, 'system', '구단 간 협상 결렬', `${josa(from, '이')} ${to}의 제안을 받아들이지 않았다.`, [{ k: '사기', d: -3 }]);
       repush(s, d, rest);
       const evId = youthMove ? 'deal_collapse_youth' : 'deal_collapse_pro';
       if ((s.phase === 'pro' || s.phase === 'youth') && !s.career.retired && s.career.clubId && (s.ev.cd[evId] ?? 0) <= s.week && rng.chance(0.65)) fireEvent(s, rng, getEvent(evId));
-      return { title: '구단 간 협상 결렬', grade: 'bad', roll: Math.round(deal.roll * 100), need: Math.round(deal.p * 100), text: `${from}이(가) ${to}의 ${youthMove ? '유스 이적' : '이적'} 제안을 거절했다. 구단 간 ${youthMove ? '육성 보상금' : '이적료'} 합의가 이뤄지지 않았다.`, changes: [{ k: '사기', d: -3 }], later: false, w };
+      return { title: '구단 간 협상 결렬', grade: 'bad', roll: Math.round(deal.roll * 100), need: Math.round(deal.p * 100), text: `${josa(from, '이')} ${to}의 ${youthMove ? '유스 이적' : '이적'} 제안을 거절했다. 구단 간 ${youthMove ? '육성 보상금' : '이적료'} 합의가 이뤄지지 않았다.`, changes: [{ k: '사기', d: -3 }], later: false, w };
     }
   }
   const locked = !!o.renego;
@@ -105,7 +106,7 @@ export function resolveOffer(s: GameState, rng: Rng, d: Decision, idx: number, d
       uid: s.ev.nextId++,
       offers: [neg.offer, ...rest],
       choices: [neg.offer, ...rest].map((x) => ({ label: offerLabel(s, x), chips: [], pct: null, disabled: '' })),
-      text: `${getClub(o.clubId).name}이(가) 요구 일부를 받아들이지 않았다. 원래 조건으로 계약할지 정한다.`
+      text: `${josa(getClub(o.clubId).name, '이')} 요구 일부를 받아들이지 않았다. 원래 조건으로 계약할지 정한다.`
     };
     nd.choices.push(d.choices.length > d.offers.length ? d.choices[d.choices.length - 1] : { label: '거절한다', chips: [], pct: null, disabled: '' });
     pushDecision(s, nd);
@@ -139,7 +140,7 @@ export function resolveOffer(s: GameState, rng: Rng, d: Decision, idx: number, d
   if (final.mode === 'renew') {
     extendContract(s, final);
     penalize();
-    return { title: `${club} 재계약`, grade: 'ok', roll: rollN, need: needN, text: `${neg.text} ${club}와(과) ${final.years}년 재계약을 맺었다. 약속된 역할은 ${roleLabel(final.role)}.`, changes: penChips, later: false, w };
+    return { title: `${club} 재계약`, grade: 'ok', roll: rollN, need: needN, text: `${neg.text} ${josa(club, '과')} ${final.years}년 재계약을 맺었다. 약속된 역할은 ${roleLabel(final.role)}.`, changes: penChips, later: false, w };
   }
   if (final.mode === 'pre') {
     signPre(s, final);

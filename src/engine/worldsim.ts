@@ -13,6 +13,7 @@ import { seasonOf, yearOf } from './time';
 import { clubLeagueId, ranking, simScore } from './world';
 import { awardPrize } from './season';
 import type { BallonRec, Face, GameState, Person, Pos, SeasonChamps, Star, TournRec, WorldInfo } from './types';
+import { josa } from './josa';
 
 interface Nation { id: string; ko: string; base: number; confed: string; code: string }
 
@@ -436,12 +437,12 @@ function faceNews(s: GameState, season: number): void {
   for (const f of s.wld.faces) {
     const club = f.clubId ? getClub(f.clubId).name : '';
     const label = f.role === 'rival' ? '라이벌' : '유스 동기';
-    if (f.status === 'pro' && f.debutS === season && tell(f, 'debut')) addLog(s, 'world', `${label} ${f.name}`, `${label} ${f.name}이(가) ${club}에서 프로 무대에 데뷔했다는 소식이 들렸다.`, []);
-    if (f.status === 'quit' && tell(f, 'quit')) addLog(s, 'world', `${label} ${f.name}`, `${label} ${f.name}은(는) 프로의 문턱을 넘지 못하고 축구를 그만뒀다고 한다.`, []);
-    if (f.status === 'retired' && tell(f, 'retire')) addLog(s, 'world', `${label} ${f.name}`, `${label} ${f.name}이(가) 현역에서 은퇴했다는 소식이 전해졌다.`, []);
-    if (f.status === 'pro' && f.caps >= 1 && ageFace(f, year) < 40 && tell(f, 'cap')) addLog(s, 'world', `${label} ${f.name}`, `${label} ${f.name}이(가) 처음으로 ${getCountry(f.country).natTeam} 명단에 이름을 올렸다.`, []);
-    if (f.status === 'pro' && f.injuredS === season && tell(f, `inj${season}`)) addLog(s, 'world', `${label} ${f.name}`, `${label} ${f.name}이(가) 큰 부상으로 한동안 결장한다는 소식이다.`, []);
-    if (f.status !== 'youth' && f.status !== 'quit' && f.wedS === season && tell(f, 'wed')) addLog(s, 'world', `${label} ${f.name}`, `${label} ${f.name}이(가) 결혼한다는 소식이 들렸다.`, []);
+    if (f.status === 'pro' && f.debutS === season && tell(f, 'debut')) addLog(s, 'world', `${label} ${f.name}`, `${label} ${josa(f.name, '이')} ${club}에서 프로 무대에 데뷔했다는 소식이 들렸다.`, []);
+    if (f.status === 'quit' && tell(f, 'quit')) addLog(s, 'world', `${label} ${f.name}`, `${label} ${josa(f.name, '은')} 프로의 문턱을 넘지 못하고 축구를 그만뒀다고 한다.`, []);
+    if (f.status === 'retired' && tell(f, 'retire')) addLog(s, 'world', `${label} ${f.name}`, `${label} ${josa(f.name, '이')} 현역에서 은퇴했다는 소식이 전해졌다.`, []);
+    if (f.status === 'pro' && f.caps >= 1 && ageFace(f, year) < 40 && tell(f, 'cap')) addLog(s, 'world', `${label} ${f.name}`, `${label} ${josa(f.name, '이')} 처음으로 ${getCountry(f.country).natTeam} 명단에 이름을 올렸다.`, []);
+    if (f.status === 'pro' && f.injuredS === season && tell(f, `inj${season}`)) addLog(s, 'world', `${label} ${f.name}`, `${label} ${josa(f.name, '이')} 큰 부상으로 한동안 결장한다는 소식이다.`, []);
+    if (f.status !== 'youth' && f.status !== 'quit' && f.wedS === season && tell(f, 'wed')) addLog(s, 'world', `${label} ${f.name}`, `${label} ${josa(f.name, '이')} 결혼한다는 소식이 들렸다.`, []);
   }
 }
 
@@ -468,7 +469,7 @@ export function worldSeasonEnd(s: GameState): void {
       s.wld.tourn.push(rec);
       if (s.wld.tourn.length > 16) s.wld.tourn.shift();
       if (cosmetic) {
-        addLog(s, 'world', `${year} ${t.ko}`, `${year} ${t.ko}에서 ${b.winner.ko}이(가) 우승했다. 결승 ${b.final}.`, [], { star: true });
+        addLog(s, 'world', `${year} ${t.ko}`, `${year} ${t.ko}에서 ${josa(b.winner.ko, '이')} 우승했다. 결승 ${b.final}.`, [], { star: true });
         toast(s, `🏆 ${year} ${t.ko} 우승: ${b.winner.ko}`);
       }
     }
@@ -492,7 +493,7 @@ function worldNews(s: GameState, core: WorldCore): void {
   addLog(s, 'world', `${year} 시즌 우승팀`, `주요 리그 우승: ${parts.join(' · ')}.`, []);
   for (const [comp, id] of Object.entries(core.champs.cont)) {
     const info = CONT_COMPS[comp];
-    addLog(s, 'world', info.ko, `${info.ko} 결승에서 ${getClub(id).name}이(가) 정상에 올랐다.`, []);
+    addLog(s, 'world', info.ko, `${info.ko} 결승에서 ${josa(getClub(id).name, '이')} 정상에 올랐다.`, []);
     if (comp === 'UCL' || comp === 'LIB') toast(s, `🏆 ${info.ko}: ${getClub(id).name} 우승`);
   }
 }
@@ -509,7 +510,7 @@ export function ceremonyWeek(s: GameState): void {
   }
   if (!isCosmetic()) return;
   const t = c.top;
-  addLog(s, 'world', `${c.year} 발롱도르 시상식`, `${c.year} 발롱도르 시상식이 열렸다. 3위 ${t[2].name}, 2위 ${t[1].name}, 그리고 수상자는 ${t[0].name}(${getClub(t[0].club).name})!${c.player ? ` ${s.p.name}은(는) ${c.player}위에 올랐다.` : ''}`, [], { star: true });
+  addLog(s, 'world', `${c.year} 발롱도르 시상식`, `${c.year} 발롱도르 시상식이 열렸다. 3위 ${t[2].name}, 2위 ${t[1].name}, 그리고 수상자는 ${t[0].name}(${getClub(t[0].club).name})!${c.player ? ` ${josa(s.p.name, '은')} ${c.player}위에 올랐다.` : ''}`, [], { star: true });
   toast(s, `🏆 ${c.year} 발롱도르: ${t[0].name}`);
 }
 

@@ -55,7 +55,7 @@ registerFx('newAgent', (s, { rng }, arg) => {
   addPerson(s, rng, 'agent', 'agent', { age, job: '에이전트', rel: rng.int(10, 35) });
   s.fin.agentSkill = arg === 'good' ? rng.int(60, 90) : arg === 'bad' ? rng.int(15, 40) : rng.int(35, 80);
   s.fin.agentFee = rng.int(5, 10);
-  addLog(s, 'system', '에이전트 계약', `${s.people.agent.name}와(과) 에이전트 계약을 맺었다.`, []);
+  addLog(s, 'system', '에이전트 계약', `${josa(s.people.agent.name, '과')} 에이전트 계약을 맺었다.`, []);
 });
 registerFx('agentFee', (s, _c, arg) => {
   s.fin.agentFee = Number(arg);
@@ -103,7 +103,7 @@ registerFx('marry', (s) => {
   s.life.romanceW = s.week;
   s.st.happy = clamp(s.st.happy + 8, 0, 100);
   s.people.partner.rel = clamp(s.people.partner.rel + 12, -100, 100);
-  addLog(s, 'milestone', '결혼', `${s.people.partner.name}와(과) 결혼했다.`, [], { star: true });
+  addLog(s, 'milestone', '결혼', `${josa(s.people.partner.name, '과')} 결혼했다.`, [], { star: true });
 });
 registerFx('divorce', (s) => {
   if (s.life.romance !== 'married') return;
@@ -124,7 +124,7 @@ registerFx('child', (s, { rng }) => {
   const nm = genName(rng, s.p.country);
   s.people[`child${n}`] = makePerson(rng, s.ev, 'child', s.p.country, { age: 0, refYear: yearOf(s.week), name: nm.name, en: nm.en, job: '자녀', rel: 70 });
   s.st.happy = clamp(s.st.happy + 7, 0, 100);
-  addLog(s, 'milestone', '아이가 태어났다', `${nm.name}이(가) 태어났다.`, [], { star: true });
+  addLog(s, 'milestone', '아이가 태어났다', `${josa(nm.name, '이')} 태어났다.`, [], { star: true });
 });
 registerFx('parentIll', (s) => {
   s.ev.flags.parent_ill = s.week;
@@ -156,7 +156,7 @@ registerFx('posShift', (s, _c, arg) => {
   s.ab.sec[old] = Math.max(30, 100 - Math.max(0, 70 - prof));
   delete s.ab.sec[np];
   s.ab.pos = np;
-  addLog(s, 'milestone', '포지션 변경', `주 포지션이 ${np}(으)로 바뀌었다.`, []);
+  addLog(s, 'milestone', '포지션 변경', `주 포지션이 ${josa(np, '으로')} 바뀌었다.`, []);
 });
 registerFx('secPos', (s, { rng }, arg) => {
   const np = arg as import('./types').Pos;
@@ -245,7 +245,7 @@ registerFx('scholar', (s, _c, arg) => {
   }
   s.career.scholar = 1;
   if (con) con.wage = scholarWage(s, arg === 'high');
-  addLog(s, 'milestone', '장학 계약', `${getClub(s.career.clubId).name}와(과) 유스 장학 계약을 맺었다.`, [], { star: true });
+  addLog(s, 'milestone', '장학 계약', `${josa(getClub(s.career.clubId).name, '과')} 유스 장학 계약을 맺었다.`, [], { star: true });
   return [{ k: '장학 수당', d: con ? con.wage : 0, u: '만' }];
 });
 registerFx('school', (s, { rng }, arg) => {
@@ -421,6 +421,7 @@ registerFx('adminBoost', (s, _c, arg) => {
 });
 
 import { advanceMilestone, MILESTONES, isEpiPath } from './postcareer';
+import { josa } from './josa';
 registerFx('msUp', (s) => {
   const name = advanceMilestone(s);
   if (!name) return;

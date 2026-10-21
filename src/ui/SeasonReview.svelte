@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { josa } from '../engine/josa';
   import { store } from './store.svelte';
   import { dialog } from './dialog';
   import Icon from './Icon.svelte';
@@ -140,7 +141,7 @@
               </tbody></table>
             </div>
           {:else if step === 1}
-            <div class="sec"><b>선수단 MVP</b><div class="best">{r.coach.mvp}이(가) 시즌 내내 팀의 중심이었다.</div></div>
+            <div class="sec"><b>선수단 MVP</b><div class="best">{josa(r.coach.mvp, '이')} 시즌 내내 팀의 중심이었다.</div></div>
             {#each r.trophies as t}<div class="award"><Icon name="trophy" size={14} /> {t}</div>{/each}
           {:else}
             <div class="sec"><b>변화 요약</b>

@@ -74,6 +74,7 @@ export function allEventDefs(): EventDef[] {
 }
 
 import { upperClubPick } from './upper';
+import { isJosaKind, josa } from './josa';
 
 export function render(s: GameState, tpl: string): string {
   const club = s.phase === 'coach' && s.coach.clubId ? s.coach.clubId : s.career.clubId;
@@ -83,7 +84,11 @@ export function render(s: GameState, tpl: string): string {
   const sib = Object.keys(s.people).find((k) => k.startsWith('sibling'));
   const child = Object.keys(s.people).find((k) => k.startsWith('child'));
   const con = s.career.contract;
-  return tpl.replace(/\{(\w+)\}/g, (_m, k: string) => {
+  return tpl.replace(/\{(\w+)(?::([가-힣]+))?\}/g, (_m, k0: string, j: string | undefined) => {
+    const v = tokenValue(k0);
+    return j && isJosaKind(j) ? josa(v, j) : v;
+  });
+  function tokenValue(k: string): string {
     switch (k) {
       case 'name': return s.p.name;
       case 'club': return clubName;
@@ -131,7 +136,7 @@ export function render(s: GameState, tpl: string): string {
       case 'fcoach': return s.people.fcoach?.name ?? '1군 감독';
       default: return `{${k}}`;
     }
-  });
+  }
 }
 
 function pick(rng: Rng, arr: string[]): string {

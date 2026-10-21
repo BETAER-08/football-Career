@@ -17,6 +17,7 @@ import { CONT_LP_WEEKS, CONT_COMPS } from '../data/competitions';
 import { leagueWeek, profileOf, windowIdx } from './calendar';
 import { firstContractOffers } from './market';
 import { makeGoals } from './goals';
+import { josa } from './josa';
 
 export const ROLE_VAL: Record<Role, number> = { starter: 3, rotation: 2, prospect: 1, backup: 0 };
 
@@ -747,9 +748,9 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
     s.people.coach.rel += 0;
   }
   if (firstPro) {
-    addLog(s, 'milestone', '프로 계약', `${cs.name}와(과) ${Math.round(o.years)}년 프로 계약을 맺었다. 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
+    addLog(s, 'milestone', '프로 계약', `${josa(cs.name, '과')} ${Math.round(o.years)}년 프로 계약을 맺었다. 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
   } else {
-    addLog(s, 'milestone', o.loan ? '임대' : o.mode === 'free' ? '자유계약' : o.mode === 'pre' ? '사전 계약 합류' : '이적', `${cs.name}${o.loan ? '로 임대 이적' : o.mode === 'free' ? '와(과) 자유계약' : '로 이적'}했다 (${reason}${feeText(o)}). 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
+    addLog(s, 'milestone', o.loan ? '임대' : o.mode === 'free' ? '자유계약' : o.mode === 'pre' ? '사전 계약 합류' : '이적', `${o.loan ? `${josa(cs.name, '으로')} 임대 이적` : o.mode === 'free' ? `${josa(cs.name, '과')} 자유계약` : `${josa(cs.name, '으로')} 이적`}했다 (${reason}${feeText(o)}). 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
   }
   toast(s, `${cs.name} 입단 · ${roleLabel(o.role)}`);
   if (isCosmetic()) s.cues.push('transfer');
@@ -826,7 +827,7 @@ export function leaveToFree(s: GameState, reason: string): void {
   s.career.pre = null;
   s.career.fixtures.length = 0;
   if (reason === '계약 만료') {
-    addLog(s, 'milestone', '계약 만료', `${prevName}과(와)의 계약이 만료됐다. 재계약은 이뤄지지 않았다.`, [], { star: true });
+    addLog(s, 'milestone', '계약 만료', `${josa(prevName, '과')}의 계약이 만료됐다. 재계약은 이뤄지지 않았다.`, [], { star: true });
     addLog(s, 'milestone', 'FA 전환', '계약 만료, 자유계약 선수가 됐다. 이적료 없이 새 팀을 찾을 수 있다.', [], { star: true });
   } else addLog(s, 'system', '무적 신분', `소속 구단이 없어졌다 (${reason}). 새 팀을 찾아야 한다.`, []);
 }

@@ -14,7 +14,7 @@ export const youthSchool: RawEvent[] = [
   ], { sched: true, cd: 0, max: 4, xg: 'release_path', note: 'youth_rate' }),
   ch('ys_alt_final', Y, 1, [
     '{coach} 감독이 조용히 불렀다. "프로 계약은 어렵겠다." 유스 계약이 끝났다. 하지만 대학 축구부, 하위 리그 테스트 등 갈 수 있는 길은 아직 남아 있다.',
-    '구단은 계약 연장 없이 {name}을(를) 놓아주기로 했다. 지도자들과 부모님이 함께 앉아 진학과 테스트 사이에서 의견을 나눴다.'
+    '구단은 계약 연장 없이 {name:을} 놓아주기로 했다. 지도자들과 부모님이 함께 앉아 진학과 테스트 사이에서 의견을 나눴다.'
   ], [
     cc('대학 축구부로 진학한다', ['입학 서류를 냈다. 수업과 훈련을 병행하는 새 생활이 시작된다.', 'fx:school=UNI stress+3 edu+4'], { pv: '학력↑ 프로 진입 기회 유지 시설↓' }),
     cc('하위 리그 입단 테스트에 도전한다', ['짐을 싸서 여러 구단의 테스트를 돌기로 했다. 아직 끝난 게 아니다.', 'fx:trialOffers stress+6'], { chk: '55 ovr*0.2 hid.pro*0.2', pv: '프로 직행 가능 스트레스↑', bad: ['연락은 좀처럼 오지 않았다. 몇 주를 기다린 끝에야 작은 구단 한 곳이 기회를 주었다.', 'fx:trialOffers stress+10 morale-5'] }),
@@ -65,7 +65,7 @@ export const youthSchool: RawEvent[] = [
     cc('학교 대회에 집중한다', ['먼저 학교의 우승에 집중하기로 했다.', 'rel.coach+3 hid.loyalty+2 hid.ambition-1'], { pv: '감독 관계↑' })
   ], { cond: ['country:JP', 'school', 'ovr>=42', '!debuted'], cd: 100, max: 1, xg: 'school_dual', tier: 'major' }),
   ch('ys_school_clash', Y, 3, [
-    '학교 감독이 전술 문제로 {name}을(를) 연달아 벤치에 앉혔다. 선배들과의 서열 문제까지 얽혀 분위기가 험악하다.',
+    '학교 감독이 전술 문제로 {name:을} 연달아 벤치에 앉혔다. 선배들과의 서열 문제까지 얽혀 분위기가 험악하다.',
     '감독이 훈련 중 크게 언성을 높였다. 팀 규율을 이유로 한 번 더 벤치를 지키게 하겠다는 통보다.'
   ], [
     cc('감독과 면담해 오해를 푼다', ['조용히 감독실을 찾아가 솔직하게 이야기했다.', 'rel.coach+1 stress+3'], { chk: '48 hid.pro*0.2 hid.social*0.15 rel.coach*0.15', great: ['감독이 의외로 귀를 기울였다. 다음 경기 명단에 이름이 올랐다.', 'rel.coach+6 morale+6'], bad: ['대화는 평행선이었다. 분위기만 더 무거워졌다.', 'rel.coach-5 morale-4'] }),

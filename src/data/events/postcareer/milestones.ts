@@ -36,7 +36,7 @@ export const milestoneEvents: RawEvent[] = [
   ], { cond: ['path:pundit', 'msN==2', 'pathYears>=5', 'postSkill>=42', 'postRep>=35', 'sinceMs>=26'], cd: 26, max: 8, xg: 'milestone', tier: 'minor' }),
   ch('ms_pun_4', PC, 30, [
     '월드컵 메인 해설 자리를 맡아 달라는 제안이 왔다. 해설가라면 누구나 꿈꾸는 무대다.',
-    '월드컵 중계팀 구성이 발표됐다. 메인 해설 이름 옆에 {name}이(가) 적혀 있다.'
+    '월드컵 중계팀 구성이 발표됐다. 메인 해설 이름 옆에 {name:이} 적혀 있다.'
   ], [
     cc('월드컵 메인 해설을 맡는다', ['개막전 마이크 앞에서 숨을 길게 내쉬었다. 한 달 내내 수많은 사람이 {name}의 목소리와 함께 경기를 봤다.', 'fx:msUp postRep+2 fameD+1.2 happy+9'], {
       chk: '46 postSkill*0.25 postRep*0.25 fameD*0.1', pv: '마지막 이정표 명성↑↑↑',
@@ -56,7 +56,7 @@ export const milestoneEvents: RawEvent[] = [
   ], { cond: ['path:admin', 'msN==0', 'pathWeeks>=8', 'postSkill>=12', 'sinceMs>=26'], cd: 26, max: 8, xg: 'milestone', tier: 'minor' }),
   ch('ms_adm_2', PC, 30, [
     '테크니컬 디렉터 자리가 비었다. 스카우트팀과 아카데미를 함께 이끌 사람이 필요하다는 이야기다.',
-    '단장이 {name}을(를) 따로 불렀다. "선수단 구성의 큰 그림을 함께 그려 보자."'
+    '단장이 {name:을} 따로 불렀다. "선수단 구성의 큰 그림을 함께 그려 보자."'
   ], [
     cc('테크니컬 디렉터 자리를 받아들인다', ['책상 위에 선수단 구성표가 펼쳐졌다. 숫자와 사람의 이야기가 함께 보이기 시작했다.', 'fx:msUp postSkill+1.5 postRep+0.8'], {
       chk: '50 postSkill*0.3 postRep*0.2', pv: '이정표 달성 연봉↑',
@@ -65,7 +65,7 @@ export const milestoneEvents: RawEvent[] = [
     cc('현장 스카우트로 더 남겠다고 한다', ['현장에 남기로 했다. 책상보다 경기장이 편한 사람이다.', 'fx:msDelay postRep-0.3 happy+1'], { pv: '현장 유지 기회 지연' })
   ], { cond: ['path:admin', 'msN==1', 'pathYears>=3', 'postSkill>=35', 'sinceMs>=26'], cd: 26, max: 8, xg: 'milestone', tier: 'minor' }),
   ch('ms_adm_3', PC, 30, [
-    '단장이 자리를 떠난다는 소식과 함께 구단주가 후임으로 {name}을(를) 거론했다.',
+    '단장이 자리를 떠난다는 소식과 함께 구단주가 후임으로 {name:을} 거론했다.',
     '구단주가 단장직을 제안했다. 이적료, 임금, 감독 선임을 모두 책임져야 한다.'
   ], [
     cc('단장직을 수락한다', ['취임 첫날 책상 위에는 이적 후보 명단과 재정 보고서가 쌓여 있었다. 책임의 무게가 어깨에 얹혔다.', 'fx:msUp postSkill+2 postRep+1.2 happy+5'], {

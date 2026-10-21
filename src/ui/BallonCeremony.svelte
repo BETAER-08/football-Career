@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { josa } from '../engine/josa';
   import { store } from './store.svelte';
   import { dialog } from './dialog';
   import Icon from './Icon.svelte';
@@ -37,9 +38,9 @@
         {#if step >= 3}
           <div class="mine">
             {#if c.winnerIsPlayer}
-              {g.p.name}이(가) 발롱도르를 들어 올렸다!
+              {josa(g.p.name, '이')} 발롱도르를 들어 올렸다!
             {:else if c.player}
-              {g.p.name}은(는) {c.player}위에 올랐다.
+              {josa(g.p.name, '은')} {c.player}위에 올랐다.
             {:else}
               이번에는 {g.p.name}의 이름이 후보 명단에 오르지 못했다.
             {/if}

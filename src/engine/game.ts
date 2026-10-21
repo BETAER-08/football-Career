@@ -35,6 +35,7 @@ import { curOvr } from './attributes';
 import { setCondEnv } from './fx';
 import { hasUpperClub } from './upper';
 import { isCosmetic } from './flags';
+import { josa } from './josa';
 
 setCondEnv({
   clubLvl: (s) => {
@@ -76,7 +77,7 @@ function injuryWeek(s: GameState, rng: Rng, age: number, weekMins: number): void
     s.st.recur = null;
     const inj = startInjury(s, rng, id, age);
     inj.recurrence = true;
-    addLog(s, 'system', '부상 재발', `${inj.ko}이(가) 재발했다. 복귀까지 ${inj.total}주.`, []);
+    addLog(s, 'system', '부상 재발', `${josa(inj.ko, '이')} 재발했다. 복귀까지 ${inj.total}주.`, []);
     if (injuryEndsCareer(s, rng, id, age)) retirePlayer(s, rng, `${INJURY_BY_ID[id].ko}의 재발 끝에 더는 뛸 수 없었다.`, true);
     return;
   }

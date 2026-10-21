@@ -11,6 +11,7 @@ import { makePerson, randomPos } from './relations';
 import { ROLE_UP } from './transfer';
 import { applyTransferRequest, withdrawTransferRequest } from './market';
 import type { GameState } from './types';
+import { josa } from './josa';
 
 function pay(s: GameState, amount: number): void {
   const fromCash = Math.min(s.fin.cash, amount);
@@ -139,7 +140,7 @@ registerAction('posChange', (s, _c, _a, grade) => {
   s.ab.sec[old] = 70;
   delete s.ab.sec[best as import('./types').Pos];
   s.ab.pos = best as import('./types').Pos;
-  addLog(s, 'milestone', '포지션 변경', `주 포지션이 ${old}에서 ${best}(으)로 바뀌었다.`, []);
+  addLog(s, 'milestone', '포지션 변경', `주 포지션이 ${old}에서 ${josa(best, '으로')} 바뀌었다.`, []);
 });
 registerAction('declineNat', (s) => { s.ev.flags.nat_ignore = s.week; });
 registerAction('coachLicense', (s) => {

@@ -20,7 +20,7 @@ export const moments: RawEvent[] = [
     cc('몸을 던져 태클한다', ['타이밍을 재고 발을 뻗었다.', 'rating+0.2'], { chk: '45 attr.tackling*3 attr.positioning*1.5 hid.bigGame*0.1', great: ['정확한 태클로 공을 걷어내고 역습을 끊었다. 관중석이 박수를 보냈다.', 'rating+1 morale+7 fameD+0.4'], bad: ['타이밍이 늦었다. 반칙으로 경고를 받았다.', 'rating-0.5 morale-3'] }),
     cc('거리를 두고 지연시킨다', ['섣불리 태클하지 않고 동료들이 돌아올 시간을 벌었다.', 'rating+0.4'], { chk: '65 attr.positioning*2 attr.concentration*1', bad: ['지연 과정에서 슈팅 기회를 내줬다.', 'rating-0.2'] })
   ], { cond: ['pos:CB'], max: 1 }),
-  mo('m_debut_gk', 'debut', D, ['프로 데뷔전. 교체로 장갑을 끼자마자 상대 에이스의 날카로운 슈팅이 날아왔다. 골문 앞의 {name}에게 모든 시선이 쏠렸다.', '떨리는 데뷔전. 상대가 문전에서 단독 찬스를 잡았다. 골키퍼 {name}이(가) 나서야 한다.'], [
+  mo('m_debut_gk', 'debut', D, ['프로 데뷔전. 교체로 장갑을 끼자마자 상대 에이스의 날카로운 슈팅이 날아왔다. 골문 앞의 {name}에게 모든 시선이 쏠렸다.', '떨리는 데뷔전. 상대가 문전에서 단독 찬스를 잡았다. 골키퍼 {name:이} 나서야 한다.'], [
     cc('각을 좁히며 몸을 던진다', ['타이밍을 재고 앞으로 나와 몸을 날렸다.', 'rating+0.2'], { chk: '48 attr.oneOnOne*3 attr.reflexes*2 hid.bigGame*0.15', great: ['공을 정확히 걷어냈다. 데뷔전 슈퍼세이브에 관중석이 박수를 보냈다.', 'rating+1.1 morale+8 fameD+0.5'], bad: ['타이밍이 늦었다. 공이 골망을 흔들었다.', 'rating-0.5 morale-4'] }),
     cc('제자리를 지키며 반응한다', ['침착하게 슈팅 방향을 읽었다.', 'rating+0.3'], { chk: '55 attr.reflexes*2.5 attr.concentration*1', bad: ['공은 손끝을 스치고 골대 안으로 들어갔다.', 'rating-0.3'] })
   ], { cond: ['pos:GK'], max: 1 }),
@@ -36,7 +36,7 @@ export const moments: RawEvent[] = [
     cc('강하게 마무리한다', ['모든 힘을 오른발에 실었다.', 'rating+0.1'], { chk: '42 attr.finishing*2.5 attr.composure*2 hid.bigGame*0.35', great: ['공이 그물을 흔들었다! 결승골. 모든 순간이 슬로모션처럼 흘렀다.', 'goal+1 rating+1.4 fameD+3 rel.fans+10 morale+12'], bad: ['슛이 골대를 비껴갔다. 고개를 떨궜다.', 'rating-0.4 morale-6 stress+4'] }),
     cc('동료에게 연결한다', ['더 좋은 위치의 동료에게 정확히 패스했다.', 'rating+0.3'], { chk: '62 attr.vision*2 attr.passing*1.5 hid.bigGame*0.1', great: ['동료가 결승골을 넣었다. 환호 속에서 서로를 끌어안았다.', 'assist+1 rating+0.9 rel.mates+4'] })
   ], { cond: ['pos:ST|LW|RW|AM|CM'], max: 8 }),
-  mo('m_final_def', 'final', P, ['결승전. 경기 막판 상대가 마지막 총공세에 나섰다. 크로스가 박스 안으로 날아든다. {name}이(가) 책임져야 한다.', '결승 종료 직전, 상대의 코너킥. 한 번의 실수가 모든 것을 날릴 수 있다.'], [
+  mo('m_final_def', 'final', P, ['결승전. 경기 막판 상대가 마지막 총공세에 나섰다. 크로스가 박스 안으로 날아든다. {name:이} 책임져야 한다.', '결승 종료 직전, 상대의 코너킥. 한 번의 실수가 모든 것을 날릴 수 있다.'], [
     cc('몸을 던져 헤더로 걷어낸다', ['높이 뛰어올라 머리로 공을 걷어냈다.', 'rating+0.2'], { chk: '45 attr.heading*2.5 attr.jumping*1.5 attr.positioning*1.5 hid.bigGame*0.2', great: ['결정적 클리어링으로 실점 위기를 막아 냈다. 승리가 확정됐다.', 'rating+1.2 fameD+1.5 rel.fans+6 morale+9'], bad: ['공을 놓치고 말았다. 상대의 슈팅이 이어졌다.', 'rating-0.6 morale-6'] }),
     cc('침착하게 라인을 유지한다', ['규율 있게 라인을 지켰다.', 'rating+0.3 rel.coach+1'], { chk: '62 attr.positioning*1.5 attr.concentration*1.5', bad: ['마크를 놓친 순간이 있었다. 간신히 위기를 넘겼다.', 'rating-0.2'] })
   ], { cond: ['pos:CB|LB|RB|DM'], max: 8 }),
@@ -44,13 +44,13 @@ export const moments: RawEvent[] = [
     cc('과감하게 뛰쳐나가 각을 좁힌다', ['타이밍을 맞춰 빠르게 전진했다.', 'rating+0.1'], { chk: '45 attr.oneOnOne*3 attr.reflexes*2 hid.bigGame*0.2', great: ['슈팅을 몸으로 막아 냈다! 슈퍼 세이브가 승리를 지켰다.', 'rating+1.5 fameD+2 rel.fans+8 morale+10'], bad: ['타이밍이 어긋났다. 슈팅이 골망을 흔들었다.', 'rating-0.8 morale-6'] }),
     cc('끝까지 버티며 반응한다', ['중앙에서 침착하게 슈팅을 기다렸다.', 'rating+0.2'], { chk: '52 attr.reflexes*2.5 attr.positioning*1.5', great: ['반사 신경으로 슈팅을 쳐냈다.', 'rating+1.0 morale+6'], bad: ['슈팅이 손끝을 스쳐 골문으로 들어갔다.', 'rating-0.5'] })
   ], { cond: ['pos:GK'], max: 8 }),
-  mo('m_shootout_k', 'shootout', YP, ['승부차기. {name}이(가) 키커로 나서야 한다. 11미터 앞에서 정적이 흐른다. 방향과 강도를 선택해야 한다.', '승부차기 마지막 키커로 지명됐다. 팀의 운명이 걸린 순간이다.'], [
+  mo('m_shootout_k', 'shootout', YP, ['승부차기. {name:이} 키커로 나서야 한다. 11미터 앞에서 정적이 흐른다. 방향과 강도를 선택해야 한다.', '승부차기 마지막 키커로 지명됐다. 팀의 운명이 걸린 순간이다.'], [
     cc('왼쪽 모서리에 강하게 찬다', ['골키퍼의 반대 방향을 노렸다.', 'rating+0.1'], { chk: '62 attr.penalties*2 attr.composure*1.5 hid.bigGame*0.3', great: ['공이 골망을 흔들었다. 팀이 환호했다.', 'rating+0.7 morale+6 rel.mates+4'], bad: ['골키퍼가 정확히 읽었다. 슈팅이 막혔다.', 'rating-0.7 morale-8 stress+6'] }),
     cc('중앙으로 가볍게 찬다', ['골키퍼가 먼저 몸을 던질 것이라 믿고 가운데를 노렸다.', 'rating+0.1'], { chk: '58 attr.composure*2 attr.penalties*1.2 hid.bigGame*0.3', great: ['골키퍼가 한쪽으로 쏠렸다. 공은 정중앙으로 들어갔다.', 'rating+0.7 morale+6'], bad: ['골키퍼가 제자리에서 공을 막았다.', 'rating-0.7 morale-8 stress+6'] }),
     cc('오른쪽 낮게 깔아 찬다', ['정확한 코스를 노려 낮게 깔았다.', 'rating+0.1'], { chk: '60 attr.penalties*2.2 attr.shooting*0.8 hid.bigGame*0.25', great: ['공이 골대 구석에 박혔다.', 'rating+0.7 morale+6 rel.mates+3'], bad: ['공이 골대를 맞고 나왔다. 고개를 숙였다.', 'rating-0.7 morale-8 stress+6'] })
   ], { cond: ['!pos:GK'], max: 12, note: 'shootout' }),
-  mo('m_shootout_gk', 'shootout', YP, ['승부차기. 골문 앞에 선 {name}에게 모든 것이 달려 있다. 키커의 눈빛과 발 모양을 살핀다.', '승부차기에서 골키퍼 {name}이(가) 골문을 지킨다. 상대 키커가 공을 내려놓았다.'], [
-    cc('한쪽을 정해 먼저 몸을 던진다', ['직감을 믿고 몸을 날렸다.', 'rating+0.1'], { chk: '28 attr.reflexes*2 attr.penalties*0 hid.bigGame*0.2', great: ['공을 막아 냈다! 동료들이 달려와 {name}을(를) 덮쳤다.', 'rating+1.2 fameD+1 morale+10'], bad: ['반대 방향으로 날았다. 공이 골망을 흔들었다.', 'rating-0.3 morale-4'] }),
+  mo('m_shootout_gk', 'shootout', YP, ['승부차기. 골문 앞에 선 {name}에게 모든 것이 달려 있다. 키커의 눈빛과 발 모양을 살핀다.', '승부차기에서 골키퍼 {name:이} 골문을 지킨다. 상대 키커가 공을 내려놓았다.'], [
+    cc('한쪽을 정해 먼저 몸을 던진다', ['직감을 믿고 몸을 날렸다.', 'rating+0.1'], { chk: '28 attr.reflexes*2 attr.penalties*0 hid.bigGame*0.2', great: ['공을 막아 냈다! 동료들이 달려와 {name:을} 덮쳤다.', 'rating+1.2 fameD+1 morale+10'], bad: ['반대 방향으로 날았다. 공이 골망을 흔들었다.', 'rating-0.3 morale-4'] }),
     cc('끝까지 기다렸다 반응한다', ['키커의 발끝을 끝까지 지켜보았다.', 'rating+0.1'], { chk: '24 attr.reflexes*2.5 attr.concentration*1.2 hid.bigGame*0.2', great: ['발끝의 방향을 읽고 정확히 막아 냈다.', 'rating+1.2 morale+10'], bad: ['반응이 한 박자 늦었다. 골이 들어갔다.', 'rating-0.3 morale-4'] })
   ], { cond: ['pos:GK'], max: 12, note: 'shootout' }),
   mo('m_relegation_a', 'relegation', P, ['강등 결정전. 이기면 생존, 지면 강등이다. 후반 중반 흔들리는 분위기 속에서 {name}에게 공이 왔다.', '잔류를 건 마지막 경기. 관중의 불안한 침묵이 경기장을 뒤덮었다.'], [

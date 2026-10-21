@@ -14,6 +14,7 @@ import { windowIdx, windowOpenW, windowCloseW, windowNow, nextWindowW } from './
 import { genOffers, makeOfferFor, pickOne, fallbackOffer, targetLevel, compFee, capByBudget, leftFeeF, sellerFeeF, clubWageCap, joinClub, leaveToFree, closeMarket, dropQueuedOffers, marketKey, contractWeeksLeft, transferFee, freeTerms, roleLabel } from './transfer';
 import { presentOffers, hasPendingOffer } from './offers';
 import type { GameState, Offer, OfferMode } from './types';
+import { josa } from './josa';
 
 const LEVELS = [2, 3, 4, 5, 6];
 const ALL_LEVELS_UP = LEVELS;
@@ -152,7 +153,7 @@ export function extendContract(s: GameState, o: Offer): void {
   dropQueuedOffers(s);
   s.career.transferReq = -1;
   s.career.reqStance = '';
-  addLog(s, 'milestone', '재계약', `${getClub(o.clubId).name}와(과) 계약을 연장했다. 연봉 ${formatKRW(o.wage)}, 새 계약 ${o.years}년, 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
+  addLog(s, 'milestone', '재계약', `${josa(getClub(o.clubId).name, '과')} 계약을 연장했다. 연봉 ${formatKRW(o.wage)}, 새 계약 ${o.years}년, 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
 }
 
 export function signPre(s: GameState, o: Offer): void {
@@ -160,7 +161,7 @@ export function signPre(s: GameState, o: Offer): void {
   if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel - 8, -100, 100);
   closeMarket(s);
   dropQueuedOffers(s);
-  addLog(s, 'milestone', '사전 계약', `${getClub(o.clubId).name}와(과) 사전 계약을 맺었다. 계약이 끝나는 시즌 종료 후 이적료 없이 합류한다.`, [], { star: true });
+  addLog(s, 'milestone', '사전 계약', `${josa(getClub(o.clubId).name, '과')} 사전 계약을 맺었다. 계약이 끝나는 시즌 종료 후 이적료 없이 합류한다.`, [], { star: true });
 }
 
 export function renewalCounter(s: GameState, externals: Offer[]): number {
@@ -394,8 +395,8 @@ export function applyTransferRequest(s: GameState, rng: Rng, accepted: boolean, 
   if (s.people.fans) s.people.fans.rel = clamp(s.people.fans.rel - 6, -100, 100);
   if (!accepted) s.st.morale = clamp(s.st.morale - 4, 0, 100);
   const club = s.career.clubId ? getClub(s.career.clubId).name : '구단';
-  if (accepted) addLog(s, 'milestone', '이적 요청 접수', `${club}이(가) 이적 요청을 받아들였다. 적절한 제안이 오면 보내 주겠다는 입장이다.`, [], { star: true });
-  else addLog(s, 'milestone', '이적 요청 거절', `${club}이(가) 이적 요청을 거절했다. 핵심 선수를 쉽게 내줄 수 없다는 입장이다.`, [], { star: true });
+  if (accepted) addLog(s, 'milestone', '이적 요청 접수', `${josa(club, '이')} 이적 요청을 받아들였다. 적절한 제안이 오면 보내 주겠다는 입장이다.`, [], { star: true });
+  else addLog(s, 'milestone', '이적 요청 거절', `${josa(club, '이')} 이적 요청을 거절했다. 핵심 선수를 쉽게 내줄 수 없다는 입장이다.`, [], { star: true });
   if (windowNow(s)) requestBatch(s, rng);
 }
 
@@ -463,7 +464,7 @@ export function executePre(s: GameState, rng: Rng): void {
   const o = s.career.pre;
   if (!o) return;
   s.career.pre = null;
-  addLog(s, 'milestone', '계약 만료', `${getClub(s.career.clubId).name}과(와)의 계약이 만료됐다. 사전 계약에 따라 이적료 없이 떠난다.`, [], { star: true });
+  addLog(s, 'milestone', '계약 만료', `${josa(getClub(s.career.clubId).name, '과')}의 계약이 만료됐다. 사전 계약에 따라 이적료 없이 떠난다.`, [], { star: true });
   joinClub(s, rng, { ...o, mode: 'pre' }, '사전 계약');
 }
 

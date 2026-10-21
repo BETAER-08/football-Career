@@ -5,7 +5,7 @@ const Y: ('youth')[] = ['youth'];
 const YP: ('youth' | 'pro')[] = ['youth', 'pro'];
 
 export const youthChoice: RawEvent[] = [
-  ch('yc_extra_practice', Y, 5, ['훈련이 끝났지만 {name}은(는) 공을 놓지 못했다. 몸은 이미 무겁다. 남아서 더 연습할까?', '운동장 불이 하나둘 꺼진다. 혼자 남아 공을 차면 한 뼘 더 자랄 것 같지만 피로가 쌓여 있다.'], [
+  ch('yc_extra_practice', Y, 5, ['훈련이 끝났지만 {name:은} 공을 놓지 못했다. 몸은 이미 무겁다. 남아서 더 연습할까?', '운동장 불이 하나둘 꺼진다. 혼자 남아 공을 차면 한 뼘 더 자랄 것 같지만 피로가 쌓여 있다.'], [
     cc('남아서 연습한다', ['남은 시간 동안 터치와 슈팅을 다듬었다. 몸은 천근만근이지만 마음은 가볍다.', 'attr.firstTouch+0.2 attr.shooting+0.15 fatigue+8 hid.pro+1'], { chk: '55 hid.pro*0.3 fatigue*-0.3 health*0.1', bad: ['욕심이 지나쳤다. 허벅지가 뻐근하고 다음 날 훈련이 엉망이었다.', 'fatigue+12 morale-3'], worst: ['무리한 연습 끝에 허벅지 뒤쪽에서 찌릿한 통증이 올라왔다.', 'fx:inj=hamstring stress+4'] }),
     cc('일찍 들어가 쉰다', ['오늘은 쉬는 것도 훈련이라고 스스로 달랬다.', 'fatigue-8 stress-3 sharp-3 hid.pro-1'])
   ], { cond: [], cd: 26, max: 3, xg: 'training_load', tier: 'minor' }),
@@ -44,7 +44,7 @@ export const youthChoice: RawEvent[] = [
     cc('적극적으로 운영한다', ['훈련 장면과 일상을 올렸다. 팔로워가 눈에 띄게 늘었다.', 'followers+25 fameD+0.4'], { chk: '60 hid.controversy*-0.3 hid.pro*0.1', bad: ['장난으로 올린 사진이 구단 눈에 거슬렸다.', 'rel.coach-3 stress+3 followers+8'], worst: ['부적절한 댓글이 논란이 됐다. 구단이 주의를 주었다.', 'rel.coach-6 rel.media-4 stress+5'] }),
     cc('비공개로 조용히 쓴다', ['친구들과만 소통하는 공간으로 남겨 두었다.', 'stress-2 fameD-0.1 rel.mates-1'])
   ], { cond: ['age<=19'], cd: 104, max: 1, xg: 'social_media', note: 'media', tier: 'minor' }),
-  ch('yc_training_fight', Y, 3, ['거친 태클 뒤 {rival}와(과) 몸싸움이 벌어질 뻔했다. 코치들이 달려오고 있다.', '연습경기 중 {rival}과(와) 얼굴을 붉혔다. 선수들이 둘러섰다.'], [
+  ch('yc_training_fight', Y, 3, ['거친 태클 뒤 {rival:과} 몸싸움이 벌어질 뻔했다. 코치들이 달려오고 있다.', '연습경기 중 {rival:과} 얼굴을 붉혔다. 선수들이 둘러섰다.'], [
     cc('먼저 사과한다', ['고개를 숙이고 손을 내밀었다. {rival}도 어색하게 손을 잡았다.', 'rel.rival+4 rel.coach+2 morale-1'], { pv: '라이벌 관계↑' }),
     cc('끝까지 맞선다', ['한 걸음도 물러서지 않았다. 분위기가 험악해졌다.', 'rel.rival-6 morale+2 rel.coach-3'], { chk: '45 hid.temper*-0.3 attr.aggression*1', bad: ['선을 넘었다. 코치가 분을 삭이며 훈련에서 제외시켰다.', 'rel.coach-8 rel.captain-3 stress+4'] })
   ], { cond: [], cd: 52, max: 4, xg: 'locker_room', tier: 'minor' }),
@@ -75,7 +75,7 @@ export const youthChoice: RawEvent[] = [
     cc('훈련을 이유로 양해를 구한다', ['선생님은 한숨을 쉬며 마지못해 넘어갔다. 부모님이 걱정했다.', 'edu-3 rel.mother-2 stress+3']),
     cc('부모님을 통해 조율한다', ['부모님이 학교와 구단을 오가며 일정을 조정했다.', 'rel.father+2 edu+2 stress+1'], { chk: '52 rel.father*0.1 rel.mother*0.1 hid.family*0.1', bad: ['조율이 길어지며 양쪽 모두와 서먹해졌다.', 'edu-2 rel.coach-2 stress+3'] })
   ], { cond: ['age<=17'], cd: 52, max: 3, xg: 'study', note: 'edu', tier: 'minor' }),
-  ch('yc_first_love', YP, 3, ['같은 반 친구에게 자꾸 마음이 간다. 훈련 후 길에서 마주칠 때면 심장이 먼저 뛴다.', '친구들이 {name}을(를) 놀렸다. 마음에 두고 있는 사람이 있다는 것이 들통났다.'], [
+  ch('yc_first_love', YP, 3, ['같은 반 친구에게 자꾸 마음이 간다. 훈련 후 길에서 마주칠 때면 심장이 먼저 뛴다.', '친구들이 {name:을} 놀렸다. 마음에 두고 있는 사람이 있다는 것이 들통났다.'], [
     cc('용기 내어 고백한다', ['"사실 너를 좋아해." 한참의 침묵 뒤 상대가 웃으며 고개를 끄덕였다.', 'fx:romance happy+5'], { chk: '40 hid.social*0.3 fameD*0.2', bad: ['정중한 거절이었다. 하루 종일 얼굴을 못 들었다.', 'morale-4 stress+2'] }),
     cc('마음속에 접어 둔다', ['지금은 축구가 먼저라고 생각했다. 가슴 한켠이 시큰했다.', 'stress+1 hid.pro+1'])
   ], { cond: ['age>=15', 'age<=18', 'single'], cd: 104, max: 1, xg: 'romance', tier: 'minor' }),
@@ -117,7 +117,7 @@ export const youthChoice: RawEvent[] = [
     cc('멘토링을 받는다', ['선배의 훈련표를 따랐다. 몸은 힘들었지만 눈이 트이는 기분이었다.', 'attr.positioning+0.25 attr.composure+0.2 fatigue+6 hid.pro+2'], { chk: '55 hid.pro*0.25 hid.social*0.1', bad: ['선배의 방식은 너무 가혹했다. 몸이 지쳐 갔다.', 'fatigue+12 morale-4'] }),
     cc('내 방식대로 간다', ['고마움을 전하며 정중히 사양했다.', 'stress-1 morale-2 rel.coach-1'])
   ], { cond: ['ftTrain', 'age<=19'], cd: 100, max: 1, xg: 'coach_relation', tier: 'minor' }),
-  ch('yc_trial_abroad', Y, 2, ['{upabroad}의 유스 테스트 초청장이 도착했다. 언어도 낯설고 기간도 길지만 가능성은 크다.', '해외의 {upabroad}이(가) 유소년 입단 테스트를 제안했다. 부모님의 의견이 갈린다.'], [
+  ch('yc_trial_abroad', Y, 2, ['{upabroad}의 유스 테스트 초청장이 도착했다. 언어도 낯설고 기간도 길지만 가능성은 크다.', '해외의 {upabroad:이} 유소년 입단 테스트를 제안했다. 부모님의 의견이 갈린다.'], [
     cc('도전한다', ['낯선 도시에서 일주일을 보냈다. 구단 관계자의 반응이 좋았다.', 'fx:youthMove=upabroad fameA+1 hid.adapt+2 stress+4 fu:fu_career@10-26'], { chk: '35 ovr*0.4 hid.adapt*0.2', bad: ['테스트는 낙방이었지만 값진 경험이었다. 해외 무대의 속도를 느꼈다.', 'morale-3 hid.adapt+1 fu:fu_career@10-26'] }),
     cc('지금은 때가 아니다', ['더 준비하고 가겠다고 했다. 한동안 아쉬운 마음이 이어졌다.', 'stress-1 hid.ambition-2 fameA-0.2 fu:fu_career@10-26'])
   ], { cond: ['age<=16', 'ovr>=50', 'tier>=2', 'upperAbroad'], cd: 200, max: 1, xg: 'academy_move', tier: 'major' })
