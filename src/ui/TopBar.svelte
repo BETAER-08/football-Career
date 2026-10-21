@@ -49,6 +49,7 @@
     <div class="info">
       <div class="line"><span class="mono">{dateLabel(g)}</span> · {week}주차 <span class="pill" data-tone={phase.tone}>{phase.label}</span></div>
       <div class="bar" title="1년 ≈ {secs}초"><i style="width:{prog * 100}%"></i></div>
+      {#if store.baselineProgress < 1}<div class="base" title="점수 비교용 출발선 분포를 계산하는 중이에요"><span>출발선 분포 계산 {Math.round(store.baselineProgress * 100)}%</span><i style="width:{store.baselineProgress * 100}%"></i></div>{/if}
     </div>
   </div>
   <div class="spacer"></div>
@@ -83,6 +84,8 @@
   .pill[data-tone='accent'] { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel2)); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
   .pill[data-tone='amber'] { color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, var(--panel2)); border-color: color-mix(in srgb, var(--amber) 40%, var(--line)); }
   .pill[data-tone='muted'] { color: var(--muted); background: var(--panel2); border-color: var(--line); }
+  .base { position: relative; font-size: var(--fs-panel); color: var(--faint); display: flex; flex-direction: column; gap: 2px; }
+  .base i { display: block; height: 3px; border-radius: 2px; background: var(--info); transition: width 0.2s; }
   .save .st { font-size: var(--fs-panel); font-weight: 600; color: var(--muted); }
   .save.bad { border-color: var(--danger); }
   .save.bad .st { color: var(--danger); }

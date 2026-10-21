@@ -119,6 +119,19 @@ export function loadGame(): LoadResult {
   }
 }
 
+export function peekSave(): { state: GameState; savedAt: number } | null {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return null;
+    const r = parseSave(raw);
+    if (r.kind !== 'ok') return null;
+    const meta = JSON.parse(raw) as { savedAt?: number };
+    return { state: r.state, savedAt: typeof meta.savedAt === 'number' ? meta.savedAt : 0 };
+  } catch {
+    return null;
+  }
+}
+
 export function hasSave(): boolean {
   try {
     return localStorage.getItem(KEY) !== null;
