@@ -474,14 +474,14 @@ export function clubDeal(s: GameState, rng: Rng, o: Offer): DealOut {
   if (con.buyout > 0 && fee >= con.buyout) return { ok: true, auto: true, p: 1, roll: 0 };
   const left = contractWeeksLeft(s) / 52;
   const val = marketValue(s);
-  let p = 0.68;
+  let p = 0.78;
   p += left <= 0.5 ? 0.2 : left <= 1 ? 0.1 : left >= 3 ? -0.1 : left >= 2 ? -0.04 : 0;
   p += { starter: -0.15, rotation: -0.05, prospect: 0.05, backup: 0.1 }[con.role];
   const fair = Math.max(1, val * leftFeeF(left) * sellerFeeF(clubLvl(s, s.career.clubId)));
   p += clamp((fee / fair - 1) * 0.5, -0.25, 0.25);
   if (s.career.transferReq >= 0) p += s.career.reqStance === 'refused' ? -0.3 : 0.25;
   if (s.people.coach) p -= clamp(s.people.coach.rel, -60, 60) / 600;
-  p = clamp(p, 0.05, 0.95);
+  p = clamp(p, 0.15, 0.97);
   const roll = rng.next();
   return { ok: roll < p, auto: false, p, roll };
 }
@@ -534,11 +534,11 @@ export function firstContractOffers(s: GameState, rng: Rng): Offer[] {
 }
 
 export function youthDeal(s: GameState, rng: Rng, o: Offer): DealOut {
-  let p = 0.8;
-  if (s.career.scholar === 1) p -= 0.18;
+  let p = 0.93;
+  if (s.career.scholar === 1) p -= 0.06;
   if (s.people.coach) p -= clamp(s.people.coach.rel, -60, 60) / 700;
   p += clamp(((o.fee ?? 0) / Math.max(1, compFee(s)) - 1) * 0.1, -0.1, 0.1);
-  p = clamp(p, 0.3, 0.95);
+  p = clamp(p, 0.6, 0.98);
   const roll = rng.next();
   return { ok: roll < p, auto: false, p, roll };
 }
