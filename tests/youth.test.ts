@@ -7,6 +7,7 @@ import { forcedOrigin, originRng, mixedSpec } from '../src/engine/headless';
 import { rngOf } from '../src/engine/world';
 import { swOf, ageAt } from '../src/engine/time';
 import { ALL_ATTRS } from '../src/engine/types';
+import { rawForAnchored } from '../src/engine/attributes';
 import { STAGE_TEAMS, gamesFor } from '../src/engine/stages';
 import { planLeague } from '../src/engine/yleague';
 import { getClub } from '../src/engine/data';
@@ -90,7 +91,8 @@ describe('유스 리그 분리', () => {
 describe('1군 진입 경로', () => {
   function strong(s: GameState): void {
     for (const k of ALL_ATTRS) s.ab.a[k] = 19;
-    s.ab.pot = 90;
+    s.ab.cap = 99;
+    s.ab.pot = rawForAnchored(99);
     s.career.youthStage = 'U19';
   }
 

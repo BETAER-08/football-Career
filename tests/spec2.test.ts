@@ -5,7 +5,7 @@ import { Rng, seedState } from '../src/engine/rng';
 import { rngOf, clubLvl } from '../src/engine/world';
 import { ensureContent } from '../src/engine/content';
 import { ageAt, swOf } from '../src/engine/time';
-import { shownOvr, anchored } from '../src/engine/attributes';
+import { shownOvr, anchored, rawForAnchored } from '../src/engine/attributes';
 import { ALL_ATTRS } from '../src/engine/types';
 import { forcedOrigin, originRng } from '../src/engine/headless';
 import { setFast } from '../src/engine/log';
@@ -87,13 +87,14 @@ function adult19(seed: string, code: string, shown: number, pot = 93): GameState
   s.p.birth = { y: s.p.birth.y, m: 6, d: 28 };
   s.week = 52 * 5 + 30;
   setShown(s, shown);
-  s.ab.pot = Math.max(s.ab.pot, pot);
+  s.ab.cap = Math.max(s.ab.cap, pot);
+  s.ab.pot = rawForAnchored(s.ab.cap);
   s.career.youthStage = 'U19';
   return s;
 }
 
 describe('시작 오버롤 범위', () => {
-  it('수준별 2,000명의 시작 오버롤이 범위 안에서 고르게 퍼지고 잠재력은 시작 오버롤 + 8 이상이다', () => {
+  it('수준별 2,000명의 시작 오버롤이 범위 안에서 고르게 퍼지고 상한은 시작 오버롤 + 6 이상이다', () => {
     const codes = ['GB', 'US', 'BR', 'JP', 'KR', 'NG', 'ES', 'DE'];
     for (const level of [2, 3, 4, 5, 6]) {
       const vals: number[] = [];
@@ -108,7 +109,7 @@ describe('시작 오버롤 범위', () => {
         vals.push(shown);
         if (!byLevel.has(origin.level)) byLevel.set(origin.level, []);
         byLevel.get(origin.level)!.push(shown);
-        expect(state.ab.pot).toBeGreaterThanOrEqual(state.p.startOvr + 8);
+        expect(state.ab.cap).toBeGreaterThanOrEqual(state.p.startOvr + 6 - 0.1);
         expect(state.p.startOvr).toBeGreaterThanOrEqual(START_MIN[origin.level] - 0.01);
         expect(state.p.startOvr).toBeLessThanOrEqual(START_MAX + 0.01);
         expect(Math.abs(shown - state.p.startOvr)).toBeLessThan(1.6);
