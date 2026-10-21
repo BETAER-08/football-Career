@@ -4,7 +4,7 @@
   import { POS_LABEL } from '../engine/types';
   import { getClub, getCountry } from '../engine/data';
   import { academyGrade } from '../engine/data';
-  import { drawAvatar } from './pixel/avatar';
+  import { drawAvatar, lookForGame } from './pixel/avatar';
   import { posPercent } from '../engine/relations';
   import { mrz, seed32, ageOf } from './format';
   import { DREAM_LABEL } from '../engine/goals';
@@ -25,8 +25,7 @@
 
   onMount(() => {
     if (!cv) return;
-    const g = cv.getContext('2d');
-    if (g) drawAvatar(g, 96, 12, seed32(s.cfg.seed), s.p.country, `hsl(${club.color} 65% 48%)`);
+    drawAvatar(cv, lookForGame(s, ageOf(s)), 4);
   });
 </script>
 
@@ -34,7 +33,7 @@
   <div class="band"><span>선수 기록 · {s.p.country} · 2026</span><span class="mono">REG-{String(seed32(s.cfg.seed) % 1000000).padStart(6, '0')}</span></div>
   <div class="body">
     <div class="top">
-      <div class="photo"><canvas bind:this={cv} width="96" height="96" class="pixel"></canvas></div>
+      <div class="photo"><canvas bind:this={cv} width="128" height="128" class="pixel"></canvas></div>
       <div class="col grow" style="gap:2px">
         <div class="name">{s.p.name} <span class="en" title="원어 표기">{s.p.en}</span></div>
         <div class="muted">{s.p.birth.y}.{String(s.p.birth.m).padStart(2, '0')}.{String(s.p.birth.d).padStart(2, '0')}생 · {ageOf(s)}세 · {country.flag} {country.ko}</div>
@@ -98,7 +97,7 @@
   .band { display: flex; justify-content: space-between; padding: 8px 16px; background: color-mix(in srgb, var(--accent) 22%, var(--panel2)); font-weight: 800; font-size: 12px; letter-spacing: 0.04em; }
   .body { padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 10px; }
   .top { display: flex; gap: 14px; }
-  .photo { width: 96px; height: 96px; background: repeating-linear-gradient(45deg, var(--bg2), var(--bg2) 6px, var(--panel2) 6px, var(--panel2) 12px); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .photo { width: 128px; height: 128px; flex: none; background: repeating-linear-gradient(45deg, var(--bg2), var(--bg2) 6px, var(--panel2) 6px, var(--panel2) 12px); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .name { font-size: 22px; font-weight: 800; }
   .en { font-size: 12px; color: var(--faint); font-weight: 500; margin-left: 6px; }
   .sect { display: flex; flex-direction: column; gap: 3px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 12.5px; }
