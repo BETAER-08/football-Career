@@ -1,3 +1,4 @@
+import { CLUB_FEE_RECORD, CLUB_FEE_DEFAULT, LEAGUE_FEE_RECORD, LEAGUE_FEE_DEFAULT } from '../data/feeRecords';
 import { hunit } from './streams';
 import { LEVEL_STARTER_OVR, LEVEL_WAGE_MULT } from '../data/countries';
 import { Rng, clamp } from './rng';
@@ -661,8 +662,8 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
 export function recordFee(s: GameState, clubId: string, fee: number): void {
   const cs = getClub(clubId);
   const rec = s.wld.feeRec;
-  const clubBase = Math.round(FEE_CAP[clamp(cs.lvl0, 2, 6)] * 0.2);
-  const lgBase = Math.round(FEE_CAP[clamp(getLeague(cs.lg0).lvl, 2, 6)] * 0.5);
+  const clubBase = CLUB_FEE_RECORD[clubId] ?? CLUB_FEE_DEFAULT[clamp(cs.lvl0, 2, 6)];
+  const lgBase = LEAGUE_FEE_RECORD[cs.lg0] ?? LEAGUE_FEE_DEFAULT[clamp(getLeague(cs.lg0).lvl, 2, 6)];
   const pc = rec.club[clubId] ?? clubBase;
   const pl = rec.league[cs.lg0] ?? lgBase;
   s.career.feeSum += fee;

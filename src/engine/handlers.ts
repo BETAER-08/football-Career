@@ -187,6 +187,14 @@ registerFx('retire', (s, { rng }, arg) => {
 registerFx('youthQuit', (s, { rng }) => {
   retirePlayer(s, rng, '축구를 포기하기로 했다.');
 });
+registerFx('fine', (s, _c, arg) => {
+  const wk = Number(arg);
+  const c = s.career.contract;
+  if (!c || !Number.isFinite(wk) || wk <= 0) return;
+  const amt = Math.max(1, Math.round((c.wage / 52) * wk));
+  s.fin.cash -= amt;
+  return [{ k: '벌금', d: -amt, u: '만' }];
+});
 registerFx('reqPush', (s, { rng }, arg) => {
   if (!s.career.clubId || s.career.retired) return;
   if (s.career.transferReq >= 0 && arg !== 'hard') return;

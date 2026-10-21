@@ -108,7 +108,8 @@ export const engineEvents: RawEvent[] = [
       {
         label: '훈련에 건성으로 임하며 압박한다', pv: '이적 요청 접수↑ 감독 관계↓ 경기 감각↓', check: '45 hid.temper*0.2 hid.ambition*0.15 hid.pro*-0.25',
         ok: { t: '훈련 강도가 눈에 띄게 떨어졌다. 구단은 불편한 기색이었지만 결국 이적 요청서를 받아 들었다.', fx: 'fx:reqPush=soft sharp-4 rel.coach-6 hid.pro-1' },
-        bad: { t: '건성인 태도가 곧바로 감독 눈에 띄었다. 벤치로 밀렸고 팬들의 시선도 차가워졌다.', fx: 'sharp-6 morale-6 rel.coach-10 rel.fans-5 hid.pro-1' }
+        worst: { t: '훈련 불참이 이어지자 구단이 징계위원회를 열었다. 주급 몇 주 치의 벌금과 함께 1군 훈련 제외 통보가 내려왔다.', fx: 'fx:fine=4 sharp-8 morale-8 rel.coach-14 rel.fans-6 hid.pro-2' },
+        bad: { t: '건성인 태도가 곧바로 감독 눈에 띄었다. 구단은 훈련 태만으로 벌금을 매겼고, 벤치로 밀렸다. 팬들의 시선도 차가워졌다.', fx: 'fx:fine=2 sharp-6 morale-6 rel.coach-10 rel.fans-5 hid.pro-1' }
       },
       {
         label: '공식 이적 요청서를 제출한다', pv: '이적 요청 접수↑ 감독 관계↓', check: '55 hid.ambition*0.15 agent*0.2',
@@ -118,12 +119,12 @@ export const engineEvents: RawEvent[] = [
       {
         label: '에이전트를 통해 언론에 불만을 흘린다', pv: '명성↑ 평판 논란↑', check: '50 agent*0.2 hid.controversy*0.15',
         ok: { t: '"선수가 떠나고 싶어 한다"는 기사가 쏟아졌다. 여론이 구단을 압박하기 시작했다.', fx: 'fameD+0.4 followers+10 rel.media+2 rel.coach-5 hid.controversy+2' },
-        bad: { t: '불만을 흘린 사실이 구단에 알려졌다. 감독은 공개 석상에서 "프로답지 못하다"고 선을 그었다.', fx: 'morale-5 rel.coach-9 rel.fans-6 hid.controversy+3' }
+        bad: { t: '불만을 흘린 사실이 구단에 알려졌다. 구단은 품위 손상 조항을 들어 벌금을 부과했고, 감독은 공개 석상에서 "프로답지 못하다"고 선을 그었다.', fx: 'fx:fine=3 morale-5 rel.coach-9 rel.fans-6 hid.controversy+3' }
       },
       {
         label: 'SNS에 의미심장한 글을 올린다', pv: '팔로워↑ 팬 관계↓', check: '50 hid.social*0.2 hid.controversy*0.1',
         ok: { t: '"때로는 떠나야 할 때를 안다." 짧은 게시물이 하루 만에 수만 번 공유됐다.', fx: 'followers+25 fameD+0.2 rel.fans-4 hid.controversy+2' },
-        bad: { t: '게시물이 삭제됐다. 구단 SNS 담당자의 요청 때문이라는 이야기가 돌았다.', fx: 'followers+5 morale-3 rel.coach-5 rel.fans-6' }
+        bad: { t: '게시물이 삭제됐다. 구단 SNS 규정 위반으로 벌금이 부과됐다는 이야기가 돌았다.', fx: 'fx:fine=1 followers+5 morale-3 rel.coach-5 rel.fans-6' }
       },
       {
         label: '프로답게 참고 훈련에 집중한다', pv: '감독 관계↑ 스트레스↑', ok: { t: '속은 쓰렸지만 훈련장에서는 평소처럼 달렸다. 감독은 말없이 어깨를 두드렸다.', fx: 'hid.pro+1 stress+4 rel.coach+4 sharp+2' }
@@ -145,7 +146,7 @@ export const engineEvents: RawEvent[] = [
       {
         label: '훈련 참가를 미루며 시위한다', pv: '경기 감각↓ 감독 관계↓', check: '45 hid.temper*0.2 hid.pro*-0.25',
         ok: { t: '며칠 훈련에 나가지 않자 구단이 면담을 요청했다. 이적 문제를 다시 검토하겠다는 말이 나왔다.', fx: 'fx:reqPush=soft sharp-4 rel.coach-8 hid.pro-1' },
-        bad: { t: '감독은 "규율을 어기는 선수는 쓸 수 없다"며 한동안 명단에서 제외했다.', fx: 'sharp-7 morale-7 rel.coach-12 hid.pro-2' }
+        bad: { t: '감독은 "규율을 어기는 선수는 쓸 수 없다"며 한동안 명단에서 제외했다. 구단 규정에 따라 벌금도 부과됐다.', fx: 'fx:fine=1 sharp-7 morale-7 rel.coach-12 hid.pro-2' }
       },
       {
         label: '에이전트에게 다른 구단을 알아보게 한다', pv: '제안 기회↑', check: '50 agent*0.25 ovr*0.1',

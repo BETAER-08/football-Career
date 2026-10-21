@@ -4,6 +4,7 @@ import { autoDecide } from '../src/engine/auto';
 import { Rng, seedState } from '../src/engine/rng';
 import { rngOf, clubLvl } from '../src/engine/world';
 import { ensureContent } from '../src/engine/content';
+import { CLUB_FEE_RECORD, LEAGUE_FEE_RECORD } from '../src/data/feeRecords';
 import { anchored, curOvr, rawForAnchored } from '../src/engine/attributes';
 import { ALL_ATTRS } from '../src/engine/types';
 import { forcedOrigin, originRng } from '../src/engine/headless';
@@ -215,19 +216,21 @@ describe('이적료', () => {
   it('최고 이적료 기록과 누적 이적료가 갱신되고 별표 로그가 남는다', () => {
     const t = pro('fee-rec');
     const clubId = 'GB:Arsenal';
+    const rec = CLUB_FEE_RECORD[clubId];
+    const big = rec + 100000;
     t.career.feeSum = 0;
     t.career.feeMax = 0;
-    recordFee(t, clubId, 6000000);
-    expect(t.career.feeSum).toBe(6000000);
-    expect(t.career.feeMax).toBe(6000000);
+    recordFee(t, clubId, big);
+    expect(t.career.feeSum).toBe(big);
+    expect(t.career.feeMax).toBe(big);
     expect(t.log.some((l) => l.title === '구단 역대 최고 이적료')).toBe(true);
-    expect(t.wld.feeRec.club[clubId]).toBe(6000000);
-    expect(t.wld.feeRec.league[getClub(clubId).lg0]).toBe(6000000);
+    expect(t.wld.feeRec.club[clubId]).toBe(big);
+    expect(t.wld.feeRec.league[getClub(clubId).lg0]).toBe(Math.max(big, LEAGUE_FEE_RECORD[getClub(clubId).lg0]));
     const n = t.log.length;
     recordFee(t, clubId, 1000);
     expect(t.log.length).toBe(n);
-    expect(t.career.feeSum).toBe(6001000);
-    expect(t.career.feeMax).toBe(6000000);
+    expect(t.career.feeSum).toBe(big + 1000);
+    expect(t.career.feeMax).toBe(big);
   });
 
   it('이전 저장은 버전 7로 변환된다', () => {
