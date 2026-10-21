@@ -2,7 +2,8 @@ import { Rng } from './rng';
 import { stream } from './streams';
 import { genName, makePerson } from './relations';
 import { dateOf } from './time';
-import type { EventDef } from '../data/schema';
+import { isJosaKind, josa } from './josa';
+import { outcomeTexts, type EventDef } from '../data/schema';
 import type { Bind, GameState, Person, PersonRef } from './types';
 
 export const PERSON_TOKENS = [
@@ -29,7 +30,7 @@ export function defTexts(def: EventDef): string[] {
   if (def.choices) {
     for (const ch of def.choices) {
       out.push(ch.label);
-      for (const o of [ch.ok, ch.bad, ch.great, ch.worst]) if (o) out.push(o.t);
+      for (const o of [ch.ok, ch.bad, ch.great, ch.worst]) if (o) out.push(...outcomeTexts(o.t));
     }
   }
   return out;
@@ -159,4 +160,31 @@ export function bindDef(s: GameState, def: EventDef, inherited?: Bind): Bind {
 export function freshName(s: GameState, token: string): string | null {
   const c = candidates(s, token);
   return c.length ? c[0].n : null;
+}
+
+export const RECENT_KEEP = 5;
+
+export function chooseVariant(s: GameState, key: string, n: number): number {
+  if (n <= 1) return 0;
+  const used = s.ev.varUsed[key] ?? [];
+  const skip = new Set(used.slice(-Math.min(n - 1, RECENT_KEEP)));
+  const open: number[] = [];
+  for (let i = 0; i < n; i++) if (!skip.has(i)) open.push(i);
+  const rng = stream(s.cfg.seed, `var:${key}`, s.ev.varN++);
+  const idx = open.length ? open[rng.int(0, open.length - 1)] : rng.int(0, n - 1);
+  const next = [...used, idx];
+  s.ev.varUsed[key] = next.length > RECENT_KEEP ? next.slice(-RECENT_KEEP) : next;
+  return idx;
+}
+
+export function fillTemplate(tpl: string, vars: Record<string, string>): string {
+  return tpl.replace(/\{(\w+)(?::([가-힣]+))?\}/g, (m, k: string, j: string | undefined) => {
+    const v = vars[k];
+    if (v === undefined) return m;
+    return j && isJosaKind(j) ? josa(v, j) : v;
+  });
+}
+
+export function say(s: GameState, key: string, variants: readonly string[], vars: Record<string, string> = {}): string {
+  return fillTemplate(variants[chooseVariant(s, key, variants.length)], vars);
 }

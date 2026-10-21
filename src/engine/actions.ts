@@ -2,6 +2,8 @@ import { ActionSchema, type ActionDef, type RawAction } from '../data/schema';
 import { Rng } from './rng';
 import { applyFx, checkPct, evalConds, parseCond, parseCheck, scaleFx, validateFx, previewChips, pctChip, type FxCtx } from './fx';
 import { decideOutcome, render } from './events';
+import { chooseVariant } from './narrative';
+import { outcomeTexts } from '../data/schema';
 import { addLog, isFast } from './log';
 import { clearCause, setCause } from './why';
 import { dateOf } from './time';
@@ -123,7 +125,8 @@ export function runAction(s: GameState, rng: Rng, id: string, amount: number): R
   if (eff < 1) chips.push({ k: `반복 사용 효과 ${Math.round(eff * 100)}%`, d: 0 });
   if (def.diminish) s.ev.actUse[def.id] = [...(s.ev.actUse[def.id] ?? []).filter((w) => s.week - w < DIMINISH_WINDOW), s.week];
   s.ev.actCd[def.id] = s.week + def.cooldown;
-  const text = render(s, outcome.out.t);
+  const outs = outcomeTexts(outcome.out.t);
+  const text = render(s, outs[chooseVariant(s, `act:${def.id}:${outcome.grade}`, outs.length)]);
   const later = /fu:/.test(outcome.out.fx ?? '') || /fu:/.test(outcome.out.fu ?? '');
   const panel: ResultPanel = { title: def.label, grade: outcome.grade, roll: outcome.roll, need: outcome.need, text, changes: chips, later, w: s.week };
   const lid = addLog(s, 'system', def.label, text, chips, { mine: true, grade: outcome.grade, pick: def.label, result: text, roll: outcome.roll, need: outcome.need });

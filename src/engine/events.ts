@@ -1,5 +1,6 @@
-import { EventSchema, type EventDef, type RawEvent, type RawOutcome } from '../data/schema';
+import { EventSchema, outcomeTexts, type EventDef, type RawEvent, type RawOutcome } from '../data/schema';
 import { noteText } from '../data/stats-notes';
+import { EVENT_VARIANTS } from '../data/variants';
 import { Rng } from './rng';
 import { applyFx, checkPct, evalConds, parseCond, parseCheck, parseFx, previewChips, pctChip, validateFx, REL_LABEL } from './fx';
 import { addLog, isFast, toast } from './log';
@@ -19,12 +20,40 @@ const byPhase: Record<Phase, EventDef[]> = { youth: [], pro: [], coach: [], post
 const moments: EventDef[] = [];
 let loaded = false;
 
+function applyVariants(def: EventDef): void {
+  const v = EVENT_VARIANTS[def.id];
+  if (!v) return;
+  if (v.t) def.text.push(...v.t);
+  if (v.tb) def.textBad = [...(def.textBad ?? []), ...v.tb];
+  if (v.o) {
+    for (const [key, extra] of Object.entries(v.o)) {
+      const [ci, grade] = key.split('.');
+      const ch = def.choices?.[Number(ci)];
+      const o = ch ? (ch as unknown as Record<string, RawOutcome | undefined>)[grade] : undefined;
+      if (!o) throw new Error(`variant target missing: ${def.id} ${key}`);
+      o.t = [...outcomeTexts(o.t), ...extra];
+    }
+  }
+}
+
+const PERSON_TOKEN_SET = new Set<string>(PERSON_TOKENS);
+const PLAIN_TOKENS = new Set(['name', 'club', 'league', 'city', 'country', 'nat', 'age', 'opp', 'upclub', 'upabroad', 'wk', 'yr', 'amt', 'cash', 'year', 'stage', 'prev']);
+
+function validateTemplate(id: string, t: string): void {
+  for (const m of t.matchAll(/\{(\w+)(?::([^}]*))?\}/g)) {
+    if (!PLAIN_TOKENS.has(m[1]) && !PERSON_TOKEN_SET.has(m[1])) throw new Error(`${id}: unknown token {${m[1]}}`);
+    if (m[2] !== undefined && !isJosaKind(m[2])) throw new Error(`${id}: unknown josa {${m[1]}:${m[2]}}`);
+  }
+}
+
 export function loadEvents(raw: RawEvent[]): void {
+  for (const id of Object.keys(EVENT_VARIANTS)) if (!raw.some((r) => r.id === id)) throw new Error(`variant for unknown event ${id}`);
   registry.clear();
   for (const k of Object.keys(byPhase) as Phase[]) byPhase[k].length = 0;
   moments.length = 0;
   for (const r of raw) {
     const def = EventSchema.parse(r);
+    applyVariants(def);
     if (def.note) def.note = noteText(def.note);
     if (registry.has(def.id)) throw new Error(`duplicate event ${def.id}`);
     registry.set(def.id, def);
@@ -45,6 +74,7 @@ export function loadEvents(raw: RawEvent[]): void {
       validateFx(o.fu);
     }
     if (def.text.length < 2) throw new Error(`${def.id}: need 2 text variants`);
+    for (const t of defTexts(def)) validateTemplate(def.id, t);
     if (def.scheduledOnly || def.kind === 'moment') {
       if (def.kind === 'moment') moments.push(def);
     }
@@ -75,7 +105,7 @@ export function allEventDefs(): EventDef[] {
 
 import { upperClubPick } from './upper';
 import { isJosaKind, josa } from './josa';
-import { bindDef, freshName, needsMet } from './narrative';
+import { PERSON_TOKENS, bindDef, chooseVariant, defTexts, freshName, needsMet } from './narrative';
 import type { Bind } from './types';
 
 export function render(s: GameState, tpl: string, bind?: Bind): string {
@@ -115,8 +145,9 @@ export function render(s: GameState, tpl: string, bind?: Bind): string {
   }
 }
 
-function pick(rng: Rng, arr: string[]): string {
-  return arr[rng.int(0, arr.length - 1)];
+function pickText(s: GameState, rng: Rng, key: string, arr: readonly string[]): string {
+  rng.next();
+  return arr[chooseVariant(s, key, arr.length)];
 }
 
 function chipsFor(s: GameState, ch: EventDef['choices'] extends (infer C)[] | undefined ? C : never): Chip[] {
@@ -148,7 +179,7 @@ function takeSrc(s: GameState, id: string): Src | undefined {
 export function buildDecision(s: GameState, rng: Rng, def: EventDef): Decision {
   const prev = s.ev.last[def.id];
   const bind = bindDef(s, def, takeBind(s, def.id));
-  const base = render(s, pick(rng, def.text), bind);
+  const base = render(s, pickText(s, rng, `${def.id}:t`, def.text), bind);
   const text = def.again && prev ? `${render(s, def.again.replace(/\{prev\}/g, prev.label), bind)} ${base}` : base;
   const src = takeSrc(s, def.id);
   const choices: DecisionChoice[] = (def.choices ?? []).map((ch) => ({
@@ -200,7 +231,7 @@ export function firePassive(s: GameState, rng: Rng, def: EventDef): void {
   const bind = bindDef(s, def, takeBind(s, def.id));
   const bad = !!src && !!def.textBad && ['bad', 'worst'].includes(s.ev.last[src.ref]?.grade ?? '');
   const pool = bad ? (def.textBad as string[]) : def.text;
-  const text = render(s, pick(rng, pool), bind);
+  const text = render(s, pickText(s, rng, `${def.id}:${bad ? 'tb' : 't'}`, pool), bind);
   setCause(text.slice(0, 14));
   const sched0 = s.ev.sched.length;
   const chips = applyFx(s, { rng }, bad && def.fxBad !== undefined ? def.fxBad : def.fx);
@@ -237,7 +268,8 @@ export function resolveEventChoice(s: GameState, rng: Rng, d: Decision, idx: num
   if (outcome.out.fu) applyFx(s, { rng }, outcome.out.fu, chips);
   clearCause();
   const later = parseFx(outcome.out.fx).some((o) => o.kind === 'fu') || parseFx(outcome.out.fu).some((o) => o.kind === 'fu');
-  const text = render(s, outcome.out.t, bind);
+  const outs = outcomeTexts(outcome.out.t);
+  const text = render(s, outs[chooseVariant(s, `${def.id}:c${idx}:${outcome.grade}`, outs.length)], bind);
   for (let i = sched0; i < s.ev.sched.length; i++) s.ev.sched[i].bind = bind;
   const panel: ResultPanel = { title: label, grade: outcome.grade, roll: outcome.roll, need: outcome.need, text, changes: chips, later, w: s.week };
   s.ev.last[def.id] = { w: s.week, label, grade: outcome.grade };

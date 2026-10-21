@@ -53,6 +53,8 @@ export function migrateState(raw: unknown): Migrated {
   if (!ev.actUse) ev.actUse = {};
   if (!ev.pendSrc) ev.pendSrc = {};
   if (!ev.pendBind) ev.pendBind = {};
+  if (!ev.varUsed) ev.varUsed = {};
+  if (ev.varN === undefined) ev.varN = 0;
   if (!ev.last) ev.last = {};
   if (ev.logSeq === undefined) ev.logSeq = Math.max(1, ...st.log.map((l) => l.id + 1), ...st.toasts.map((x) => x.id + 1));
   if (!ev.bud) ev.bud = { s: -1, choiceT: 0, choiceN: 0, majorN: 0, minorN: 0, passT: 0, passN: 0, lastChoiceW: -99 };

@@ -659,6 +659,8 @@ export interface EvState {
   sched: { id: string; at: number; exp: number; src?: Src; bind?: Bind }[];
   pendSrc: Record<string, Src>;
   pendBind: Record<string, Bind>;
+  varUsed: Record<string, number[]>;
+  varN: number;
   last: Record<string, { w: number; label: string; grade: string }>;
   bud: Budget;
   actCd: Record<string, number>;
