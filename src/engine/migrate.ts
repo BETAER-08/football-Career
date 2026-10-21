@@ -1,12 +1,12 @@
 import { START_YEAR } from './time';
-import { curOvr } from './attributes';
+import { curOvr, rawForAnchored } from './attributes';
 import { marketValue } from './finance';
 import { initWorld } from './worldsim';
 import { emptyRec } from './records';
 import { openYouthRec, setupYouthSeason, settleToPro } from './yleague';
 import type { GameState } from './types';
 
-export const STATE_VERSION = 7;
+export const STATE_VERSION = 8;
 
 export type Migrated = { ok: true; state: GameState } | { ok: false; reason: string };
 
@@ -91,6 +91,12 @@ export function migrateState(raw: unknown): Migrated {
     st.fame.value = marketValue(st);
     st.fame.peakValue = st.fame.value;
     st.snap.val = st.fame.value;
+  }
+  if (v < 8 || (st.ab as unknown as Record<string, unknown>).cap === undefined) {
+    const old = Number(st.ab.pot);
+    const cp = Math.min(99, Math.max(60, Number.isFinite(old) ? old : 70));
+    st.ab.cap = Math.round(cp * 10) / 10;
+    st.ab.pot = Math.round(rawForAnchored(st.ab.cap) * 10) / 10;
   }
   st.v = STATE_VERSION;
   if (st.phase === 'youth' && st.career.signed && st.career.clubId) settleToPro(st, null as never, '프로 선수단 등록');
