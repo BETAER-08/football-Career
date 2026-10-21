@@ -97,5 +97,64 @@ export const engineEvents: RawEvent[] = [
       },
       { label: '개인 훈련을 이어가며 기다린다', pv: '경기 감각↑ 스트레스↑', ok: { t: '혼자서 몸을 만들며 기회를 기다리기로 했다.', fx: 'sharp+6 stress+4' } }
     ]
+  },
+  {
+    id: 'deal_collapse_pro', kind: 'choice', phase: ['pro'], weight: 1, scheduledOnly: true, max: 99, cooldown: 26,
+    text: [
+      '{club}이(가) 이적 제안을 끝내 거절했다는 소식이 에이전트를 통해 전해졌다. 라커룸에서도 이야기가 새어 나간 눈치다.',
+      '구단 간 협상이 결렬됐다. 새 팀을 향해 이미 마음이 기울어 있던 터라 훈련장에 서 있는 것조차 어색하다.'
+    ],
+    choices: [
+      {
+        label: '훈련에 건성으로 임하며 압박한다', pv: '이적 요청 접수↑ 감독 관계↓ 경기 감각↓', check: '45 hid.temper*0.2 hid.ambition*0.15 hid.pro*-0.25',
+        ok: { t: '훈련 강도가 눈에 띄게 떨어졌다. 구단은 불편한 기색이었지만 결국 이적 요청서를 받아 들었다.', fx: 'fx:reqPush=soft sharp-4 rel.coach-6 hid.pro-1' },
+        bad: { t: '건성인 태도가 곧바로 감독 눈에 띄었다. 벤치로 밀렸고 팬들의 시선도 차가워졌다.', fx: 'sharp-6 morale-6 rel.coach-10 rel.fans-5 hid.pro-1' }
+      },
+      {
+        label: '공식 이적 요청서를 제출한다', pv: '이적 요청 접수↑ 감독 관계↓', check: '55 hid.ambition*0.15 agent*0.2',
+        ok: { t: '"새로운 도전을 하고 싶습니다." 요청서를 낸 날, 구단은 적절한 제안이 오면 보내 주겠다고 한발 물러섰다.', fx: 'fx:reqPush=hard rel.coach-4' },
+        bad: { t: '요청서는 접수됐지만 구단은 팔 생각이 없다고 못을 박았다. 분위기만 싸늘해졌다.', fx: 'fx:reqPush=hard morale-4 rel.coach-8 rel.fans-4' }
+      },
+      {
+        label: '에이전트를 통해 언론에 불만을 흘린다', pv: '명성↑ 평판 논란↑', check: '50 agent*0.2 hid.controversy*0.15',
+        ok: { t: '"선수가 떠나고 싶어 한다"는 기사가 쏟아졌다. 여론이 구단을 압박하기 시작했다.', fx: 'fameD+0.4 followers+10 rel.media+2 rel.coach-5 hid.controversy+2' },
+        bad: { t: '불만을 흘린 사실이 구단에 알려졌다. 감독은 공개 석상에서 "프로답지 못하다"고 선을 그었다.', fx: 'morale-5 rel.coach-9 rel.fans-6 hid.controversy+3' }
+      },
+      {
+        label: 'SNS에 의미심장한 글을 올린다', pv: '팔로워↑ 팬 관계↓', check: '50 hid.social*0.2 hid.controversy*0.1',
+        ok: { t: '"때로는 떠나야 할 때를 안다." 짧은 게시물이 하루 만에 수만 번 공유됐다.', fx: 'followers+25 fameD+0.2 rel.fans-4 hid.controversy+2' },
+        bad: { t: '게시물이 삭제됐다. 구단 SNS 담당자의 요청 때문이라는 이야기가 돌았다.', fx: 'followers+5 morale-3 rel.coach-5 rel.fans-6' }
+      },
+      {
+        label: '프로답게 참고 훈련에 집중한다', pv: '감독 관계↑ 스트레스↑', ok: { t: '속은 쓰렸지만 훈련장에서는 평소처럼 달렸다. 감독은 말없이 어깨를 두드렸다.', fx: 'hid.pro+1 stress+4 rel.coach+4 sharp+2' }
+      }
+    ]
+  },
+  {
+    id: 'deal_collapse_youth', kind: 'choice', phase: ['youth'], weight: 1, scheduledOnly: true, max: 99, cooldown: 26,
+    text: [
+      '다른 구단의 제안이 {club}의 반대로 무산됐다. 보낼 수 없다는 구단의 입장이 전해지자 숙소 분위기가 어수선해졌다.',
+      '유스 이적 협상이 결렬됐다. 부모님은 걱정스러운 얼굴로 연락을 해 왔고, 에이전트는 방법을 찾아보겠다고만 했다.'
+    ],
+    choices: [
+      {
+        label: '부모님과 함께 구단에 직접 호소한다', pv: '구단 입장 변화 기대 감독 관계↓', check: '48 hid.family*0.15 hid.pro*0.15',
+        ok: { t: '부모님이 구단 사무실을 찾아 사정을 설명했다. 구단은 다음 시장에서 다시 논의하겠다고 답했다.', fx: 'fx:reqPush=soft stress+3 rel.coach-3' },
+        bad: { t: '구단은 "선수의 앞날을 위해 내린 결정"이라며 요청을 일축했다. 분위기만 어색해졌다.', fx: 'morale-4 rel.coach-6 rel.father-1' }
+      },
+      {
+        label: '훈련 참가를 미루며 시위한다', pv: '경기 감각↓ 감독 관계↓', check: '45 hid.temper*0.2 hid.pro*-0.25',
+        ok: { t: '며칠 훈련에 나가지 않자 구단이 면담을 요청했다. 이적 문제를 다시 검토하겠다는 말이 나왔다.', fx: 'fx:reqPush=soft sharp-4 rel.coach-8 hid.pro-1' },
+        bad: { t: '감독은 "규율을 어기는 선수는 쓸 수 없다"며 한동안 명단에서 제외했다.', fx: 'sharp-7 morale-7 rel.coach-12 hid.pro-2' }
+      },
+      {
+        label: '에이전트에게 다른 구단을 알아보게 한다', pv: '제안 기회↑', check: '50 agent*0.25 ovr*0.1',
+        ok: { t: '에이전트가 발 빠르게 움직였다. 다음 시장에서 접촉할 구단 몇 곳이 윤곽을 드러냈다.', fx: 'agentSkill+1 stress+1' },
+        bad: { t: '에이전트의 연락에 돌아오는 답이 신통치 않았다. 기다려야 할 것 같다.', fx: 'stress+4 morale-3' }
+      },
+      {
+        label: '마음을 다잡고 지금 팀에서 증명한다', pv: '감독 관계↑ 경기 감각↑', ok: { t: '남은 시즌 더 많이 뛰고 더 많이 배우기로 했다. 코치진은 달라진 눈빛을 알아챘다.', fx: 'hid.pro+1 sharp+3 rel.coach+3 stress+2' }
+      }
+    ]
   }
 ];

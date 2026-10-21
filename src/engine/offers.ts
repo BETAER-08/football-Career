@@ -7,7 +7,7 @@ import { closeMarket, negotiate, trialPass, joinClub, roleLabel, genOffers, fall
 import { clubDeal, youthDeal, extendContract, signPre, modeLabel, expireToFree } from './market';
 import { addLog } from './log';
 import { isSchoolId } from '../data/schools';
-import { pushDecision } from './events';
+import { pushDecision, fireEvent, getEvent } from './events';
 import { coachOfferLabel } from './coach';
 import type { Chip, Decision, GameState, Offer, ResultPanel } from './types';
 import { ageAt } from './time';
@@ -83,6 +83,8 @@ export function resolveOffer(s: GameState, rng: Rng, d: Decision, idx: number, d
       if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel - 2, -100, 100);
       addLog(s, 'system', '구단 간 협상 결렬', `${from}이(가) ${to}의 제안을 받아들이지 않았다.`, [{ k: '사기', d: -3 }]);
       repush(s, d, rest);
+      const evId = youthMove ? 'deal_collapse_youth' : 'deal_collapse_pro';
+      if ((s.phase === 'pro' || s.phase === 'youth') && !s.career.retired && s.career.clubId && (s.ev.cd[evId] ?? 0) <= s.week && rng.chance(0.65)) fireEvent(s, rng, getEvent(evId));
       return { title: '구단 간 협상 결렬', grade: 'bad', roll: Math.round(deal.roll * 100), need: Math.round(deal.p * 100), text: `${from}이(가) ${to}의 ${youthMove ? '유스 이적' : '이적'} 제안을 거절했다. 구단 간 ${youthMove ? '육성 보상금' : '이적료'} 합의가 이뤄지지 않았다.`, changes: [{ k: '사기', d: -3 }], later: false, w };
     }
   }

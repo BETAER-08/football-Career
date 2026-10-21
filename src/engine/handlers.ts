@@ -7,7 +7,7 @@ import { INJURY_BY_ID } from '../data/injuries';
 import { startInjury, injuryEndsCareer } from './health';
 import { retirePlayer, endGame } from './lifecycle';
 import { isCosmetic } from './flags';
-import { releaseToFree } from './market';
+import { releaseToFree, applyTransferRequest } from './market';
 import { leaveToFree, genOffers, joinClub, makeOfferFor, fallbackOffer } from './transfer';
 import { presentOffers, hasPendingOffer } from './offers';
 import { playIntl } from './season';
@@ -186,6 +186,11 @@ registerFx('retire', (s, { rng }, arg) => {
 });
 registerFx('youthQuit', (s, { rng }) => {
   retirePlayer(s, rng, '축구를 포기하기로 했다.');
+});
+registerFx('reqPush', (s, { rng }, arg) => {
+  if (!s.career.clubId || s.career.retired) return;
+  if (s.career.transferReq >= 0 && arg !== 'hard') return;
+  if (s.career.transferReq < 0) applyTransferRequest(s, rng, true, '');
 });
 registerFx('offers', (s, { rng }, arg) => {
   if (arg !== 'free' && s.career.clubId && !windowNow(s)) {
