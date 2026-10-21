@@ -1,4 +1,5 @@
 import { registerFx } from './fx';
+import { sys } from './narrative';
 import { addLog, toast } from './log';
 import { clamp } from './rng';
 import { ageAt, yearOf } from './time';
@@ -55,7 +56,7 @@ registerFx('newAgent', (s, { rng }, arg) => {
   addPerson(s, rng, 'agent', 'agent', { age, job: '에이전트', rel: rng.int(10, 35) });
   s.fin.agentSkill = arg === 'good' ? rng.int(60, 90) : arg === 'bad' ? rng.int(15, 40) : rng.int(35, 80);
   s.fin.agentFee = rng.int(5, 10);
-  addLog(s, 'system', '에이전트 계약', `${josa(s.people.agent.name, '과')} 에이전트 계약을 맺었다.`, []);
+  addLog(s, 'system', '에이전트 계약', sys(s, 'agentSign', { agent: s.people.agent.name }), []);
 });
 registerFx('agentFee', (s, _c, arg) => {
   s.fin.agentFee = Number(arg);
@@ -103,7 +104,7 @@ registerFx('marry', (s) => {
   s.life.romanceW = s.week;
   s.st.happy = clamp(s.st.happy + 8, 0, 100);
   s.people.partner.rel = clamp(s.people.partner.rel + 12, -100, 100);
-  addLog(s, 'milestone', '결혼', `${josa(s.people.partner.name, '과')} 결혼했다.`, [], { star: true });
+  addLog(s, 'milestone', '결혼', sys(s, 'marry', { partner: s.people.partner.name }), [], { star: true });
 });
 registerFx('divorce', (s) => {
   if (s.life.romance !== 'married') return;
@@ -124,7 +125,7 @@ registerFx('child', (s, { rng }) => {
   const nm = genName(rng, s.p.country);
   s.people[`child${n}`] = makePerson(rng, s.ev, 'child', s.p.country, { age: 0, refYear: yearOf(s.week), name: nm.name, en: nm.en, job: '자녀', rel: 70 });
   s.st.happy = clamp(s.st.happy + 7, 0, 100);
-  addLog(s, 'milestone', '아이가 태어났다', `${josa(nm.name, '이')} 태어났다.`, [], { star: true });
+  addLog(s, 'milestone', '아이가 태어났다', sys(s, 'child', { child: nm.name }), [], { star: true });
 });
 registerFx('parentIll', (s) => {
   s.ev.flags.parent_ill = s.week;

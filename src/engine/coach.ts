@@ -1,6 +1,7 @@
 import { LEVEL_WAGE_MULT, LEVEL_STARTER_OVR } from '../data/countries';
 import { TOURNAMENTS } from '../data/competitions';
 import { Rng, clamp } from './rng';
+import { sys } from './narrative';
 import { addLog, toast } from './log';
 import { ageAt, seasonOf, swOf, yearOf, START_YEAR } from './time';
 import { clubLvl, clubSt, dyn, ensureCountry, endSeasonCountry, positionOf, ranking, membersOf, clubLeagueId } from './world';
@@ -208,7 +209,7 @@ export function acceptCoachJob(s: GameState, rng: Rng, o: Offer): void {
     c.tableTarget = Math.max(1, Math.min(rank.length, rank.indexOf(o.clubId) + 1));
     buildStaffPeople(s, rng, o.clubId);
     buildSquad(s, rng, o.clubId);
-    addLog(s, 'milestone', '지도자 부임', `${cs.name}에 ${role === 'manager' ? '감독' : role === 'assistant' ? '수석코치' : '유스 코치'}로 부임했다.`, [], { star: true });
+    addLog(s, 'milestone', '지도자 부임', sys(s, 'coachAppoint', { club: cs.name, role: role === 'manager' ? '감독' : role === 'assistant' ? '수석코치' : '유스 코치' }), [], { star: true });
   }
   c.lastOfferW = s.week;
   s.focus = 'tactics';
@@ -309,7 +310,7 @@ export function leaveJob(s: GameState): void {
 
 export function resignCoach(s: GameState, rng: Rng): void {
   closeCoachSeason(s, rng, false, '사임');
-  addLog(s, 'milestone', '사임', `${c0(s)}에서 사임했다.`, [], { star: true });
+  addLog(s, 'milestone', '사임', sys(s, 'coachResign', { club: c0(s) }), [], { star: true });
   leaveJob(s);
 }
 
@@ -430,11 +431,11 @@ export function coachSeasonEnd(s: GameState, rng: Rng): void {
     if (renew) {
       con.endW += (c.role === 'manager' ? 2 : 2) * 52;
       con.wage = Math.round(con.wage * 1.08);
-      addLog(s, 'system', '재계약', `계약이 연장됐다.`, []);
+      addLog(s, 'system', '재계약', sys(s, 'coachRenew'), []);
     } else {
       closeCoachSeason(s, rng, false, '계약 만료', true);
       leaveJob(s);
-      addLog(s, 'system', '계약 만료', `계약이 만료돼 새 직장을 찾아야 한다.`, []);
+      addLog(s, 'system', '계약 만료', sys(s, 'coachExpire'), []);
       return;
     }
   }

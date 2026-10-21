@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { PERSONA_SHORT, personaOf } from '../engine/quotes';
   import { store } from './store.svelte';
   import { getClub, getLeague, getCountry } from '../engine/data';
   import { START_YEAR, ageAt, seasonOf, yearOf } from '../engine/time';
@@ -155,7 +156,7 @@
       {#each relList as k}
         {@const p = g.people[k]}
         {@const d = chg(k)}
-        <div class="rl" title={whyText(g, `rel.${k}`) || '최근 큰 변화가 없어요'}><span title={p.en}>{p.name}<em>{REL_LABEL[k] ?? p.kind}{p.job && p.kind !== 'fans' ? ' · ' + p.job : ''}{p.pos ? ' · ' + p.pos : ''}</em></span><div class="gauge"><i style="width:{(p.rel + 100) / 2}%;background:{relColor(p.rel)}"></i></div><b class={d > 0.5 ? 'up' : d < -0.5 ? 'down' : 'faint'}><Icon name={d > 0.5 ? 'up' : d < -0.5 ? 'down' : 'flat'} size={12} /></b></div>
+        <div class="rl" title={whyText(g, `rel.${k}`) || '최근 큰 변화가 없어요'}><span title={p.en}>{p.name}<em>{REL_LABEL[k] ?? p.kind}{p.job && p.kind !== 'fans' ? ' · ' + p.job : ''}{p.pos ? ' · ' + p.pos : ''}{p.kind !== 'fans' ? ' · ' + PERSONA_SHORT[personaOf(p.name)] : ''}</em></span><div class="gauge"><i style="width:{(p.rel + 100) / 2}%;background:{relColor(p.rel)}"></i></div><b class={d > 0.5 ? 'up' : d < -0.5 ? 'down' : 'faint'}><Icon name={d > 0.5 ? 'up' : d < -0.5 ? 'down' : 'flat'} size={12} /></b></div>
       {/each}
     </div>
   </div>

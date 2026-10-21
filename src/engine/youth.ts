@@ -2,6 +2,7 @@ import { LEVEL_WAGE_MULT } from '../data/countries';
 import { Rng, clamp } from './rng';
 import { curOvr } from './attributes';
 import { getClub, getCountry } from './data';
+import { sys } from './narrative';
 import { addLog, toast } from './log';
 import { stageStd } from './match';
 import { STAGE_EXPECT, STAGE_ORDER, isSchoolStage } from './stages';
@@ -80,7 +81,7 @@ export function youthSeasonReview(s: GameState, rng: Rng): void {
     fireEvent(s, rng, getEvent('ys_review_stay'));
     return;
   }
-  addLog(s, 'milestone', '승급 심사', `${getClub(s.career.clubId).name} ${stage} 팀에서 방출 통보를 받았다.`, [], { star: true });
+  addLog(s, 'milestone', '승급 심사', sys(s, 'youthRelease', { club: getClub(s.career.clubId).name, stage: String(stage) }), [], { star: true });
   releaseEvent(s, rng, stage === 'U19');
 }
 

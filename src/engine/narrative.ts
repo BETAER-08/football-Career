@@ -1,4 +1,5 @@
 import { Rng } from './rng';
+import { SYS_TEXT } from '../data/sysText';
 import { stream } from './streams';
 import { genName, makePerson } from './relations';
 import { dateOf } from './time';
@@ -129,7 +130,7 @@ function makeReporter(s: GameState, rng: Rng): PersonRef {
 
 export const narrativeFlags = { personGate: true };
 
-export const narrativeStats = { fallback: 0, autoReporter: 0 };
+export const narrativeStats = { fallback: 0, autoReporter: 0, events: 0, quoted: 0 };
 
 export function bindTokens(s: GameState, tokens: string[], rng: Rng, inherited?: Bind): Bind {
   const out: Bind = {};
@@ -187,4 +188,8 @@ export function fillTemplate(tpl: string, vars: Record<string, string>): string 
 
 export function say(s: GameState, key: string, variants: readonly string[], vars: Record<string, string> = {}): string {
   return fillTemplate(variants[chooseVariant(s, key, variants.length)], vars);
+}
+
+export function sys(s: GameState, id: string, vars: Record<string, string> = {}): string {
+  return say(s, `sys:${id}`, SYS_TEXT[id], vars);
 }

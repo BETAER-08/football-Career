@@ -91,6 +91,7 @@ export interface LogEntry {
   need?: number;
   from?: number;
   quote?: string;
+  lines?: Line[];
   dream?: boolean;
   tier?: 'y' | 'r' | 'f';
 }
@@ -636,6 +637,8 @@ export interface PostState {
 
 export interface PersonRef { k: string; n: string }
 
+export interface Line { who: string; name: string; rel: string; icon: string; text: string }
+
 export type Bind = Record<string, PersonRef>;
 
 export interface Src { w: number; q: string; log: number; ref: string; bind?: Bind }
@@ -690,6 +693,7 @@ export interface Decision {
   ctx: string;
   offers: Offer[];
   quote?: string;
+  lines?: Line[];
   from?: number;
   bind?: Bind;
 }
@@ -703,6 +707,7 @@ export interface ResultPanel {
   changes: Chip[];
   later: boolean;
   w: number;
+  lines?: Line[];
 }
 
 export interface Snap { ovr: number; val: number; wage: number; fame: number; standing: number }

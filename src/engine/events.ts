@@ -9,6 +9,7 @@ import { curOvr } from './attributes';
 import { formatKRW } from './finance';
 import { ageAt, dateOf, seasonOf, swOf } from './time';
 import { clearCause, setCause } from './why';
+import { situationLine, reactionLine } from './quotes';
 import { budgetTarget, initBudget, tierRoom } from './budget';
 import type { Src } from './types';
 import type { Chip, Decision, DecisionChoice, GameState, Phase, ResultPanel } from './types';
@@ -188,9 +189,10 @@ export function buildDecision(s: GameState, rng: Rng, def: EventDef): Decision {
     pct: ch.check ? checkPct(s, ch.check, curOvr(s.ab)) : null,
     disabled: ''
   }));
+  const sl = situationLine(s, def, bind);
   const dec: Decision = {
     uid: s.ev.nextId++, kind: def.kind === 'moment' ? 'moment' : 'event', ref: def.id, title: def.chain ? '이어지는 이야기' : def.kind === 'moment' ? '결정적 순간' : '선택의 순간',
-    text, choices, w: s.week, heavy: !!def.heavy, help: def.help ?? '', ctx: '', offers: [], quote: src?.q, from: src?.log, bind
+    text, choices, w: s.week, heavy: !!def.heavy, help: def.help ?? '', ctx: '', offers: [], quote: src?.q, lines: sl ? [sl] : undefined, from: src?.log, bind
   };
   return dec;
 }
@@ -238,8 +240,9 @@ export function firePassive(s: GameState, rng: Rng, def: EventDef): void {
   if (def.fu) applyFx(s, { rng }, def.fu);
   clearCause();
   for (let i = sched0; i < s.ev.sched.length; i++) s.ev.sched[i].bind = bind;
+  const pl = situationLine(s, def, bind);
   if (!isFast()) {
-    addLog(s, def.chain ? 'chain' : 'passive', '', text, chips, { note: def.note, heavy: def.heavy, help: def.help, from: src?.log, quote: src?.q });
+    addLog(s, def.chain ? 'chain' : 'passive', '', text, chips, { note: def.note, heavy: def.heavy, help: def.help, from: src?.log, quote: src?.q, lines: pl ? [pl] : undefined });
     toast(s, text, chips);
   }
 }
@@ -271,12 +274,13 @@ export function resolveEventChoice(s: GameState, rng: Rng, d: Decision, idx: num
   const outs = outcomeTexts(outcome.out.t);
   const text = render(s, outs[chooseVariant(s, `${def.id}:c${idx}:${outcome.grade}`, outs.length)], bind);
   for (let i = sched0; i < s.ev.sched.length; i++) s.ev.sched[i].bind = bind;
-  const panel: ResultPanel = { title: label, grade: outcome.grade, roll: outcome.roll, need: outcome.need, text, changes: chips, later, w: s.week };
+  const rl = reactionLine(s, def, bind, outcome.grade, d.lines?.[0]?.name);
+  const panel: ResultPanel = { title: label, grade: outcome.grade, roll: outcome.roll, need: outcome.need, text, changes: chips, later, w: s.week, lines: rl ? [rl] : undefined };
   s.ev.last[def.id] = { w: s.week, label, grade: outcome.grade };
   const gl = { great: '대성공', ok: '성공', bad: '실패', worst: '대실패', none: '' }[outcome.grade];
   if (!isFast()) {
     const id = addLog(s, def.kind === 'moment' ? 'moment' : def.chain ? 'chain' : 'choice', label, `${d.text}\n→ ${text}${gl ? `\n판정 ${gl} · 굴린 값 ${outcome.roll} / 필요 ${outcome.need}` : ''}${later ? '\n↻ 이 선택은 나중에 다시 돌아올 수 있어요.' : ''}`, chips, {
-      heavy: def.heavy, help: def.help, note: def.note, mine: true, grade: outcome.grade, pick: label, result: text, roll: outcome.roll, need: outcome.need, from: d.from, quote: d.quote
+      heavy: def.heavy, help: def.help, note: def.note, mine: true, grade: outcome.grade, pick: label, result: text, roll: outcome.roll, need: outcome.need, from: d.from, quote: d.quote, lines: [...(d.lines ?? []), ...(rl ? [rl] : [])].slice(0, 2)
     });
     for (let i = sched0; i < s.ev.sched.length; i++) s.ev.sched[i].src = { w: s.week, q: quoteOf(s, label), log: id, ref: def.id };
   }

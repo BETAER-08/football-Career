@@ -11,6 +11,7 @@ import { pushMatchLine, commentary } from './matchtext';
 import { CONT_COMPS, CONT_KO_NAMES, CONT_KO_WEEKS, INTL_WINDOWS, TOURNAMENTS } from '../data/competitions';
 import { Rng, clamp } from './rng';
 import { curOvr, shownOvr, youthCallMin } from './attributes';
+import { sys } from './narrative';
 import { addLog, toast } from './log';
 import { ageAt, seasonOf, swOf, START_YEAR, yearOf } from './time';
 import { clubLvl, clubSt, clubStd, endSeasonCountry, playRoundOthers, ranking, ensureCountry, roundRng, simScore, membersOf, dyn } from './world';
@@ -125,7 +126,7 @@ export function awardTrophy(s: GameState, name: string, clubId: string): void {
   s.st.happy = clamp(s.st.happy + 6, 0, 100);
   s.extra.champs += 1;
   if (isCosmetic()) s.cues.push('trophy');
-  addLog(s, 'milestone', '트로피', `${club}에서 ${josa(name, '을')} 들어 올렸다!`, [], { star: true });
+  addLog(s, 'milestone', '트로피', sys(s, 'trophy', { club, name }), [], { star: true });
   toast(s, `🏆 ${name}`);
 }
 
@@ -137,7 +138,7 @@ export function awardPrize(s: GameState, name: string, pts = 0): void {
   s.fame.abroad = clamp(s.fame.abroad + 1.5 + pts, 0, 100);
   s.st.happy = clamp(s.st.happy + 5, 0, 100);
   if (isCosmetic()) s.cues.push('trophy');
-  addLog(s, 'milestone', '개인상', `${name} 수상!`, [], { star: true });
+  addLog(s, 'milestone', '개인상', sys(s, 'prize', { name }), [], { star: true });
   toast(s, `🏅 ${name}`);
 }
 
@@ -526,8 +527,8 @@ export function endSeason(s: GameState, rng: Rng): void {
     ensureCountry(s, country);
     const info = endSeasonCountry(s, country, lgId, rankSet);
     s.world.countries[country].initS = season + 1;
-    if (info.promoted.includes(clubId)) addLog(s, 'milestone', '승격', `${josa(getClub(clubId).name, '이')} 상위 리그로 승격했다!`, [], { star: true });
-    if (info.relegated.includes(clubId)) addLog(s, 'milestone', '강등', `${josa(getClub(clubId).name, '이')} 강등됐다.`, [], { star: true });
+    if (info.promoted.includes(clubId)) addLog(s, 'milestone', '승격', sys(s, 'promoted', { club: getClub(clubId).name }), [], { star: true });
+    if (info.relegated.includes(clubId)) addLog(s, 'milestone', '강등', sys(s, 'relegated', { club: getClub(clubId).name }), [], { star: true });
   }
   seasonEndGrowth(s, age);
   if (isCosmetic()) for (const k of ALL_ATTRS) recordWhy(s, `attr.${k}`, '시즌 훈련·성장', s.ab.a[k] - s.ab.prev[k]);

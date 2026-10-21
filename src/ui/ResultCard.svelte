@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { store } from './store.svelte';
   import Chips from './Chips.svelte';
+  import Lines from './Lines.svelte';
   import Icon from './Icon.svelte';
   import { dialogCount } from './dialog';
 
@@ -34,6 +35,7 @@
     <div class="band"><b>{labels[r.grade]}</b><span>{r.title}</span></div>
     <div class="panel-b col" style="gap:var(--s3)">
       <div class="txt">{r.text}</div>
+      <Lines lines={r.lines} />
       {#if check}
         <div class="ruler" aria-label="굴린 값 {r.roll}, 필요한 값 {r.need}">
           <div class="track">
