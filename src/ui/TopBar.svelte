@@ -29,7 +29,7 @@
         <button class="btn sm" class:on={store.speed === v} onclick={() => store.setSpeed(v)}>{v}×</button>
       {/each}
     </div>
-    <button class="btn" disabled={blocked || g.ended} onclick={() => store.skipToDecision()}>다음 결정까지 »</button>
+    <button class="btn" disabled={blocked || g.ended} onclick={() => store.skipToDecision()} class:on={store.skipping}>{store.skipping ? '■ 스킵 중지' : '다음 결정까지 »'}</button>
     <button class="btn" class:on={g.auto} onclick={() => store.toggleAuto()} title="자동 결정">자동 결정 {g.auto ? 'ON' : 'OFF'}</button>
     <button class="btn" class:on={store.prefs.music} onclick={() => store.toggleMusic()} title="음악">{store.prefs.music && isMusicOn() ? '♪ 음악 ON' : '♪ 음악'}</button>
     <button class="btn" onclick={() => store.toggleTheme()} title="테마">{store.prefs.theme === 'dark' ? '☾' : '☀'}</button>
