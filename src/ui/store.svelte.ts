@@ -160,8 +160,15 @@ class Store {
       this.notify();
     }
     this.checkModals(g);
-    if (this.reviewOpen || this.ceremonyOpen) return;
-    if (g.decision || (!this.playing && !this.skipping)) return;
+    if (this.reviewOpen || this.ceremonyOpen) {
+      this.skipping = false;
+      return;
+    }
+    if (g.decision) {
+      this.skipping = false;
+      return;
+    }
+    if (!this.playing && !this.skipping) return;
     this.acc += this.skipping ? 1e9 : dt;
     let n = 0;
     const phase = g.phase;
@@ -170,10 +177,14 @@ class Store {
     while ((this.skipping || this.acc >= wms) && n < limit) {
       if (!this.skipping) this.acc -= wms;
       if (g.auto) autoWeek(g);
-      if (!tickState(g)) break;
+      if (!tickState(g)) {
+        this.skipping = false;
+        break;
+      }
       n++;
+      const hadDecision = !!g.decision;
       if (g.auto && g.decision) autoStep(g);
-      if (g.decision || g.ended || g.phase !== phase) {
+      if (hadDecision || g.decision || g.ended || g.phase !== phase) {
         this.skipping = false;
         if (g.decision) this.playing = false;
         break;
@@ -283,6 +294,11 @@ class Store {
   skipToDecision(): void {
     const g = this.game;
     if (!g || g.decision || g.ended) return;
+    if (this.skipping) {
+      this.skipping = false;
+      click();
+      return;
+    }
     this.skipping = true;
     this.playing = true;
     click();
