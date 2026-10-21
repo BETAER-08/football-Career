@@ -1,6 +1,7 @@
 <script lang="ts">
+  import CountryBadge from './CountryBadge.svelte';
   import { store } from './store.svelte';
-  import { getClub, getCountry, getLeague, academyGrade } from '../engine/data';
+  import { getClub, getLeague, academyGrade } from '../engine/data';
   import { formatKRW, formatMarket } from '../engine/finance';
   import { ROLE_LABEL, type Offer } from '../engine/types';
   import { clubLvl } from '../engine/world';
@@ -97,7 +98,7 @@
                 <div class="muted" style="font-size:12px">계약 {o.years}년</div>
               {:else}
                 {@const c = getClub(o.clubId)}
-                <div class="row"><b class="ocl">{c.name}</b><span class="tag badge" data-mode={o.mode ?? 'transfer'}>{modeLabel(o)}</span><span class="tag">{getCountry(c.country).flag} {getCountry(c.country).ko}</span><span class="tag">{getLeague(c.lg0).ko}</span><span class="tag">수준 {lvlOf(o)}</span>{#if o.yth || o.first}<span class="tag">아카데미 {academyGrade(c.acad)}등급</span>{/if}{#if o.mode === 'free'}<span class="tag">자유계약 · 이적료 없음</span>{:else if o.mode === 'pre'}<span class="tag">사전 계약 · 시즌 종료 후 합류</span>{/if}{#if o.trial}<span class="tag" style="color:var(--amber)">입단 테스트</span>{/if}</div>
+                <div class="row"><b class="ocl">{c.name}</b><span class="tag badge" data-mode={o.mode ?? 'transfer'}>{modeLabel(o)}</span><span class="tag"><CountryBadge code={c.country} name /></span><span class="tag">{getLeague(c.lg0).ko}</span><span class="tag">수준 {lvlOf(o)}</span>{#if o.yth || o.first}<span class="tag">아카데미 {academyGrade(c.acad)}등급</span>{/if}{#if o.mode === 'free'}<span class="tag">자유계약 · 이적료 없음</span>{:else if o.mode === 'pre'}<span class="tag">사전 계약 · 시즌 종료 후 합류</span>{/if}{#if o.trial}<span class="tag" style="color:var(--amber)">입단 테스트</span>{/if}</div>
                 <div class="og">
                   <span>약속 역할 <b>{ROLE_LABEL[o.role]}</b></span><span>연봉 <b class="mono">{formatKRW(o.wage)}</b>{#if o.mode === 'renew' && g.career.contract && g.career.contract.wage > 0} <i class="mono">({raiseText(o)})</i>{/if}</span><span>{o.mode === 'renew' ? '새 계약 기간' : '기간'} <b>{o.years}년</b></span>
                   {#if o.mode === 'transfer' || o.mode === 'loan'}<span>{o.yth || (o.first && o.clubId !== g.career.clubId) ? '유스 보상금' : '이적료'} <b class="mono">{o.loan ? (o.optionFee ? `임대 · 옵션 ${formatMarket(o.optionFee)}` : '임대') : o.fee ? formatMarket(o.fee) : o.first && o.clubId === g.career.clubId ? '없음' : '협의'}</b></span>{:else if o.mode === 'free' || o.mode === 'pre'}<span>이적료 <b>없음</b></span>{/if}

@@ -1,8 +1,9 @@
 <script lang="ts">
+  import CountryBadge from './CountryBadge.svelte';
   import { onMount } from 'svelte';
   import type { GameState } from '../engine/types';
   import { POS_LABEL } from '../engine/types';
-  import { getClub, getCountry } from '../engine/data';
+  import { getClub } from '../engine/data';
   import { academyGrade } from '../engine/data';
   import { drawAvatar, lookForGame } from './pixel/avatar';
   import { posPercent } from '../engine/relations';
@@ -15,7 +16,6 @@
   let { s, revealStep = 99 }: { s: GameState; revealStep?: number } = $props();
   let cv: HTMLCanvasElement | undefined = $state();
   const club = $derived(getClub(s.p.startClubId));
-  const country = $derived(getCountry(s.p.country));
   const [l1, l2] = $derived(mrz(s));
   const kids = ['mate1', 'mate2', 'mate3'];
   const incomeLabels = ['매우 어려움', '넉넉하지 않음', '평범함', '여유로움', '매우 부유함'];
@@ -36,7 +36,7 @@
       <div class="photo"><canvas bind:this={cv} width="128" height="128" class="pixel"></canvas></div>
       <div class="col grow" style="gap:2px">
         <div class="name">{s.p.name} <span class="en" title="원어 표기">{s.p.en}</span></div>
-        <div class="muted">{s.p.birth.y}.{String(s.p.birth.m).padStart(2, '0')}.{String(s.p.birth.d).padStart(2, '0')}생 · {ageOf(s)}세 · {country.flag} {country.ko}</div>
+        <div class="muted">{s.p.birth.y}.{String(s.p.birth.m).padStart(2, '0')}.{String(s.p.birth.d).padStart(2, '0')}생 · {ageOf(s)}세 · <CountryBadge code={s.p.country} name /></div>
         <div class="muted">고향 {s.p.hometown}{s.p.dorm ? ' · 유스 숙소 생활' : ' · 집에서 통학'}</div>
         <div class="muted">{POS_LABEL[s.ab.pos]} (U15 선수 100명 중 약 {posPercent(s.ab.pos).toFixed(0)}명) · {footLabel[s.p.foot]}잡이 · {growLabel[s.p.growth]} · {s.p.build} 체형</div>
       </div>

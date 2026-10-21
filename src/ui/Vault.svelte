@@ -1,7 +1,7 @@
 <script lang="ts">
+  import CountryBadge from './CountryBadge.svelte';
   import { store } from './store.svelte';
   import { loadArchive, removeArchive, isCurrent, exportEntry, type AnyEntry } from './save';
-  import { getCountry } from '../engine/data';
 
   let list = $state<AnyEntry[]>(loadArchive());
 
@@ -22,7 +22,7 @@
         <div class="it">
           <div class="gr">{(e.playerGrade ?? '-') === '프로 데뷔 실패' ? '실패' : (e.playerGrade ?? '-')}</div>
           <div class="grow col" style="gap:1px">
-            <b>{e.name ?? '이름 없음'} <span class="faint" style="font-weight:500">{e.country ? `${getCountry(e.country).flag} ${getCountry(e.country).ko}` : ''}{e.birthYear ? ` · ${e.birthYear}년생` : ''}{e.startClub ? ` · ${e.startClub}` : ''}</span></b>
+            <b>{e.name ?? '이름 없음'} <span class="faint" style="font-weight:500">{#if e.country}<CountryBadge code={e.country} name />{/if}{e.birthYear ? ` · ${e.birthYear}년생` : ''}{e.startClub ? ` · ${e.startClub}` : ''}</span></b>
             <span class="muted" style="font-size:12.5px">{e.summary ?? ''}{e.coachGrade ? ` · 지도자 ${e.coachGrade}` : ''}{e.code ? ' · 운명 코드 ' : ''}<span class="mono">{e.code ?? ''}</span></span>
             {#if !isCurrent(e)}<span class="old">이전 버전 보관 항목이라 열람할 수 없어요. 내보내기만 가능합니다.</span>{/if}
           </div>

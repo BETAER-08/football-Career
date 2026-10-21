@@ -1,11 +1,12 @@
 import { getCountry } from '../engine/data';
 import { formatKRW } from '../engine/finance';
+import { countryCode3 } from './pixel/palette';
 import type { EndData } from '../engine/enddata';
 
 export function summaryText(d: EndData): string {
   const c = getCountry(d.country);
   const lines = [
-    `⚽ 태어난 김에 축구 — ${d.name} (${c.flag} ${c.ko}, ${d.birthYear}년생)`,
+    `[태어난 김에 축구] ${d.name} (${c.ko} ${countryCode3(d.country)}, ${d.birthYear}년생)`,
     `시작: ${d.startClub} · 선수 등급 ${d.grade}${d.percentile ? ` (같은 출발선 상위 ${Math.max(1, Math.round(100 - d.percentile))}%)` : ''}${d.coachGrade ? ` · 지도자 ${d.coachGrade}` : ''}`,
     `통산 ${d.apps}경기 ${d.goals}골 ${d.assists}도움 · 평균 평점 ${d.avg ? d.avg.toFixed(2) : '-'} · A매치 ${d.caps}`,
     `트로피 ${d.trophies.length + d.coachTrophies.length} · 개인상 ${d.awards.length} · 최종 순자산 ${formatKRW(d.netWorth)}`,
@@ -40,7 +41,7 @@ export function renderShareCard(d: EndData, cv: HTMLCanvasElement): void {
   const c = getCountry(d.country);
   g.fillStyle = '#8d96ab';
   g.font = '500 26px Pretendard, sans-serif';
-  g.fillText(`${c.flag} ${c.ko} · ${d.birthYear}년생 · ${d.startClub}에서 출발`, 56, 205);
+  g.fillText(`${countryCode3(d.country)} ${c.ko} · ${d.birthYear}년생 · ${d.startClub}에서 출발`, 56, 205);
   g.fillStyle = '#ffb84d';
   g.font = '800 150px Pretendard, sans-serif';
   g.fillText(d.grade, 56, 370);
