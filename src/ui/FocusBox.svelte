@@ -64,11 +64,11 @@
 
 <style>
   .ident { font-weight: 600; color: var(--text); font-size: 12.5px; margin-left: 6px; }
-  .foc { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 6px; }
-  .fc { text-align: left; border: 1px solid var(--line); background: var(--panel2); border-radius: 9px; padding: 6px 9px; cursor: pointer; display: flex; flex-direction: column; gap: 1px; transition: border-color 0.12s, transform 0.06s; }
+  .foc { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: var(--s2); }
+  .fc { text-align: left; border: 1px solid var(--line); background: var(--panel2); border-radius: var(--r-md); padding: var(--s2) 9px; cursor: pointer; display: flex; flex-direction: column; gap: 1px; transition: border-color 0.12s, transform 0.06s; }
   .fc:hover { border-color: var(--faint); }
   .fc.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel2)); }
   .fc b { font-size: 13px; }
-  .fc span { font-size: 11px; color: var(--muted); }
-  .confirm { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: color-mix(in srgb, var(--danger) 10%, var(--panel)); border: 1px solid var(--danger); border-radius: 8px; font-size: 13px; }
+  .fc span { font-size: var(--fs-panel); color: var(--muted); }
+  .confirm { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) var(--s3); background: color-mix(in srgb, var(--danger) 10%, var(--panel)); border: 1px solid var(--danger); border-radius: var(--r-sm); font-size: 13px; }
 </style>

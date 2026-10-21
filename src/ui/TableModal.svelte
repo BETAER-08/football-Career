@@ -72,7 +72,7 @@
 
 <style>
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  th { text-align: left; color: var(--faint); font-weight: 600; padding: 3px 6px; border-bottom: 1px solid var(--line); }
-  td { padding: 3px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+  th { text-align: left; color: var(--faint); font-weight: 600; padding: 3px var(--s2); border-bottom: 1px solid var(--line); }
+  td { padding: 3px var(--s2); border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
   tr.me td { background: color-mix(in srgb, var(--accent) 18%, transparent); font-weight: 800; }
 </style>

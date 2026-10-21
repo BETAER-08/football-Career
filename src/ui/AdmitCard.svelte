@@ -93,20 +93,20 @@
 </div>
 
 <style>
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); width: 100%; }
-  .band { display: flex; justify-content: space-between; padding: 8px 16px; background: color-mix(in srgb, var(--accent) 22%, var(--panel2)); font-weight: 800; font-size: 12px; letter-spacing: 0.04em; }
-  .body { padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 10px; }
-  .top { display: flex; gap: 14px; }
-  .photo { width: 128px; height: 128px; flex: none; background: repeating-linear-gradient(45deg, var(--bg2), var(--bg2) 6px, var(--panel2) 6px, var(--panel2) 12px); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow); width: 100%; }
+  .band { display: flex; justify-content: space-between; padding: var(--s2) var(--s4); background: color-mix(in srgb, var(--accent) 22%, var(--panel2)); font-weight: 800; font-size: 12px; letter-spacing: 0.04em; }
+  .body { padding: var(--s4) var(--s4) var(--s3); display: flex; flex-direction: column; gap: var(--s3); }
+  .top { display: flex; gap: var(--s4); }
+  .photo { width: 128px; height: 128px; flex: none; background: repeating-linear-gradient(45deg, var(--bg2), var(--bg2) 6px, var(--panel2) 6px, var(--panel2) 12px); border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
   .name { font-size: 22px; font-weight: 800; }
   .en { font-size: 12px; color: var(--faint); font-weight: 500; margin-left: 6px; }
-  .sect { display: flex; flex-direction: column; gap: 3px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 12.5px; }
+  .sect { display: flex; flex-direction: column; gap: 3px; padding-top: var(--s2); border-top: 1px dashed var(--line); font-size: 12.5px; }
   .reveal { animation: pop 0.4s ease both; }
-  ul { margin: 0; padding-left: 18px; color: var(--muted); }
+  ul { margin: 0; padding-left: var(--s4); color: var(--muted); }
   .dreams { display: flex; flex-direction: column; gap: 5px; }
-  .dream { text-align: left; padding: 6px 10px; border: 1px solid var(--line); background: var(--panel2); border-radius: 8px; cursor: pointer; font-size: 12.5px; }
+  .dream { text-align: left; padding: var(--s2) var(--s3); border: 1px solid var(--line); background: var(--panel2); border-radius: var(--r-sm); cursor: pointer; font-size: 12.5px; }
   .dream:hover { border-color: var(--faint); }
   .dream.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel2)); font-weight: 700; }
   .rumor { color: var(--amber); font-style: italic; }
-  .mrz { padding: 6px 16px 10px; font-size: 12px; letter-spacing: 0.1em; color: var(--faint); background: var(--bg2); border-top: 1px solid var(--line); line-height: 1.3; word-break: break-all; }
+  .mrz { padding: var(--s2) var(--s4) var(--s3); font-size: 12px; letter-spacing: 0.1em; color: var(--faint); background: var(--bg2); border-top: 1px solid var(--line); line-height: 1.3; word-break: break-all; }
 </style>

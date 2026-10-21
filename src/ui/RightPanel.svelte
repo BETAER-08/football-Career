@@ -174,23 +174,23 @@
 
 <style>
   .right { height: 100%; padding-right: 2px; }
-  .sum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .sum div { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 5px 4px; text-align: center; display: flex; flex-direction: column; }
+  .sum { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); }
+  .sum div { background: var(--panel2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 5px var(--s1); text-align: center; display: flex; flex-direction: column; }
   .sum b { font-size: 16px; }
-  .sum span { font-size: 10.5px; color: var(--muted); }
-  table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .sum span { font-size: var(--fs-panel); color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: var(--fs-panel); }
   th { text-align: left; color: var(--faint); font-weight: 600; padding: 2px 3px; border-bottom: 1px solid var(--line); }
   td { padding: 3px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
   tr.clk { cursor: pointer; }
   tr.clk:hover td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
   .cl { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lg { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
-  .chart { width: 100%; height: 54px; background: var(--bg2); border-radius: 6px; }
-  .rl { display: grid; grid-template-columns: 1fr 74px 12px; gap: 8px; align-items: center; font-size: 12.5px; }
+  .chart { width: 100%; height: 54px; background: var(--bg2); border-radius: var(--r-sm); }
+  .rl { display: grid; grid-template-columns: 1fr 74px 12px; gap: var(--s2); align-items: center; font-size: 12.5px; }
   .rl span { display: flex; flex-direction: column; line-height: 1.25; overflow: hidden; }
-  .rl em { font-style: normal; font-size: 11px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .rl b { font-size: 10px; text-align: center; }
+  .rl em { font-style: normal; font-size: var(--fs-panel); color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rl b { font-size: var(--fs-panel); text-align: center; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(22px, 1fr)); gap: 3px; }
-  .cell { aspect-ratio: 1; border-radius: 4px; display: grid; place-items: center; font-size: 9px; color: #fff; border: 1px solid var(--line); }
+  .cell { aspect-ratio: 1; border-radius: var(--r-sm); display: grid; place-items: center; font-size: var(--fs-panel); color: #fff; border: 1px solid var(--line); }
   .cell.cur { outline: 2px solid var(--accent); outline-offset: 1px; }
 </style>

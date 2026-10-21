@@ -40,7 +40,7 @@
 <style>
   .vault { height: 100%; display: grid; place-items: center; }
   .box { width: 880px; max-width: 94vw; }
-  .it { display: flex; gap: 10px; align-items: center; padding: 8px 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; }
+  .it { display: flex; gap: var(--s3); align-items: center; padding: var(--s2) var(--s3); background: var(--panel2); border: 1px solid var(--line); border-radius: var(--r-md); }
   .gr { width: 56px; text-align: center; font-size: 22px; font-weight: 900; color: var(--amber); }
   .old { font-size: 12px; color: var(--amber); }
 </style>

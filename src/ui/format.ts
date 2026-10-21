@@ -1,6 +1,7 @@
 import { ageAt, dateOf, fmtDate, seasonOf, swOf } from '../engine/time';
 import { formatKRW, formatMarket } from '../engine/finance';
 import type { Chip, GameState } from '../engine/types';
+import { isOffseason, isPreseason, windowNow } from '../engine/calendar';
 
 export { formatKRW, formatMarket };
 
@@ -81,4 +82,26 @@ export function whyText(s: GameState, key: string): string {
   const l = s.why[key];
   if (!l || !l.length) return '';
   return l.map((e) => `${e.d > 0 ? '+' : '−'}${Math.abs(e.d) >= 10 ? Math.round(Math.abs(e.d)) : Math.abs(e.d).toFixed(Math.abs(e.d) < 1 ? 2 : 1)} ${e.c}`).join(' · ');
+}
+
+export interface PhasePill {
+  label: string;
+  tone: 'info' | 'accent' | 'amber' | 'muted';
+}
+
+export function seasonPhase(s: GameState): PhasePill {
+  if (s.phase === 'postcareer') return { label: '은퇴 후', tone: 'muted' };
+  const last = s.nat.matches[s.nat.matches.length - 1];
+  if (last && last.w === s.week) return { label: '국제대회', tone: 'amber' };
+  if (isOffseason(s)) return { label: '휴식기', tone: 'muted' };
+  if (isPreseason(s)) return { label: '프리시즌', tone: 'info' };
+  if (windowNow(s)) return { label: '이적시장 열림', tone: 'accent' };
+  return { label: '리그 진행', tone: 'info' };
+}
+
+export function agoText(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000));
+  if (s < 60) return `${s}초 전`;
+  const m = Math.round(s / 60);
+  return `${m}분 전`;
 }

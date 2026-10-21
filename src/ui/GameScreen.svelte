@@ -62,8 +62,8 @@
 
 <style>
   .game { height: 100%; display: flex; flex-direction: column; }
-  .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 400px; gap: 12px; padding: 12px; }
+  .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 400px; gap: var(--s3); padding: var(--s3); }
   .l, .c, .r { min-height: 0; min-width: 0; }
-  .banner { background: color-mix(in srgb, var(--amber) 18%, var(--panel)); padding: 6px 16px; font-size: 13px; border-bottom: 1px solid var(--line); }
-  :global(.app.compact) .cols { grid-template-columns: 320px minmax(0, 1fr) 340px; gap: 8px; padding: 8px; }
+  .banner { background: color-mix(in srgb, var(--amber) 18%, var(--panel)); padding: var(--s2) var(--s4); font-size: 13px; border-bottom: 1px solid var(--line); }
+  :global(.app.compact) .cols { grid-template-columns: 320px minmax(0, 1fr) 340px; gap: var(--s2); padding: var(--s2); }
 </style>

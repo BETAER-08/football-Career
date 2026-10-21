@@ -166,18 +166,18 @@
 </div>
 
 <style>
-  .grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1fr; gap: 16px; padding: 12px 14px; }
-  .cap { padding: 8px 14px 0; font-size: 12.5px; color: var(--muted); }
-  .h { font-size: 11px; font-weight: 800; color: var(--faint); letter-spacing: 0.05em; }
+  .grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1fr; gap: var(--s4); padding: var(--s3) var(--s4); }
+  .cap { padding: var(--s2) var(--s4) 0; font-size: 12.5px; color: var(--muted); }
+  .h { font-size: var(--fs-panel); font-weight: 800; color: var(--faint); letter-spacing: 0.05em; }
   .big { font-size: 17px; font-weight: 800; line-height: 1.2; }
-  .gr { display: grid; grid-template-columns: 56px 1fr 30px; gap: 8px; align-items: center; font-size: 12px; }
+  .gr { display: grid; grid-template-columns: 56px 1fr 30px; gap: var(--s2); align-items: center; font-size: 12px; }
   .gr span { color: var(--muted); }
   .gr b { text-align: right; }
-  .goal { display: grid; grid-template-columns: 1fr 70px 46px; gap: 6px; align-items: center; font-size: 11.5px; color: var(--muted); }
+  .goal { display: grid; grid-template-columns: 1fr 70px 46px; gap: var(--s2); align-items: center; font-size: var(--fs-panel); color: var(--muted); }
   .goal span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .goal b { text-align: right; color: var(--text); }
-  .inj { font-size: 12px; background: color-mix(in srgb, var(--down) 14%, var(--panel)); border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line)); border-radius: 6px; padding: 3px 8px; }
-  .kv { gap: 8px; white-space: nowrap; }
+  .inj { font-size: 12px; background: color-mix(in srgb, var(--down) 14%, var(--panel)); border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line)); border-radius: var(--r-sm); padding: 3px var(--s2); }
+  .kv { gap: var(--s2); white-space: nowrap; }
   .kv span:last-child { text-align: right; }
   @media (max-width: 1439px) { .grid { grid-template-columns: 1fr 1fr; } }
 </style>

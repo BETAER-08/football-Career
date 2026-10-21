@@ -68,5 +68,5 @@
 <style>
   .setup { height: 100%; display: grid; place-items: center; }
   .card { width: 640px; }
-  .big { padding: 10px 28px; font-size: 15px; }
+  .big { padding: var(--s3) var(--s5); font-size: 15px; }
 </style>

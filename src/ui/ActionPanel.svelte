@@ -69,8 +69,8 @@
 </div>
 
 <style>
-  .act { display: flex; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); }
+  .act { display: flex; gap: var(--s3); padding: var(--s3) var(--s3); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--panel2); }
   .act.off { opacity: 0.6; }
   .why { font-size: 12px; color: var(--amber); }
-  .res { padding: 10px 12px; border: 1px solid var(--accent); border-radius: 10px; background: color-mix(in srgb, var(--accent) 8%, var(--panel)); display: flex; flex-direction: column; gap: 4px; }
+  .res { padding: var(--s3) var(--s3); border: 1px solid var(--accent); border-radius: var(--r-md); background: color-mix(in srgb, var(--accent) 8%, var(--panel)); display: flex; flex-direction: column; gap: var(--s1); }
 </style>

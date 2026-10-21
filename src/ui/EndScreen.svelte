@@ -162,21 +162,21 @@
 
 <style>
   .ag { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  .ag th { text-align: left; color: var(--faint); font-weight: 600; padding: 3px 6px; border-bottom: 1px solid var(--line); }
-  .ag td { padding: 3px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+  .ag th { text-align: left; color: var(--faint); font-weight: 600; padding: 3px var(--s2); border-bottom: 1px solid var(--line); }
+  .ag td { padding: 3px var(--s2); border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
   .end { height: 100%; }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px; display: flex; flex-direction: column; gap: 14px; }
-  .head { display: flex; gap: 24px; align-items: center; padding: 18px 22px; border-radius: 14px; border: 1px solid var(--line); background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 14%, var(--panel)), var(--panel)); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: var(--s5) var(--s5); display: flex; flex-direction: column; gap: var(--s4); }
+  .head { display: flex; gap: var(--s5); align-items: center; padding: var(--s4) 22px; border-radius: var(--r-lg); border: 1px solid var(--line); background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 14%, var(--panel)), var(--panel)); }
   .gr { font-size: 64px; font-weight: 900; color: var(--amber); min-width: 150px; text-align: center; letter-spacing: -0.03em; }
   h1 { margin: 0; font-size: 32px; }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); }
   .hist { position: relative; height: 130px; display: flex; align-items: flex-end; gap: 3px; border-bottom: 1px solid var(--line); }
-  .bar { flex: 1; background: color-mix(in srgb, var(--info) 70%, var(--panel)); border-radius: 3px 3px 0 0; min-height: 2px; }
+  .bar { flex: 1; background: color-mix(in srgb, var(--info) 70%, var(--panel)); border-radius: var(--r-sm) 3px 0 0; min-height: 2px; }
   .me { position: absolute; bottom: 0; top: 0; width: 2px; background: var(--amber); }
   .me span { position: absolute; top: -2px; left: 4px; font-size: 12px; font-weight: 800; color: var(--amber); }
-  .fail { padding: 10px 14px; border: 1px solid var(--amber); border-radius: 10px; color: var(--amber); font-size: 13px; }
-  .share { width: 100%; max-width: 720px; border-radius: 12px; border: 1px solid var(--line); }
-  .sum { white-space: pre-wrap; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-family: var(--font); font-size: 13px; width: 100%; max-width: 720px; margin: 0; }
-  .code { background: var(--bg2); padding: 2px 10px; border-radius: 6px; }
-  .big { padding: 10px 20px; font-size: 14px; }
+  .fail { padding: var(--s3) var(--s4); border: 1px solid var(--amber); border-radius: var(--r-md); color: var(--amber); font-size: 13px; }
+  .share { width: 100%; max-width: 720px; border-radius: var(--r-lg); border: 1px solid var(--line); }
+  .sum { white-space: pre-wrap; background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s3) var(--s4); font-family: var(--font); font-size: 13px; width: 100%; max-width: 720px; margin: 0; }
+  .code { background: var(--bg2); padding: 2px var(--s3); border-radius: var(--r-sm); }
+  .big { padding: var(--s3) var(--s5); font-size: 14px; }
 </style>

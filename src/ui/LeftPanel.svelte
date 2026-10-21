@@ -119,17 +119,17 @@
 <style>
   .left { height: 100%; min-height: 0; }
   .prof { overflow: hidden; }
-  .band { padding: 5px 12px; background: color-mix(in srgb, var(--accent) 20%, var(--panel2)); font-size: 11px; font-weight: 800; letter-spacing: 0.05em; }
-  .head { display: flex; gap: 10px; padding: 10px 12px 4px; }
-  .photo { width: 96px; height: 96px; border-radius: 8px; border: 1px solid var(--line); background: repeating-linear-gradient(45deg, var(--bg2), var(--bg2) 5px, var(--panel2) 5px, var(--panel2) 10px); overflow: hidden; flex: none; }
+  .band { padding: 5px var(--s3); background: color-mix(in srgb, var(--accent) 20%, var(--panel2)); font-size: var(--fs-panel); font-weight: 800; letter-spacing: 0.05em; }
+  .head { display: flex; gap: var(--s3); padding: var(--s3) var(--s3) var(--s1); }
+  .photo { width: 96px; height: 96px; border-radius: var(--r-sm); border: 1px solid var(--line); background: repeating-linear-gradient(45deg, var(--bg2), var(--bg2) 5px, var(--panel2) 5px, var(--panel2) 10px); overflow: hidden; flex: none; }
   .nm { font-weight: 800; font-size: 17px; }
-  .rows { padding: 4px 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+  .rows { padding: var(--s1) var(--s3) var(--s2); display: flex; flex-direction: column; gap: 2px; }
   .dots { letter-spacing: 2px; color: var(--amber); }
-  .mrz { font-size: 10.5px; letter-spacing: 0.06em; color: var(--faint); background: var(--bg2); border-top: 1px solid var(--line); padding: 4px 8px; line-height: 1.2; word-break: break-all; }
-  .tabs { display: flex; gap: 4px; padding: 6px 12px 0; }
-  .ab { display: grid; grid-template-columns: 78px 1fr 24px 14px; gap: 8px; align-items: center; font-size: 12.5px; }
+  .mrz { font-size: var(--fs-panel); letter-spacing: 0.06em; color: var(--faint); background: var(--bg2); border-top: 1px solid var(--line); padding: var(--s1) var(--s2); line-height: 1.2; word-break: break-all; }
+  .tabs { display: flex; gap: var(--s1); padding: var(--s2) var(--s3) 0; }
+  .ab { display: grid; grid-template-columns: 78px 1fr 24px 14px; gap: var(--s2); align-items: center; font-size: 12.5px; }
   .ab span { color: var(--muted); }
   .ab b { text-align: right; }
-  .ab em { font-style: normal; font-size: 10px; }
+  .ab em { font-style: normal; font-size: var(--fs-panel); }
   .sep { height: 1px; background: var(--line); margin: 2px 0; }
 </style>

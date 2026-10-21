@@ -83,12 +83,12 @@
 <style>
   .menu { height: 100%; display: grid; place-items: center; background: radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent), var(--bg); }
   .hero { text-align: center; max-width: 640px; }
-  .logo { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .logo { display: flex; align-items: center; justify-content: center; gap: var(--s4); }
   h1 { font-size: 46px; margin: 0; letter-spacing: -0.02em; }
   .ball { width: 38px; height: 38px; border-radius: 50%; background: conic-gradient(from 20deg, #fff 0 20%, #111 0 28%, #fff 0 48%, #111 0 56%, #fff 0 76%, #111 0 84%, #fff 0); box-shadow: 0 0 0 3px var(--accent); animation: spin 8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .sub { color: var(--muted); font-size: 16px; margin: 14px 0 28px; }
-  .btns { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-  .legacy { font-size: 12.5px; max-width: 280px; padding: 8px 10px; border: 1px solid var(--amber); border-radius: 8px; color: var(--amber); }
-  .big { width: 280px; padding: 12px 16px; font-size: 15px; }
+  .btns { display: flex; flex-direction: column; gap: var(--s3); align-items: center; }
+  .legacy { font-size: 12.5px; max-width: 280px; padding: var(--s2) var(--s3); border: 1px solid var(--amber); border-radius: var(--r-sm); color: var(--amber); }
+  .big { width: 280px; padding: var(--s3) var(--s4); font-size: 15px; }
 </style>

@@ -44,6 +44,10 @@ class Store {
   skipping = $state(false);
   hasSaved = $state(hasSave());
   archived = $state(false);
+  savedAt = $state(0);
+  saveFailed = $state(false);
+  private pendingNotify = false;
+  private lastFlush = 0;
   private acc = 0;
   private last = 0;
   private timer: number | null = null;
@@ -68,7 +72,22 @@ class Store {
   }
 
   notify(): void {
+    this.pendingNotify = false;
+    this.lastFlush = performance.now();
     if (this.game) this.game = { ...this.game };
+  }
+
+  notifySoon(): void {
+    if (this.pendingNotify) return;
+    const wait = Math.max(0, 83 - (performance.now() - this.lastFlush));
+    if (wait === 0) {
+      this.notify();
+      return;
+    }
+    this.pendingNotify = true;
+    window.setTimeout(() => {
+      if (this.pendingNotify) this.notify();
+    }, wait);
   }
 
   begin(state: GameState, origin: RouletteResult | null): void {
@@ -184,7 +203,7 @@ class Store {
       this.snapRel();
       this.pullToasts();
       this.pullCues();
-      this.notify();
+      this.notifySoon();
       if (performance.now() - this.lastSave > 2000 || g.decision) this.saveNow();
     }
     if (g.ended) this.finish();
@@ -381,8 +400,11 @@ class Store {
     if (!g) return;
     this.lastSave = performance.now();
     const ok = saveGame(g);
-    if (ok) this.hasSaved = true;
-    else if (!this.banner) {
+    this.saveFailed = !ok;
+    if (ok) {
+      this.hasSaved = true;
+      this.savedAt = Date.now();
+    } else if (!this.banner) {
       this.banner = '저장 공간을 사용할 수 없어요. 지금 내보내 두세요.';
       this.bannerExport = true;
     }

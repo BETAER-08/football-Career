@@ -166,20 +166,20 @@
 
 <style>
   .rv { max-width: 640px; width: 94vw; }
-  .sec { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .sec { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s3) var(--s3); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--panel2); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
   .stats.four { grid-template-columns: repeat(4, 1fr); }
-  .stats div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; text-align: center; display: flex; flex-direction: column; }
+  .stats div { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-sm); padding: var(--s2); text-align: center; display: flex; flex-direction: column; }
   .stats b { font-size: 17px; }
-  .stats span { font-size: 11px; color: var(--muted); }
+  .stats span { font-size: var(--fs-panel); color: var(--muted); }
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  td { padding: 3px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+  td { padding: 3px var(--s2); border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
   tr.me td { background: color-mix(in srgb, var(--accent) 18%, transparent); font-weight: 800; }
   tr.champ td:first-child { color: var(--amber); }
   tr.cont td.z { color: var(--info); }
   tr.down td.z { color: var(--down); }
-  .z { text-align: right; font-size: 11px; }
-  .award { font-size: 13px; display: flex; gap: 8px; align-items: center; }
+  .z { text-align: right; font-size: var(--fs-panel); }
+  .award { font-size: 13px; display: flex; gap: var(--s2); align-items: center; }
   .best { line-height: 1.7; font-size: 13.5px; }
   .goal { font-size: 13px; }
   .next { border-color: var(--accent); }

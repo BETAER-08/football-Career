@@ -13,5 +13,5 @@
 </div>
 
 <style>
-  .center { display: flex; flex-direction: column; gap: 10px; height: 100%; padding-right: 2px; }
+  .center { display: flex; flex-direction: column; gap: var(--s3); height: 100%; padding-right: 2px; }
 </style>

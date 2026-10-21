@@ -53,8 +53,8 @@
 
 <style>
   .bl { max-width: 460px; width: 92vw; }
-  .slot { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); animation: pop 0.35s ease; }
+  .slot { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--panel2); animation: pop 0.35s ease; }
   .slot.first { border-color: var(--g-great); background: color-mix(in srgb, var(--g-great) 14%, var(--panel2)); font-size: 16px; }
   .rk { font-weight: 900; color: var(--amber); width: 36px; }
-  .mine { text-align: center; padding: 8px; font-weight: 700; }
+  .mine { text-align: center; padding: var(--s2); font-weight: 700; }
 </style>

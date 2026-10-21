@@ -124,28 +124,28 @@
 <style>
   .logs { display: flex; flex-direction: column; }
   .fullp .logs { max-height: calc(70vh / var(--z, 1)); }
-  .sub { display: flex; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-  .own { font-size: 12px; display: inline-flex; gap: 4px; align-items: center; color: var(--muted); cursor: pointer; }
-  .entry { display: flex; gap: 10px; padding: 9px 12px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); animation: pop 0.25s ease; }
+  .sub { display: flex; gap: var(--s2); padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .own { font-size: 12px; display: inline-flex; gap: var(--s1); align-items: center; color: var(--muted); cursor: pointer; }
+  .entry { display: flex; gap: var(--s3); padding: 9px var(--s3); border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); animation: pop 0.25s ease; }
   .entry:last-child { border-bottom: none; }
-  .rail { width: 3px; border-radius: 2px; background: var(--kc); flex: none; }
+  .rail { width: 3px; border-radius: var(--r-sm); background: var(--kc); flex: none; }
   .entry.mine, .entry.fu { background: color-mix(in srgb, var(--band) 9%, transparent); }
   .entry.mine .rail, .entry.fu .rail { width: 4px; background: var(--band); }
-  .badge { font-size: 10.5px; font-weight: 800; padding: 0 7px; border-radius: 999px; background: var(--band); color: var(--bg); }
-  .tier { font-size: 10px; font-weight: 800; padding: 0 5px; border-radius: 8px; border: 1px solid var(--line); color: var(--muted); }
+  .badge { font-size: var(--fs-panel); font-weight: 800; padding: 0 7px; border-radius: 999px; background: var(--band); color: var(--bg); }
+  .tier { font-size: var(--fs-panel); font-weight: 800; padding: 0 5px; border-radius: var(--r-sm); border: 1px solid var(--line); color: var(--muted); }
   .tier.y { color: var(--info); border-color: color-mix(in srgb, var(--info) 50%, var(--line)); }
-  .kind { font-size: 10.5px; font-weight: 800; color: var(--kc); letter-spacing: 0.04em; }
-  .date { font-size: 11px; color: var(--faint); }
+  .kind { font-size: var(--fs-panel); font-weight: 800; color: var(--kc); letter-spacing: 0.04em; }
+  .date { font-size: var(--fs-panel); color: var(--faint); }
   .ttl { font-size: 13px; }
-  .dot { font-size: 10px; }
+  .dot { font-size: var(--fs-panel); }
   .dreamstar { color: var(--amber); font-weight: 800; }
-  .link { background: none; border: none; color: var(--info); font-size: 11.5px; cursor: pointer; padding: 0; }
-  .quote { font-size: 11.5px; color: var(--g-none); }
+  .link { background: none; border: none; color: var(--info); font-size: var(--fs-panel); cursor: pointer; padding: 0; }
+  .quote { font-size: var(--fs-panel); color: var(--g-none); }
   .sum { font-size: 13.5px; line-height: 1.6; }
   .gr { font-weight: 700; font-size: 12px; }
   .ctx { font-size: 12px; color: var(--faint); }
   .body { font-size: 13.5px; line-height: 1.6; white-space: pre-line; }
-  .note { font-size: 11.5px; color: var(--faint); }
+  .note { font-size: var(--fs-panel); color: var(--faint); }
   .help { font-size: 12px; color: var(--info); }
   .entry.mine .sum b { font-weight: 800; }
   .entry[data-g='worst'] .sum b { font-weight: 900; }

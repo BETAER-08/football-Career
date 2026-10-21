@@ -105,16 +105,16 @@
 <style>
   .card { border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); animation: pop 0.3s ease; }
   .card.heavy { border-color: color-mix(in srgb, var(--info) 55%, var(--line)); }
-  .quote { font-size: 12px; color: var(--g-none); border-left: 3px solid var(--g-none); padding: 2px 8px; background: color-mix(in srgb, var(--g-none) 8%, transparent); border-radius: 0 6px 6px 0; }
+  .quote { font-size: 12px; color: var(--g-none); border-left: 3px solid var(--g-none); padding: 2px var(--s2); background: color-mix(in srgb, var(--g-none) 8%, transparent); border-radius: 0 6px 6px 0; }
   .txt { font-size: 14.5px; line-height: 1.65; }
-  .help { font-size: 12.5px; color: var(--info); background: color-mix(in srgb, var(--info) 8%, var(--panel)); border-radius: 8px; padding: 6px 10px; }
-  .choices { display: flex; flex-direction: column; gap: 8px; }
-  .choice { display: flex; gap: 12px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--line); cursor: pointer; transition: border-color 0.12s, transform 0.06s; }
+  .help { font-size: 12.5px; color: var(--info); background: color-mix(in srgb, var(--info) 8%, var(--panel)); border-radius: var(--r-sm); padding: var(--s2) var(--s3); }
+  .choices { display: flex; flex-direction: column; gap: var(--s2); }
+  .choice { display: flex; gap: var(--s3); align-items: center; text-align: left; padding: var(--s3) var(--s3); border-radius: var(--r-md); background: var(--panel2); border: 1px solid var(--line); cursor: pointer; transition: border-color 0.12s, transform 0.06s; }
   .choice:hover { border-color: var(--accent); }
   .choice:active { transform: translateY(1px); }
-  .num { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: var(--bg2); color: var(--muted); font-size: 12px; flex: none; }
-  .offers { display: flex; flex-direction: column; gap: 8px; }
-  .offer { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); }
+  .num { width: 22px; height: 22px; display: grid; place-items: center; border-radius: var(--r-sm); background: var(--bg2); color: var(--muted); font-size: 12px; flex: none; }
+  .offers { display: flex; flex-direction: column; gap: var(--s2); }
+  .offer { padding: var(--s3) var(--s3); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--panel2); }
   .offer.sel { border-color: var(--accent); }
   .badge { font-weight: 800; color: var(--accent); }
   .badge[data-mode='renew'] { color: var(--info); }
@@ -122,6 +122,6 @@
   .badge[data-mode='pre'] { color: #c58bff; }
   .badge[data-mode='loan'] { color: var(--faint); }
   .ocl { font-size: 16px; }
-  .og { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px 14px; font-size: 12.5px; margin: 6px 0; color: var(--muted); }
-  .dm { font-size: 12.5px; display: flex; align-items: center; gap: 4px; }
+  .og { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px var(--s4); font-size: 12.5px; margin: 6px 0; color: var(--muted); }
+  .dm { font-size: 12.5px; display: flex; align-items: center; gap: var(--s1); }
 </style>
