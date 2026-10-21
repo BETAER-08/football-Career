@@ -446,8 +446,10 @@ export function releaseToFree(s: GameState, rng: Rng, reason: string): void {
 }
 
 export function freeAgentOffers(s: GameState, rng: Rng, text: string): void {
-  const min = curOvr(s.ab) < starterOvr(2) - 8 ? 1 : 2;
-  const offers = freeOffers(s, rng, min, 0);
+  const weak = curOvr(s.ab) < starterOvr(2) - 8;
+  const min = weak ? 1 : 3;
+  const want = weak ? 2 : 3 + (rng.chance(0.6) ? 1 : 0) + (rng.chance(0.25) ? 1 : 0);
+  const offers = freeOffers(s, rng, want, 0);
   const used = new Set<string>(offers.map((o) => o.clubId));
   while (offers.length < min) {
     const fb = fallbackDistinct(s, rng, used, 'free');

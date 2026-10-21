@@ -5,6 +5,8 @@ import { getEvent, fireEvent } from '../src/engine/events';
 import { applyFx } from '../src/engine/fx';
 import { forcedOrigin, originRng } from '../src/engine/headless';
 import { rngOf } from '../src/engine/world';
+import { freeAgentOffers } from '../src/engine/market';
+import { ALL_ATTRS } from '../src/engine/types';
 import type { GameConfig } from '../src/engine/types';
 
 ensureContent();
@@ -40,5 +42,17 @@ describe('구단 간 협상 결렬 이벤트', () => {
     const before = s.fin.cash;
     applyFx(s, { rng }, 'fx:fine=3');
     expect(before - s.fin.cash).toBe(300);
+  });
+
+  it('자유계약 선수가 되면 여러 제안 중에서 고를 수 있다', () => {
+    const seed = 'collapse-fa';
+    const s = newGame(cfgOf(seed), forcedOrigin(originRng(seed), 'GB', 6));
+    s.ab.cap = 99;
+    for (const k of ALL_ATTRS) s.ab.a[k] = 15;
+    s.phase = 'pro';
+    s.career.signed = true;
+    freeAgentOffers(s, rngOf(s), '테스트');
+    expect(s.decision?.kind).toBe('offer');
+    expect(s.decision!.offers.length).toBeGreaterThanOrEqual(3);
   });
 });
