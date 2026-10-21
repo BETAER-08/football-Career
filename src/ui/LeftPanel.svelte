@@ -1,13 +1,12 @@
 <script lang="ts">
   import { store } from './store.svelte';
-  import { onMount } from 'svelte';
-  import { drawAvatar } from './pixel/avatar';
+  import { drawAvatar, lookForGame } from './pixel/avatar';
   import { ageAt, yearOf } from '../engine/time';
   import { getClub, getCountry } from '../engine/data';
   import { POS_LABEL, ATTR_LABEL, TECH_KEYS, GK_KEYS, PHYS_KEYS, MENTAL_KEYS, HIDDEN_KEYS, type AttrKey } from '../engine/types';
   import { anchored, shownOvr } from '../engine/attributes';
   import { TRAIT_LABEL, scoutLine } from '../engine/player';
-  import { mrz, seed32, whyText } from './format';
+  import { mrz, whyText } from './format';
   import { licenseLabel, licenseLevel, LICENSE_NAME } from '../engine/coach';
   import { hashString } from '../engine/rng';
   import { formatMarket } from '../engine/finance';
@@ -24,16 +23,13 @@
   const isGk = $derived(g.ab.pos === 'GK');
   const keys = $derived<readonly AttrKey[]>(tab === 'tech' ? (isGk ? [...GK_KEYS, ...TECH_KEYS.slice(0, 3)] : TECH_KEYS) : tab === 'phys' ? PHYS_KEYS : MENTAL_KEYS);
   const ovr = $derived(shownOvr(g.ab, age));
-  const club = $derived(clubId ? getClub(clubId) : null);
   const valDelta = $derived(g.snap.val > 0 ? Math.round(((g.fame.value - g.snap.val) / g.snap.val) * 100) : 0);
 
+  const look = $derived(lookForGame(g, age));
+
   $effect(() => {
-    void age; void clubId;
-    if (!cv) return;
-    const c = cv.getContext('2d');
-    if (c) drawAvatar(c, 72, age, seed32(g.cfg.seed), g.p.country, `hsl(${club ? club.color : 150} 65% 48%)`);
+    if (cv) drawAvatar(cv, look, 3);
   });
-  onMount(() => {});
 
   function delta(k: AttrKey): number {
     return g.ab.a[k] - g.ab.prev[k];
@@ -48,7 +44,7 @@
   <div class="panel prof">
     <div class="band"><span>{header} · {g.p.country} · {yearOf(g.week)}</span></div>
     <div class="head">
-      <div class="photo"><canvas bind:this={cv} width="72" height="72" class="pixel"></canvas></div>
+      <div class="photo"><canvas bind:this={cv} width="96" height="96" class="pixel"></canvas></div>
       <div class="col" style="gap:1px">
         <div class="nm" title={g.p.en}>{g.p.name}</div>
         <div class="muted" style="font-size:12px">{g.p.birth.y}.{String(g.p.birth.m).padStart(2, '0')}.{String(g.p.birth.d).padStart(2, '0')}생 · {age}세</div>
@@ -125,7 +121,7 @@
   .prof { overflow: hidden; }
   .band { padding: 5px 12px; background: color-mix(in srgb, var(--accent) 20%, var(--panel2)); font-size: 11px; font-weight: 800; letter-spacing: 0.05em; }
   .head { display: flex; gap: 10px; padding: 10px 12px 4px; }
-  .photo { width: 72px; height: 72px; border-radius: 8px; border: 1px solid var(--line); background: repeating-linear-gradient(45deg, var(--bg2), var(--bg2) 5px, var(--panel2) 5px, var(--panel2) 10px); overflow: hidden; flex: none; }
+  .photo { width: 96px; height: 96px; border-radius: 8px; border: 1px solid var(--line); background: repeating-linear-gradient(45deg, var(--bg2), var(--bg2) 5px, var(--panel2) 5px, var(--panel2) 10px); overflow: hidden; flex: none; }
   .nm { font-weight: 800; font-size: 17px; }
   .rows { padding: 4px 12px 8px; display: flex; flex-direction: column; gap: 2px; }
   .dots { letter-spacing: 2px; color: var(--amber); }

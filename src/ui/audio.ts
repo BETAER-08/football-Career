@@ -39,6 +39,10 @@ export function reelStop(i: number): void {
   setTimeout(() => blip(base * 1.5, 0.12, 'triangle', 0.1), 70);
 }
 
+export function tick(speed: number): void {
+  blip(900 + speed * 500, 0.025, 'square', 0.035);
+}
+
 export function click(): void {
   blip(900, 0.04, 'square', 0.05);
 }
