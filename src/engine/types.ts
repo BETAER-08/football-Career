@@ -154,6 +154,7 @@ export interface WorldInfo {
   ceremony: BallonRec | null;
   ceremonyDue: boolean;
   youthCoach: { name: string; retireS: number };
+  feeRec: { club: Record<string, number>; league: Record<string, number> };
 }
 
 export interface GoalDef { id: string; label: string; metric: 'apps' | 'starts' | 'goals' | 'assists' | 'cs' | 'rating' | 'promo' | 'scholar' | 'train' | 'squad' | 'debut' | 'squadReg' | 'resrating'; target: number; done?: boolean; base?: number }
@@ -203,6 +204,7 @@ export interface Contract {
   buyout: number;
   loanFrom: string;
   youth: boolean;
+  opt?: number;
 }
 
 export interface SeasonRec {
@@ -271,6 +273,7 @@ export interface Offer {
   fee?: number;
   yth?: 'youth' | 'scholar' | 'pro';
   note?: string;
+  optionFee?: number;
 }
 
 export type OfferMode = 'transfer' | 'renew' | 'loan' | 'free' | 'pre';
@@ -557,6 +560,8 @@ export interface CareerState {
   pre: Offer | null;
   faPressureW: number;
   reqDir: '' | 'dom' | 'abroad';
+  feeSum: number;
+  feeMax: number;
   resCur: SeasonRec;
   resSeasons: SeasonRec[];
 }

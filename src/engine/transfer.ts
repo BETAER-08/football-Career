@@ -7,7 +7,7 @@ import { curOvr, shownOvr } from './attributes';
 import { clubLvl, clubStd, clubSt, dyn, ensureCountry, startLeagueSeason, buildRounds, simScore, record, membersOf, clubLeagueId, roundRng } from './world';
 import { ageAt, seasonOf, swOf, yearOf } from './time';
 import { genName, makePerson, randomPos } from './relations';
-import { marketValue, priceF, formatKRW } from './finance';
+import { marketValue, priceF, formatMarket } from './finance';
 import { addLog, toast } from './log';
 import { isCosmetic } from './flags';
 import { changeYouthClub, closeYouthCurrent, restageYouth } from './yleague';
@@ -93,7 +93,6 @@ export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string
   const promised = role;
   const wage = Math.max(300, Math.round((wageFor(s, clubId, promised, ovr, age) * (opts.wageMul ?? 1)) / 10) * 10);
   const years = age <= 21 ? rng.int(3, 5) : age <= 30 ? rng.int(2, 4) : rng.int(1, 2);
-  const val = marketValue(s);
   const coachName = genName(rng, getClub(clubId).country);
   const offer: Offer = {
     id: s.ev.nextId++,
@@ -104,7 +103,7 @@ export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string
     signing: Math.round(wage * rng.float(0.05, 0.35)),
     appBonus: Math.round((wage / 52) * rng.float(0.05, 0.25)),
     goalBonus: Math.round((wage / 52) * rng.float(0.1, 0.5)),
-    buyout: Math.round(val * rng.float(1.2, 3.2)),
+    buyout: buyoutFor(s, rng, clubId),
     loan: !!opts.loan,
     trial: !!opts.trial,
     exp: s.week + 6,
@@ -124,15 +123,65 @@ export function contractWeeksLeft(s: GameState): number {
   return con ? Math.max(0, con.endW - s.week) : 0;
 }
 
-export function transferFee(s: GameState, rng: Rng): number {
-  const val = marketValue(s);
-  const left = contractWeeksLeft(s) / 52;
-  const timeF = left >= 3 ? 1.05 : left >= 2 ? 0.95 : left >= 1 ? 0.8 : left >= 0.5 ? 0.55 : 0.3;
-  return Math.max(0, Math.round(val * timeF * rng.float(0.85, 1.25)));
+const SELLER_F: Record<number, number> = { 6: 1.15, 5: 1, 4: 0.85, 3: 0.7, 2: 0.6 };
+const FEE_CAP: Record<number, number> = { 2: 50000, 3: 300000, 4: 1500000, 5: 8000000, 6: 25000000 };
+const YOUTH_RATE: Record<number, number> = { 6: 15000, 5: 10000, 4: 5000, 3: 2000, 2: 500 };
+
+export function leftFeeF(leftYears: number): number {
+  if (leftYears <= 0) return 0;
+  if (leftYears >= 3) return 1;
+  if (leftYears >= 2) return 0.85 + (leftYears - 2) * 0.15;
+  if (leftYears >= 1) return 0.6 + (leftYears - 1) * 0.25;
+  if (leftYears > 0.5) return 0.35 + ((leftYears - 0.5) / 0.5) * 0.25;
+  return 0.35;
 }
 
-export function compFee(s: GameState): number {
-  return Math.max(30, Math.round(marketValue(s) * 0.12));
+export function sellerFeeF(lvl: number): number {
+  return SELLER_F[lvl] ?? 0.6;
+}
+
+export function feeCap(clubId: string): number {
+  const c = getClub(clubId);
+  const lvl = clamp(c.lvl0, 2, 6);
+  return Math.round(FEE_CAP[lvl] * (1 + ((c.fin0 - 50) / 50) * 0.4));
+}
+
+export function youthSeasons(s: GameState, clubId: string): number {
+  const past = s.career.ySeasons.filter((r) => r.clubId === clubId).length;
+  const cur = s.career.yCur;
+  return past + (cur.clubId === clubId && !cur.done ? 1 : 0);
+}
+
+export function compFee(s: GameState, sellerId?: string): number {
+  const seller = sellerId ?? s.career.clubId;
+  if (!seller) return 0;
+  const lvl = clubLvl(s, seller);
+  return Math.max(1, youthSeasons(s, seller)) * (YOUTH_RATE[lvl] ?? 500);
+}
+
+export function transferFee(s: GameState, rng: Rng, buyerId = ''): number {
+  void buyerId;
+  const left = contractWeeksLeft(s) / 52;
+  const lf = leftFeeF(left);
+  if (lf <= 0) return 0;
+  const val = marketValue(s);
+  const seller = s.career.clubId ? clubLvl(s, s.career.clubId) : 4;
+  const neg = s.career.transferReq >= 0 ? rng.float(0.8, 1) : rng.float(0.9, 1.15);
+  const age = ageAt(s.p.birth, s.week);
+  const comp = age <= 23 && s.career.clubId ? compFee(s) : 0;
+  return Math.max(0, Math.round(val * lf * sellerFeeF(seller) * neg + comp));
+}
+
+export function capByBudget(s: GameState, o: Offer): Offer {
+  if (o.mode !== 'transfer' || o.loan || o.first || o.yth || (o.fee ?? 0) <= 0) return o;
+  if (o.fee! <= feeCap(o.clubId)) return o;
+  return { ...o, loan: true, years: 1, mode: 'loan', optionFee: o.fee, fee: 0, note: `완전 이적 옵션 ${formatMarket(o.fee!)}` };
+}
+
+export function buyoutFor(s: GameState, rng: Rng, clubId: string): number {
+  const lvl = clubLvl(s, clubId);
+  const base = 1.5 + 1.5 * clamp((lvl - 2) / 4, 0, 1);
+  return Math.round(marketValue(s) * clamp(base * rng.float(0.92, 1.08), 1.5, 3));
 }
 
 export function freeTerms(o: Offer, rng: Rng): void {
@@ -275,7 +324,7 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
           if (ro) {
             ro.wage = Math.round((ro.wage * rng.float(3, 6)) / 10) * 10;
             ro.role = 'starter';
-            ro.fee = transferFee(s, rng);
+            ro.fee = transferFee(s, rng, rich.id);
             used.add(rich.id);
             out.push(ro);
             continue;
@@ -290,7 +339,7 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
     const offer = makeOfferFor(s, rng, club.id, kind, { trial, first: kind === 'first', shift: adj.shift, wageMul: adj.wageMul });
     if (!offer) continue;
     if ((kind === 'window' || kind === 'free') && s.career.contract && !s.career.contract.youth && s.career.contract.wage > clubWageCap(s, club.id) * 0.9) continue;
-    if (kind === 'window' && s.career.clubId) offer.fee = transferFee(s, rng);
+    if (kind === 'window' && s.career.clubId) offer.fee = transferFee(s, rng, club.id);
     if (kind === 'first' && s.career.clubId && club.id !== s.career.clubId) offer.fee = compFee(s);
     if (kind === 'free' && !s.career.clubId && s.career.signed) {
       offer.mode = 'free';
@@ -346,7 +395,7 @@ export function negotiate(s: GameState, rng: Rng, o: Offer, demands: { wage: boo
   if (demands.role) fail += 0.17;
   if (demands.buyout) fail += 0.1;
   fail -= agent / 600;
-  fail -= Math.min(0.08, val / 20000000);
+  fail -= Math.min(0.08, val / 200000000);
   if (o.first) fail += 0.04;
   fail = clamp(fail, 0.02, 0.7);
   const roll = rng.next();
@@ -551,6 +600,9 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   }
   closeMarket(s);
   dropQueuedOffers(s);
+  if (o.loan && o.optionFee) con.opt = o.optionFee;
+  const paid = !o.loan && (o.mode === 'transfer' || o.first) && prev && prev !== o.clubId ? o.fee ?? 0 : 0;
+  if (paid > 0) recordFee(s, o.clubId, paid);
   if (firstPro && s.phase === 'pro') {
     s.goals = makeGoals(s);
     addLog(s, 'milestone', '1군 선수단 등록', `${cs.name} 1군 선수단에 이름이 올랐다. 유스 리그를 떠나 1군 경기 주차마다 출전 판정을 받고, 명단에서 빠지는 주에는 리저브 경기에 나선다.`, []);
@@ -603,12 +655,29 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   toast(s, `${cs.name} 입단 · ${roleLabel(o.role)}`);
   if (isCosmetic()) s.cues.push('transfer');
   s.fame.value = marketValue(s);
+  s.fame.peakValue = Math.max(s.fame.peakValue, s.fame.value);
+}
+
+export function recordFee(s: GameState, clubId: string, fee: number): void {
+  const cs = getClub(clubId);
+  const rec = s.wld.feeRec;
+  const clubBase = Math.round(FEE_CAP[clamp(cs.lvl0, 2, 6)] * 0.2);
+  const lgBase = Math.round(FEE_CAP[clamp(getLeague(cs.lg0).lvl, 2, 6)] * 0.5);
+  const pc = rec.club[clubId] ?? clubBase;
+  const pl = rec.league[cs.lg0] ?? lgBase;
+  s.career.feeSum += fee;
+  s.career.feeMax = Math.max(s.career.feeMax, fee);
+  if (fee > pc) addLog(s, 'milestone', '구단 역대 최고 이적료', `${cs.name} 역대 최고 이적료(${formatMarket(fee)})로 영입됐다. 종전 기록은 ${formatMarket(pc)}.`, [], { star: true });
+  if (fee > pl) addLog(s, 'milestone', '리그 역대 최고 이적료', `${getLeague(cs.lg0).ko} 역대 최고 이적료(${formatMarket(fee)}) 기록을 새로 썼다. 종전 기록은 ${formatMarket(pl)}.`, [], { star: true });
+  rec.club[clubId] = Math.max(pc, fee);
+  rec.league[cs.lg0] = Math.max(pl, fee);
 }
 
 export function feeNote(o: Offer): string {
-  if (o.loan) return '';
+  if (o.loan && !o.optionFee) return '';
   if (o.mode === 'free' || o.mode === 'pre') return '이적료 없음';
-  return o.fee ? `이적료 ${formatKRW(o.fee)}` : '';
+  if (o.optionFee) return `임대 · 완전 이적 옵션 ${formatMarket(o.optionFee)}`;
+  return o.fee ? `${o.first || o.yth ? '유스 보상금' : '이적료'} ${formatMarket(o.fee)}` : '';
 }
 
 export function feeText(o: Offer): string {

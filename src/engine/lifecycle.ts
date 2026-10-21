@@ -5,7 +5,7 @@ import { windowNow } from './calendar';
 import { curOvr, shownOvr } from './attributes';
 import { clubLvl, clubSt, clubStd } from './world';
 import { getClub, getCountry, leaguesOf } from './data';
-import { genOffers, genYouthJudgement, joinClub, leaveToFree, fallbackOffer, makeOfferFor, closeCurrent, freeTerms } from './transfer';
+import { genOffers, genYouthJudgement, joinClub, leaveToFree, fallbackOffer, makeOfferFor, closeCurrent, freeTerms, recordFee } from './transfer';
 import { hasUpperClub } from './upper';
 import { executePre, expireToFree, freeOffers } from './market';
 import { presentOffers, hasPendingOffer } from './offers';
@@ -69,6 +69,19 @@ export function expireContracts(s: GameState, rng: Rng): void {
   if (!con || !s.career.clubId) return;
   if (s.life.mil === 'serving') return;
   if (con.loanFrom) {
+    const cur = s.career.cur;
+    if (con.opt && cur.apps >= 8 && cur.ratingN > 0 && cur.ratingSum / cur.ratingN >= 6.7 && rng.chance(0.6)) {
+      const buyer = con.clubId;
+      const fee = con.opt;
+      const bo = makeOfferFor(s, rng, buyer, 'option', { anyRole: true, mode: 'transfer' });
+      if (bo) {
+        bo.fee = fee;
+        bo.years = rng.int(3, 5);
+        recordFee(s, buyer, fee);
+        joinClub(s, rng, { ...bo, loan: false }, '완전 이적 옵션 행사');
+        return;
+      }
+    }
     const parent = con.loanFrom;
     const o = makeOfferFor(s, rng, parent, 'loanreturn', { renew: true });
     if (o) {
