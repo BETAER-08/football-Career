@@ -45,6 +45,7 @@ class Store {
   hasSaved = $state(hasSave());
   archived = $state(false);
   savedAt = $state(0);
+  logFocus = $state(0);
   saveFailed = $state(false);
   private pendingNotify = false;
   private lastFlush = 0;
@@ -310,6 +311,17 @@ class Store {
     this.skipping = true;
     this.playing = true;
     click();
+  }
+
+  focusLogForToast(t: Toast): void {
+    const g = this.game;
+    if (!g) return;
+    const same = g.log.filter((e) => e.w === t.w);
+    const key = t.text.replace(/\s+/g, '').slice(0, 8);
+    const hit = same.find((e) => (e.title + e.text).replace(/\s+/g, '').includes(key)) ?? same[same.length - 1] ?? g.log[g.log.length - 1];
+    if (!hit) return;
+    this.panel = '';
+    this.logFocus = hit.id;
   }
 
   toast(text: string): void {
