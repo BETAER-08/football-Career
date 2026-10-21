@@ -267,7 +267,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     },
     post: { path: 'none', adminRole: '', skill: 0, rep: 0, income: 0, enteredW: 0, legendEvents: 0, ms: {}, msWeek: {}, lastAsk: -1, askCount: 0, endedBy: '', epiWeeks: 0 },
     people,
-    ev: { cd: {}, count: {}, recent: [], flags: {}, sched: [], pendSrc: {}, last: {}, bud: { s: -1, choiceT: 0, choiceN: 0, majorN: 0, minorN: 0, passT: 0, passN: 0, lastChoiceW: -99 }, actCd: {}, actUse: {}, nextId: st0.nextId, logSeq: 1, lastRollW: 0 },
+    ev: { cd: {}, count: {}, recent: [], flags: {}, sched: [], pendSrc: {}, pendBind: {}, last: {}, bud: { s: -1, choiceT: 0, choiceN: 0, majorN: 0, minorN: 0, passT: 0, passN: 0, lastChoiceW: -99 }, actCd: {}, actUse: {}, nextId: st0.nextId, logSeq: 1, lastRollW: 0 },
     world: { countries: {}, leagues: {}, cupSeed: hashString(cfg.seed) },
     decision: null,
     decQueue: [],

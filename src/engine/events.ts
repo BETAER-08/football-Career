@@ -75,17 +75,15 @@ export function allEventDefs(): EventDef[] {
 
 import { upperClubPick } from './upper';
 import { isJosaKind, josa } from './josa';
+import { bindDef, freshName, needsMet } from './narrative';
+import type { Bind } from './types';
 
-export function render(s: GameState, tpl: string): string {
+export function render(s: GameState, tpl: string, bind?: Bind): string {
   const club = s.phase === 'coach' && s.coach.clubId ? s.coach.clubId : s.career.clubId;
   const clubName = club ? getClub(club).name : '무적';
-  const mates = ['mate1', 'mate2', 'mate3'].filter((k) => s.people[k]);
-  const mate = mates.length ? s.people[mates[s.week % mates.length]].name : '동료';
-  const sib = Object.keys(s.people).find((k) => k.startsWith('sibling'));
-  const child = Object.keys(s.people).find((k) => k.startsWith('child'));
   const con = s.career.contract;
   return tpl.replace(/\{(\w+)(?::([가-힣]+))?\}/g, (_m, k0: string, j: string | undefined) => {
-    const v = tokenValue(k0);
+    const v = bind && bind[k0] ? bind[k0].n : tokenValue(k0);
     return j && isJosaKind(j) ? josa(v, j) : v;
   });
   function tokenValue(k: string): string {
@@ -93,26 +91,6 @@ export function render(s: GameState, tpl: string): string {
       case 'name': return s.p.name;
       case 'club': return clubName;
       case 'league': return club ? getLeague(s.career.cur.leagueId || getClub(club).lg0).ko : '리그';
-      case 'coach': return s.people.coach?.name ?? '감독';
-      case 'captain': return s.people.captain?.name ?? '주장';
-      case 'mate': return mate;
-      case 'mate1': return s.people.mate1?.name ?? mate;
-      case 'mate2': return s.people.mate2?.name ?? mate;
-      case 'mate3': return s.people.mate3?.name ?? mate;
-      case 'oldmate': return s.wld.faces.find((f) => f.role === 'mate' && f.status !== 'quit')?.name ?? mate;
-      case 'oldrival': return s.wld.faces.find((f) => f.role === 'rival')?.name ?? '옛 라이벌';
-      case 'youthcoach': return s.wld.youthCoach.name || '유스 시절 감독';
-      case 'rival': return s.people.rival?.name ?? '라이벌';
-      case 'agent': return s.people.agent && !s.people.agent.gone ? s.people.agent.name : '에이전트';
-      case 'father': return s.people.father?.name ?? '아버지';
-      case 'mother': return s.people.mother?.name ?? '어머니';
-      case 'sibling': return sib ? s.people[sib].name : '형제';
-      case 'partner': return s.people.partner?.name ?? '연인';
-      case 'child': return child ? s.people[child].name : '아이';
-      case 'reporter': return s.people.media?.name ?? '기자';
-      case 'director': return s.people.director?.name ?? '단장';
-      case 'owner': return s.people.owner?.name ?? '구단주';
-      case 'natcoach': return s.people.natcoach?.name ?? '대표팀 감독';
       case 'city': return s.p.hometown;
       case 'country': return getCountry(s.p.country).ko;
       case 'nat': return getCountry(s.p.country).natTeam;
@@ -129,12 +107,10 @@ export function render(s: GameState, tpl: string): string {
       case 'wk': return formatKRW(con ? con.wage / 52 : 100);
       case 'yr': return formatKRW(con ? con.wage : 1000);
       case 'amt': return formatKRW(Number(s.decCtx.amt ?? 1000));
-      case 'star': return s.coach.squad.length ? s.coach.squad[s.week % s.coach.squad.length].name : mate;
       case 'cash': return formatKRW(s.fin.cash);
       case 'year': return String(2026 + seasonOf(s.week));
       case 'stage': return s.career.youthStage === 'RES' ? '리저브' : s.career.youthStage;
-      case 'fcoach': return s.people.fcoach?.name ?? '1군 감독';
-      default: return `{${k}}`;
+      default: return freshName(s, k) ?? `{${k}}`;
     }
   }
 }
@@ -157,6 +133,12 @@ function quoteOf(s: GameState, label: string): string {
   return `${d.y}년 ${d.m}월 · 선택: ${label}`;
 }
 
+function takeBind(s: GameState, id: string): Bind | undefined {
+  const b = s.ev.pendBind?.[id];
+  if (b) delete s.ev.pendBind[id];
+  return b;
+}
+
 function takeSrc(s: GameState, id: string): Src | undefined {
   const src = s.ev.pendSrc[id];
   if (src) delete s.ev.pendSrc[id];
@@ -165,18 +147,19 @@ function takeSrc(s: GameState, id: string): Src | undefined {
 
 export function buildDecision(s: GameState, rng: Rng, def: EventDef): Decision {
   const prev = s.ev.last[def.id];
-  const base = render(s, pick(rng, def.text));
-  const text = def.again && prev ? `${render(s, def.again.replace(/\{prev\}/g, prev.label))} ${base}` : base;
+  const bind = bindDef(s, def, takeBind(s, def.id));
+  const base = render(s, pick(rng, def.text), bind);
+  const text = def.again && prev ? `${render(s, def.again.replace(/\{prev\}/g, prev.label), bind)} ${base}` : base;
   const src = takeSrc(s, def.id);
   const choices: DecisionChoice[] = (def.choices ?? []).map((ch) => ({
-    label: render(s, ch.label),
+    label: render(s, ch.label, bind),
     chips: isFast() ? [] : chipsFor(s, ch),
     pct: ch.check ? checkPct(s, ch.check, curOvr(s.ab)) : null,
     disabled: ''
   }));
   const dec: Decision = {
     uid: s.ev.nextId++, kind: def.kind === 'moment' ? 'moment' : 'event', ref: def.id, title: def.chain ? '이어지는 이야기' : def.kind === 'moment' ? '결정적 순간' : '선택의 순간',
-    text, choices, w: s.week, heavy: !!def.heavy, help: def.help ?? '', ctx: '', offers: [], quote: src?.q, from: src?.log
+    text, choices, w: s.week, heavy: !!def.heavy, help: def.help ?? '', ctx: '', offers: [], quote: src?.q, from: src?.log, bind
   };
   return dec;
 }
@@ -202,7 +185,7 @@ export function eligible(s: GameState, def: EventDef, groupWindow = 6): boolean 
     if (g !== undefined && s.week - g < groupWindow) return false;
   }
   if (def.exclusiveGroup && s.ev.flags[`xg:${def.exclusiveGroup}`] === seasonOf(s.week)) return false;
-  return evalConds(s, def.cond);
+  return evalConds(s, def.cond) && needsMet(s, def);
 }
 
 export function pushDecision(s: GameState, d: Decision): void {
@@ -214,13 +197,16 @@ export function firePassive(s: GameState, rng: Rng, def: EventDef): void {
   markFired(s, def);
   s.decCtx = {};
   const src = takeSrc(s, def.id);
+  const bind = bindDef(s, def, takeBind(s, def.id));
   const bad = !!src && !!def.textBad && ['bad', 'worst'].includes(s.ev.last[src.ref]?.grade ?? '');
   const pool = bad ? (def.textBad as string[]) : def.text;
-  const text = render(s, pick(rng, pool));
+  const text = render(s, pick(rng, pool), bind);
   setCause(text.slice(0, 14));
+  const sched0 = s.ev.sched.length;
   const chips = applyFx(s, { rng }, bad && def.fxBad !== undefined ? def.fxBad : def.fx);
   if (def.fu) applyFx(s, { rng }, def.fu);
   clearCause();
+  for (let i = sched0; i < s.ev.sched.length; i++) s.ev.sched[i].bind = bind;
   if (!isFast()) {
     addLog(s, def.chain ? 'chain' : 'passive', '', text, chips, { note: def.note, heavy: def.heavy, help: def.help, from: src?.log, quote: src?.q });
     toast(s, text, chips);
@@ -243,14 +229,16 @@ export function resolveEventChoice(s: GameState, rng: Rng, d: Decision, idx: num
   const outcome = decideOutcome(s, rng, ch);
   const chips: Chip[] = [];
   s.decCtx.eventId = def.id;
-  const label = render(s, ch.label);
+  const bind = d.bind;
+  const label = render(s, ch.label, bind);
   const sched0 = s.ev.sched.length;
   setCause(label);
   applyFx(s, { rng }, outcome.out.fx, chips);
   if (outcome.out.fu) applyFx(s, { rng }, outcome.out.fu, chips);
   clearCause();
   const later = parseFx(outcome.out.fx).some((o) => o.kind === 'fu') || parseFx(outcome.out.fu).some((o) => o.kind === 'fu');
-  const text = render(s, outcome.out.t);
+  const text = render(s, outcome.out.t, bind);
+  for (let i = sched0; i < s.ev.sched.length; i++) s.ev.sched[i].bind = bind;
   const panel: ResultPanel = { title: label, grade: outcome.grade, roll: outcome.roll, need: outcome.need, text, changes: chips, later, w: s.week };
   s.ev.last[def.id] = { w: s.week, label, grade: outcome.grade };
   const gl = { great: '대성공', ok: '성공', bad: '실패', worst: '대실패', none: '' }[outcome.grade];
@@ -283,8 +271,10 @@ export function dueScheduled(s: GameState): EventDef[] {
     const def = registry.get(it.id);
     if (!def) continue;
     if ((s.ev.count[it.id] ?? 0) >= def.max) continue;
-    if (evalConds(s, def.cond) && !(s.ev.cd[it.id] !== undefined && s.week < s.ev.cd[it.id])) {
+    if (it.bind && !needsMet(s, def, it.bind)) continue;
+    if (evalConds(s, def.cond) && needsMet(s, def, it.bind) && !(s.ev.cd[it.id] !== undefined && s.week < s.ev.cd[it.id])) {
       if (it.src) s.ev.pendSrc[def.id] = it.src;
+      if (it.bind) s.ev.pendBind[def.id] = it.bind;
       out.push(def);
       continue;
     }
@@ -372,7 +362,7 @@ function eligibleMoment(s: GameState, def: EventDef): boolean {
   if ((s.ev.count[def.id] ?? 0) >= def.max) return false;
   const cd = s.ev.cd[def.id];
   if (cd !== undefined && s.week < cd) return false;
-  return evalConds(s, def.cond);
+  return evalConds(s, def.cond) && needsMet(s, def);
 }
 
 export function applyMomentContext(s: GameState): { goals: number; assists: number; rating: number } {

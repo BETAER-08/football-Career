@@ -6,7 +6,7 @@ import { emptyRec } from './records';
 import { openYouthRec, setupYouthSeason, settleToPro } from './yleague';
 import type { GameState } from './types';
 
-export const STATE_VERSION = 8;
+export const STATE_VERSION = 9;
 
 export type Migrated = { ok: true; state: GameState } | { ok: false; reason: string };
 
@@ -52,6 +52,7 @@ export function migrateState(raw: unknown): Migrated {
   const ev = st.ev as unknown as Record<string, unknown>;
   if (!ev.actUse) ev.actUse = {};
   if (!ev.pendSrc) ev.pendSrc = {};
+  if (!ev.pendBind) ev.pendBind = {};
   if (!ev.last) ev.last = {};
   if (ev.logSeq === undefined) ev.logSeq = Math.max(1, ...st.log.map((l) => l.id + 1), ...st.toasts.map((x) => x.id + 1));
   if (!ev.bud) ev.bud = { s: -1, choiceT: 0, choiceN: 0, majorN: 0, minorN: 0, passT: 0, passN: 0, lastChoiceW: -99 };

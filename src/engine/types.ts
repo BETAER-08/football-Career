@@ -634,7 +634,11 @@ export interface PostState {
   legendEvents: number;
 }
 
-export interface Src { w: number; q: string; log: number; ref: string }
+export interface PersonRef { k: string; n: string }
+
+export type Bind = Record<string, PersonRef>;
+
+export interface Src { w: number; q: string; log: number; ref: string; bind?: Bind }
 
 export interface Budget {
   s: number;
@@ -652,8 +656,9 @@ export interface EvState {
   count: Record<string, number>;
   recent: string[];
   flags: Record<string, number>;
-  sched: { id: string; at: number; exp: number; src?: Src }[];
+  sched: { id: string; at: number; exp: number; src?: Src; bind?: Bind }[];
   pendSrc: Record<string, Src>;
+  pendBind: Record<string, Bind>;
   last: Record<string, { w: number; label: string; grade: string }>;
   bud: Budget;
   actCd: Record<string, number>;
@@ -684,6 +689,7 @@ export interface Decision {
   offers: Offer[];
   quote?: string;
   from?: number;
+  bind?: Bind;
 }
 
 export interface ResultPanel {
