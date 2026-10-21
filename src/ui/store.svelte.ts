@@ -52,6 +52,8 @@ class Store {
   baselineProgress = $state(0);
   hasSaved = $state(hasSave());
   archived = $state(false);
+  tutorialOpen = $state(false);
+  private tutorialResume = false;
   savedAt = $state(0);
   logFocus = $state(0);
   saveFailed = $state(false);
@@ -155,6 +157,7 @@ class Store {
     this.startBaseline();
     this.startLoop();
     this.saveNow();
+    if (!this.prefs.tutorialSeen) this.openTutorial();
   }
 
   create(cfg: GameConfig, forced: RouletteResult): GameState {
@@ -216,6 +219,7 @@ class Store {
       this.notify();
     }
     this.checkModals(g);
+    if (this.tutorialOpen) return;
     if (this.activeModal) {
       if (this.ps.skipping) endSkip(this.ps, 'modal');
       return;
@@ -393,6 +397,24 @@ class Store {
     if (!hit) return;
     this.panel = '';
     this.logFocus = hit.id;
+  }
+
+  openTutorial(): void {
+    this.tutorialResume = this.ps.playing;
+    this.ps.playing = false;
+    cancelSkip(this.ps);
+    this.tutorialOpen = true;
+  }
+
+  closeTutorial(): void {
+    this.tutorialOpen = false;
+    if (!this.prefs.tutorialSeen) {
+      this.prefs.tutorialSeen = true;
+      savePrefs(this.prefs);
+    }
+    const g = this.game;
+    if (this.tutorialResume && g && !g.decision) this.ps.playing = true;
+    this.tutorialResume = false;
   }
 
   dismissToast(id: number): void {

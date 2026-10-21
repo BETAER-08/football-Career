@@ -51,7 +51,7 @@
     <span class="faint" style="font-weight:500">언제든 바꿀 수 있어요</span>
   </div>
   <div class="panel-b col" style="gap:10px">
-    <div class="foc" role="radiogroup" aria-label="올해의 초점">
+    <div class="foc" data-tour="focus" role="radiogroup" aria-label="올해의 초점">
       {#each list as f}
         <button class="fc" class:on={g.focus === f.id} role="radio" aria-checked={g.focus === f.id} onclick={() => store.setFocus(f.id)} title="F 키로 순환">
           <b>{#if g.focus === f.id}<Icon name="check" size={14} />{/if}{f.label}</b>
@@ -59,7 +59,7 @@
         </button>
       {/each}
     </div>
-    <div class="acts">
+    <div class="acts" data-tour="actions">
       {#each groups as gr}
         <button class="btn act" class:on={store.panel === gr.id} onclick={() => (store.panel = store.panel === gr.id ? '' : gr.id)}>
           <Icon name={gr.icon} size={18} />{gr.label}

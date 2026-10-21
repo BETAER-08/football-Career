@@ -43,9 +43,9 @@ export function isCurrent(e: AnyEntry): e is ArchiveEntry {
   return (e as ArchiveEntry).version === ARCHIVE_VERSION && !!(e as ArchiveEntry).data;
 }
 
-export interface Prefs { music: boolean; speed: number; lengthMin: 30 | 60 | 90; autoDecide: boolean }
+export interface Prefs { tutorialSeen: boolean; music: boolean; speed: number; lengthMin: 30 | 60 | 90; autoDecide: boolean }
 
-export const defaultPrefs: Prefs = { music: false, speed: 1, lengthMin: 60, autoDecide: false };
+export const defaultPrefs: Prefs = { tutorialSeen: false, music: false, speed: 1, lengthMin: 60, autoDecide: false };
 
 export function loadPrefs(): Prefs {
   try {

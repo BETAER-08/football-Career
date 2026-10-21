@@ -7,6 +7,7 @@
   import GameScreen from './GameScreen.svelte';
   import EndScreen from './EndScreen.svelte';
   import Vault from './Vault.svelte';
+  import Tutorial from './Tutorial.svelte';
 
   let width = $state(window.innerWidth);
   let height = $state(window.innerHeight);
@@ -55,6 +56,7 @@
     {/if}
   </div>
 {/if}
+{#if store.tutorialOpen && store.screen === 'game'}<Tutorial />{/if}
 
 <style>
   .app { width: 100%; }

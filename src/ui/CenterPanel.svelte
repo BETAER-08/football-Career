@@ -9,7 +9,7 @@
   const pending = $derived(!!store.game?.decision);
 </script>
 
-<div class="center scroll">
+<div class="center scroll" data-tour="center">
   {#if pending}<DecisionCard />{/if}
   <ResultCard />
   <TeamBox />

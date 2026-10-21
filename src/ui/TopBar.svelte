@@ -25,6 +25,7 @@
 
 <div class="top">
   <div class="brand">태어난<br />김에 축구</div>
+  <div class="tourtime" data-tour="time">
   <div class="grp">
     {#if blocked}
       <span class="wait"><Icon name="warn" size={16} /> 결정 대기 중</span>
@@ -42,6 +43,7 @@
     {#each speeds as v}
       <button class="btn sm" class:on={store.speed === v} onclick={() => store.setSpeed(v)} aria-pressed={store.speed === v}>{v}×</button>
     {/each}
+  </div>
   </div>
   <div class="div"></div>
   <div class="grp prog">
@@ -70,6 +72,7 @@
 <style>
   .top { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) var(--s4); border-bottom: 1px solid var(--line); background: var(--panel); height: 68px; }
   .brand { font-weight: 800; color: var(--accent); letter-spacing: -0.01em; width: 76px; line-height: 1.15; font-size: var(--fs-sub); }
+  .tourtime { display: flex; align-items: center; gap: var(--s3); }
   .grp { display: flex; align-items: center; gap: var(--s2); }
   .div { width: 1px; align-self: stretch; margin: var(--s1) 0; background: var(--line); }
   .btn { display: inline-flex; align-items: center; gap: var(--s1); }
