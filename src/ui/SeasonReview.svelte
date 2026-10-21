@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { josa } from '../engine/josa';
   import { store } from './store.svelte';
+  import { dialog } from './dialog';
+  import Icon from './Icon.svelte';
   import { formatKRW, formatMarket } from './format';
   import type { SeasonReview, TableRow } from '../engine/types';
 
@@ -30,10 +33,11 @@
 
 {#if r}
   <div class="modal-bg" role="presentation">
-    <div class="modal rv" role="dialog" tabindex="-1" onkeydown={() => {}}>
+    <div class="modal rv" role="dialog" aria-label="시즌 결산" tabindex="-1" use:dialog={{ close: () => store.closeReview() }}>
       <div class="modal-h">
         <span>{r.year}~{r.year + 1} 시즌 결산 · {r.clubName}</span>
         <span class="spacer"></span>
+        {#if store.batchTotal > 1}<span class="tag" title="대기 중인 알림">알림 {store.batchIndex} / {store.batchTotal}</span>{/if}
         <span class="mini-hint">{step + 1} / 3{g.auto ? ' · 8초 뒤 자동으로 닫혀요' : ''}</span>
       </div>
       <div class="modal-b col" style="gap:12px">
@@ -80,12 +84,12 @@
             <div class="sec">
               <b>시상</b>
               {#if r.awards.length}
-                {#each r.awards as a}<div class="award">🏅 {a.name}<span class="tag">{a.scope === 'club' ? '구단' : '리그'}</span></div>{/each}
+                {#each r.awards as a}<div class="award"><Icon name="star" size={14} /> {a.name}<span class="tag">{a.scope === 'club' ? '구단' : '리그'}</span></div>{/each}
               {:else}<div class="muted">이번 시즌에는 수상이 없었어요.</div>{/if}
               {#if r.clubPoy.length}
                 <div class="mini-hint">구단 평점 순위: {r.clubPoy.map((p, i) => `${i + 1}. ${p.name} ${p.rating.toFixed(2)}`).join(' · ')}</div>
               {/if}
-              {#each r.trophies as t}<div class="award">{r.youth ? '🏅 유스 트로피 ·' : '🏆'} {t}</div>{/each}
+              {#each r.trophies as t}<div class="award"><Icon name={r.youth ? 'star' : 'trophy'} size={14} /> {r.youth ? '유스 트로피 · ' : ''}{t}</div>{/each}
             </div>
             <div class="sec"><b>시즌 베스트 장면</b><div class="best">{r.best}</div></div>
           {:else}
@@ -106,7 +110,7 @@
             {/if}
             {#if r.goals.length}
               <div class="sec"><b>이번 시즌 목표</b>
-                {#each r.goals as gl}<div class="goal"><span class={gl.done ? 'up' : 'down'}>{gl.done ? '달성 ✓' : '미달 ✗'}</span> {gl.label} <span class="faint">· {gl.reward}</span></div>{/each}
+                {#each r.goals as gl}<div class="goal"><span class={gl.done ? 'up' : 'down'}><Icon name={gl.done ? 'check' : 'close'} size={14} /> {gl.done ? '달성' : '미달'}</span> {gl.label} <span class="faint">· {gl.reward}</span></div>{/each}
               </div>
             {/if}
             {#if r.next.club}
@@ -124,7 +128,7 @@
                 <div><b class="mono">{r.pos}위</b><span>{r.n}팀 중</span></div>
                 <div><b class="mono">{r.coach.target}위</b><span>목표</span></div>
                 <div><b class="mono">{r.coach.pts}</b><span>승점</span></div>
-                <div><b class="mono">{r.trophies.length ? '★' + r.trophies.length : '-'}</b><span>트로피</span></div>
+                <div><b class="mono">{r.trophies.length ? r.trophies.length : '-'}</b><span>트로피</span></div>
               </div>
               <div class="muted">목표 대비 {r.coach.target - r.pos >= 0 ? `${r.coach.target - r.pos}계단 위` : `${r.pos - r.coach.target}계단 아래`}에서 시즌을 마쳤다.</div>
             </div>
@@ -137,8 +141,8 @@
               </tbody></table>
             </div>
           {:else if step === 1}
-            <div class="sec"><b>선수단 MVP</b><div class="best">{r.coach.mvp}이(가) 시즌 내내 팀의 중심이었다.</div></div>
-            {#each r.trophies as t}<div class="award">🏆 {t}</div>{/each}
+            <div class="sec"><b>선수단 MVP</b><div class="best">{josa(r.coach.mvp, '이')} 시즌 내내 팀의 중심이었다.</div></div>
+            {#each r.trophies as t}<div class="award"><Icon name="trophy" size={14} /> {t}</div>{/each}
           {:else}
             <div class="sec"><b>변화 요약</b>
               <div class="stats four">
@@ -153,7 +157,7 @@
           <button class="btn" disabled={step === 0} onclick={() => (step -= 1)}>이전</button>
           <span class="spacer"></span>
           {#if step < 2}
-            <button class="btn primary" onclick={() => (step += 1)}>다음</button>
+            <button class="btn primary" data-autofocus onclick={() => (step += 1)}>다음</button>
           {:else}
             <button class="btn primary" onclick={() => store.closeReview()}>닫고 계속하기</button>
           {/if}
@@ -166,20 +170,20 @@
 
 <style>
   .rv { max-width: 640px; width: 94vw; }
-  .sec { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .sec { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s3) var(--s3); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--panel2); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
   .stats.four { grid-template-columns: repeat(4, 1fr); }
-  .stats div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; text-align: center; display: flex; flex-direction: column; }
+  .stats div { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-sm); padding: var(--s2); text-align: center; display: flex; flex-direction: column; }
   .stats b { font-size: 17px; }
-  .stats span { font-size: 11px; color: var(--muted); }
+  .stats span { font-size: var(--fs-panel); color: var(--muted); }
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  td { padding: 3px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+  td { padding: 3px var(--s2); border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
   tr.me td { background: color-mix(in srgb, var(--accent) 18%, transparent); font-weight: 800; }
   tr.champ td:first-child { color: var(--amber); }
   tr.cont td.z { color: var(--info); }
   tr.down td.z { color: var(--down); }
-  .z { text-align: right; font-size: 11px; }
-  .award { font-size: 13px; display: flex; gap: 8px; align-items: center; }
+  .z { text-align: right; font-size: var(--fs-panel); }
+  .award { font-size: 13px; display: flex; gap: var(--s2); align-items: center; }
   .best { line-height: 1.7; font-size: 13.5px; }
   .goal { font-size: 13px; }
   .next { border-color: var(--accent); }

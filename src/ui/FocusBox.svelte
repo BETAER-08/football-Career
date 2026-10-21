@@ -6,6 +6,9 @@
   import { roleLabel } from '../engine/coach';
   import { STAGE_LABEL } from '../engine/stages';
   import ActionPanel from './ActionPanel.svelte';
+  import Icon from './Icon.svelte';
+  import { allActions, actionStatus } from '../engine/actions';
+  import type { IconName } from './icons';
 
   const g = $derived(store.game!);
   const list = $derived(focusList(g.phase));
@@ -21,6 +24,22 @@
   });
   let confirm = $state('');
 
+  function effectParts(text: string): { t: string; dir: 'up' | 'down' | '' }[] {
+    return text.split(/(?<=[↑↓])\s*/).filter(Boolean).map((seg) => {
+      const last = seg[seg.length - 1];
+      if (last === '↑') return { t: seg.slice(0, -1).trim(), dir: 'up' as const };
+      if (last === '↓') return { t: seg.slice(0, -1).trim(), dir: 'down' as const };
+      return { t: seg.trim(), dir: '' as const };
+    });
+  }
+
+  const groups: { id: 'money' | 'career' | 'life'; label: string; icon: IconName }[] = [
+    { id: 'money', label: '돈 · 투자', icon: 'money' },
+    { id: 'career', label: '커리어', icon: 'career' },
+    { id: 'life', label: '삶', icon: 'life' }
+  ];
+  const ready = $derived(Object.fromEntries(groups.map((gr) => [gr.id, allActions().filter((a) => a.group === gr.id && a.phase.includes(g.phase)).map((a) => actionStatus(g, a)).filter((x) => x.enabled).length])) as Record<string, number>);
+
   const retireAction = $derived(g.phase === 'coach' ? { id: 'coach_retire', label: '지도자 은퇴' } : g.phase === 'postcareer' ? { id: 'leave_football', label: '축구계를 떠난다' } : { id: 'retire_now', label: '은퇴 선언' });
 </script>
 
@@ -32,20 +51,22 @@
     <span class="faint" style="font-weight:500">언제든 바꿀 수 있어요</span>
   </div>
   <div class="panel-b col" style="gap:10px">
-    <div class="foc">
+    <div class="foc" data-tour="focus" role="radiogroup" aria-label="올해의 초점">
       {#each list as f}
-        <button class="fc" class:on={g.focus === f.id} onclick={() => store.setFocus(f.id)} title="F 키로 순환">
-          <b>{f.label}</b>
-          <span>{f.effects}</span>
+        <button class="fc" class:on={g.focus === f.id} role="radio" aria-checked={g.focus === f.id} onclick={() => store.setFocus(f.id)} title="F 키로 순환">
+          <b>{#if g.focus === f.id}<Icon name="check" size={14} />{/if}{f.label}</b>
+          <span class="fx">{#each effectParts(f.effects) as e}<em class={e.dir}>{e.t}{#if e.dir}<Icon name={e.dir} size={12} />{/if}</em>{/each}</span>
         </button>
       {/each}
     </div>
-    <div class="row" style="flex-wrap:wrap">
-      <button class="btn" onclick={() => (store.panel = 'money')}>돈 쓰기 · 투자</button>
-      <button class="btn" onclick={() => (store.panel = 'career')}>커리어</button>
-      <button class="btn" onclick={() => (store.panel = 'life')}>삶</button>
-      <span class="spacer"></span>
-      <button class="btn danger sm" onclick={() => (confirm = retireAction.id)}>{retireAction.label}</button>
+    <div class="acts" data-tour="actions">
+      {#each groups as gr}
+        <button class="btn act" class:on={store.panel === gr.id} onclick={() => (store.panel = store.panel === gr.id ? '' : gr.id)}>
+          <Icon name={gr.icon} size={18} />{gr.label}
+          {#if ready[gr.id] > 0}<span class="cnt" title="지금 할 수 있는 행동">{ready[gr.id]}</span>{/if}
+        </button>
+      {/each}
+      <button class="btn danger sm retire" onclick={() => (confirm = retireAction.id)}>{retireAction.label}</button>
     </div>
     {#if confirm}
       <div class="confirm">
@@ -63,12 +84,19 @@
 {/if}
 
 <style>
-  .ident { font-weight: 600; color: var(--text); font-size: 12.5px; margin-left: 6px; }
-  .foc { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 6px; }
-  .fc { text-align: left; border: 1px solid var(--line); background: var(--panel2); border-radius: 9px; padding: 6px 9px; cursor: pointer; display: flex; flex-direction: column; gap: 1px; transition: border-color 0.12s, transform 0.06s; }
+  .ident { font-weight: 600; color: var(--text); font-size: var(--fs-sub); margin-left: var(--s2); }
+  .foc { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: var(--s2); }
+  .fc { text-align: left; border: 1px solid var(--line); background: var(--panel2); border-radius: var(--r-md); padding: var(--s2) var(--s3); cursor: pointer; display: flex; flex-direction: column; gap: var(--s1); transition: border-color 0.12s, background 0.12s; }
   .fc:hover { border-color: var(--faint); }
-  .fc.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel2)); }
-  .fc b { font-size: 13px; }
-  .fc span { font-size: 11px; color: var(--muted); }
-  .confirm { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: color-mix(in srgb, var(--danger) 10%, var(--panel)); border: 1px solid var(--danger); border-radius: 8px; font-size: 13px; }
+  .fc.on { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+  .fc b { font-size: var(--fs-sub); display: flex; align-items: center; gap: var(--s1); }
+  .fx { display: flex; flex-wrap: wrap; gap: 0 var(--s2); font-size: var(--fs-panel); color: var(--muted); }
+  .fx em { font-style: normal; display: inline-flex; align-items: center; }
+  .fx em.up { color: var(--up); }
+  .fx em.down { color: var(--down); }
+  .fc.on .fx, .fc.on .fx em { color: var(--accent-ink); }
+  .acts { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: var(--s2); align-items: stretch; }
+  .act { display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); position: relative; padding: var(--s2) var(--s3); }
+  .cnt { min-width: 20px; height: 20px; padding: 0 var(--s1); border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: var(--fs-panel); font-weight: 800; display: inline-grid; place-items: center; }
+  .confirm { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) var(--s3); background: color-mix(in srgb, var(--danger) 10%, var(--panel)); border: 1px solid var(--danger); border-radius: var(--r-sm); font-size: var(--fs-sub); }
 </style>

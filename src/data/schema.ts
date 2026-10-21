@@ -52,7 +52,7 @@ export const NamePoolSchema = z.object({
 export type NamePoolRaw = z.infer<typeof NamePoolSchema>;
 
 export const OutcomeSchema = z.object({
-  t: z.string(),
+  t: z.union([z.string(), z.array(z.string()).min(1)]),
   fx: z.string().optional(),
   fu: z.string().optional()
 });
@@ -146,3 +146,7 @@ export type InjuryDef = z.infer<typeof InjurySchema>;
 
 export const StatNoteSchema = z.object({ id: z.string(), text: z.string(), est: z.boolean() });
 export type StatNote = z.infer<typeof StatNoteSchema>;
+
+export function outcomeTexts(t: string | string[]): string[] {
+  return Array.isArray(t) ? t : [t];
+}

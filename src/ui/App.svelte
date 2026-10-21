@@ -7,6 +7,7 @@
   import GameScreen from './GameScreen.svelte';
   import EndScreen from './EndScreen.svelte';
   import Vault from './Vault.svelte';
+  import Tutorial from './Tutorial.svelte';
 
   let width = $state(window.innerWidth);
   let height = $state(window.innerHeight);
@@ -55,10 +56,11 @@
     {/if}
   </div>
 {/if}
+{#if store.tutorialOpen && store.screen === 'game'}<Tutorial />{/if}
 
 <style>
   .app { width: 100%; }
-  .narrow { height: 100%; display: grid; place-items: center; padding: 24px; text-align: center; }
+  .narrow { height: 100%; display: grid; place-items: center; padding: var(--s5); text-align: center; }
   .narrow-card { max-width: 420px; }
   h1 { margin: 0 0 12px; }
 </style>

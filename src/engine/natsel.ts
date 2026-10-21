@@ -7,6 +7,7 @@ import { natTeamBase } from './match';
 import { ageAt, seasonOf, yearOf } from './time';
 import { addLog } from './log';
 import type { GameState, NatLevel, NatStage, NatStyle, PoolMember, Pos, Role } from './types';
+import { josa } from './josa';
 
 export const LEVEL_ADJ: Record<NatLevel, number> = { A: 0, u23: -4, u20: -7, u17: -12 };
 const AGE_RANGE: Record<NatLevel, [number, number]> = { A: [20, 33], u23: [19, 23], u20: [17, 20], u17: [15, 17] };
@@ -128,7 +129,7 @@ export function ensureNatCoach(s: GameState, rng: Rng): void {
   const p = makePerson(rng, s.ev, 'natcoach', s.p.country, { age: rng.int(45, 66), refYear: yearOf(s.week), job: '대표팀 감독', rel: changed ? Math.round(keepRel * 0.2) : 0 });
   p.style = STYLE_LABEL[s.nat.coachStyle];
   s.people.natcoach = p;
-  if (changed) addLog(s, 'world', '대표팀 감독 교체', `${getCountry(s.p.country).natTeam} 감독이 ${p.name}(으)로 바뀌었다. 성향: ${STYLE_LABEL[s.nat.coachStyle]}.`, []);
+  if (changed) addLog(s, 'world', '대표팀 감독 교체', `${getCountry(s.p.country).natTeam} 감독이 ${josa(p.name, '으로')} 바뀌었다. 성향: ${STYLE_LABEL[s.nat.coachStyle]}.`, []);
 }
 
 export function roleScore(s: GameState): number {

@@ -6,6 +6,7 @@ import { netWorth } from './finance';
 import { MILESTONES, isEpiPath } from './postcareer';
 import { START_YEAR } from './time';
 import type { AgeRec, AwardRec, CoachRec, GameState, LogEntry, NatMatch, Pos, TrophyRec } from './types';
+import { josa } from './josa';
 
 export const ARCHIVE_VERSION = 3;
 
@@ -68,7 +69,7 @@ export function epilogueText(s: GameState): EndData['epilogue'] {
   const names = MILESTONES[endedPath].slice(0, n);
   const label = { pundit: '해설·방송', admin: '구단 행정', business: '사업' }[endedPath];
   const last = names.length ? names[names.length - 1] : '';
-  const text = `${s.p.name}은(는) 은퇴 후 ${label}의 길에서 ${years}년을 보냈다. ${names.length ? `${names.join(', ')}의 이정표를 지나 ${last}에 이르렀다.` : '뚜렷한 이정표를 남기지는 못했지만 자신의 속도로 일상을 지켰다.'} ${n >= 4 ? '네 개의 이정표를 모두 지난 뒤 조용히 축구 인생을 마무리했다.' : '그렇게 축구와 함께한 인생이 천천히 저물었다.'}`;
+  const text = `${josa(s.p.name, '은')} 은퇴 후 ${label}의 길에서 ${years}년을 보냈다. ${names.length ? `${names.join(', ')}의 이정표를 지나 ${last}에 이르렀다.` : '뚜렷한 이정표를 남기지는 못했지만 자신의 속도로 일상을 지켰다.'} ${n >= 4 ? '네 개의 이정표를 모두 지난 뒤 조용히 축구 인생을 마무리했다.' : '그렇게 축구와 함께한 인생이 천천히 저물었다.'}`;
   return { path: endedPath, ms: n, milestones: names, years, text };
 }
 

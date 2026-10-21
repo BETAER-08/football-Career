@@ -1,3 +1,4 @@
+import { SYS_TEXT } from '../src/data/sysText';
 import { afterAll, describe, expect, it } from 'vitest';
 import { newGame, tickState, autoWeek, resolveDecision, actionInput } from '../src/engine/game';
 import { autoDecide } from '../src/engine/auto';
@@ -276,7 +277,7 @@ describe('계약 만료와 자유계약', () => {
     expect(s.career.freeAgentW).toBeGreaterThanOrEqual(0);
     const d = [s.decision, ...s.decQueue].find((x) => x && x.ref === 'free')!;
     expect(windowIdx(at(s, d.w))).toBe(-1);
-    expect(s.log.some((l) => l.text.includes('계약 만료, 자유계약 선수가 됐다'))).toBe(true);
+    expect(s.log.some((l) => SYS_TEXT.faSwitch.includes(l.text))).toBe(true);
     expect(d).not.toBeNull();
     expect(d.kind).toBe('offer');
     expect(d.ref).toBe('free');

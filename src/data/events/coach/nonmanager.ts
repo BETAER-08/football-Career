@@ -23,7 +23,7 @@ export const coachNonManager: RawEvent[] = [
     cc('출전 시간을 먼저 보장해 경험을 쌓게 한다', ['성적과 육성의 균형을 잡았다. 구단은 불안해했다.', 'development+0.1 rel.director-2 coachFame-0.1'], { pv: '경험↑ 구단 신뢰↓' })
   ], { cond: [YOUTH], cd: 80, max: 3, xg: 'youth_dev', tier: 'minor' }),
   ch('cn_tactics_clash', C, 4, [
-    '감독이 선호하는 전술에 {name}은(는) 동의하기 어렵다. 훈련 중 미묘한 신경전이 이어졌다.',
+    '감독이 선호하는 전술에 {name:은} 동의하기 어렵다. 훈련 중 미묘한 신경전이 이어졌다.',
     '수석코치로서 감독의 포메이션 변경 지시에 의문이 든다. 코칭스태프 회의에서 의견을 낼 기회가 왔다.'
   ], [
     cc('회의에서 공개적으로 의견을 낸다', ['데이터를 근거로 논리적으로 설명했다. 회의실의 공기가 달라졌다.', 'tactics+0.2 coachFame+0.3'], {
@@ -45,7 +45,7 @@ export const coachNonManager: RawEvent[] = [
     cc('정중히 사양한다', ['아직은 준비가 덜 됐다고 말했다. 구단은 다른 대행을 찾았다.', 'coachFame-0.3 rel.owner-2 stress-1 fu:fu_coach@8-22'], { pv: '위험 회피 기회 상실' })
   ], { cond: [ASST], cd: 150, max: 2, xg: 'caretaker', tier: 'major' }),
   ch('cn_rival_club_job', C, 3, [
-    '다른 구단에서 {name}을(를) 코칭스태프로 데려가고 싶다는 연락이 왔다. 지금 팀과의 계약은 아직 남아 있다.',
+    '다른 구단에서 {name:을} 코칭스태프로 데려가고 싶다는 연락이 왔다. 지금 팀과의 계약은 아직 남아 있다.',
     '에이전트를 통해 코치직 제안이 들어왔다. 더 큰 구단이고 책임도 크다.'
   ], [
     cc('면접을 보러 간다', ['새 구단의 단장과 마주 앉았다. 준비해 온 구상을 차분히 설명했다.', 'fx:coachOffers=more coachFame+0.4 fu:fu_coach@8-22'], { chk: '50 coachFame*0.25 tactics*0.2 leadership*0.1', pv: '이직 제안↑ 평판 위험', bad: ['면접 소식이 새어 나가 현 구단과 서먹해졌다.', 'coachFame-0.5 rel.owner-4 fu:fu_coach@8-22'] }),

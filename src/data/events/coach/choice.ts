@@ -6,7 +6,7 @@ const M = 'coachRole:manager';
 const J = 'coachRole:manager|assistant|youthCoach';
 
 export const coachChoice: RawEvent[] = [
-  ch('co_c_star_demand', C, 4, ['핵심 선수 {star}이(가) 선발 출전 보장을 공개적으로 요구했다. 팀의 중심이지만 요구를 받아들이면 다른 선수들이 흔들릴 수 있다.', '{star}이(가) 에이전트를 통해 선발 보장과 역할 확대를 요구했다.'], [
+  ch('co_c_star_demand', C, 4, ['핵심 선수 {star:이} 선발 출전 보장을 공개적으로 요구했다. 팀의 중심이지만 요구를 받아들이면 다른 선수들이 흔들릴 수 있다.', '{star:이} 에이전트를 통해 선발 보장과 역할 확대를 요구했다.'], [
     cc('요구를 받아들인다', ['"앞으로도 중심은 너다." 선수는 환히 웃었지만 일부 선수들의 눈빛이 달라졌다.', 'rel.captain-4 management-0.1 standing+2 stress+2 fu:fu_coach@8-22'], { chk: '50 leadership*0.2 management*0.2 rel.captain*0.15', pv: '스타 만족 라커룸 반발 위험', bad: ['요구를 들어줬지만 라커룸이 폭발했다. 주장이 공개적으로 불만을 터뜨렸다.', 'rel.captain-12 standing-5 management-0.2 stress+6 fu:fu_coach@8-22'], worst: ['소문이 새어 나가 언론이 불화설을 연일 보도했다. 선수단이 둘로 갈렸다.', 'rel.captain-18 standing-8 rel.media-4 stress+9 fu:fu_coach@8-22'] }),
     cc('단호하게 거절한다', ['"선발은 훈련에서 정한다." 라커룸이 술렁였다.', 'leadership+0.2 standing-2 stress+3 fu:fu_coach@8-22'], { chk: '46 leadership*0.4 management*0.3 rel.owner*0.1', bad: ['선수와 관계가 틀어졌다. 언론이 불화설을 보도했다.', 'standing-6 rel.media-3 stress+6 fu:fu_coach@8-22'] }),
     cc('역할 확대를 약속하되 선발은 보장하지 않는다', ['절충안으로 합의했다. 서로 한 발씩 물러났다.', 'management+0.15 stress+1 fu:fu_coach@8-22'], { chk: '52 management*0.4 leadership*0.2', bad: ['선수는 약속이 부족하다고 느꼈다.', 'standing-2 stress+3 fu:fu_coach@8-22'] })
@@ -34,7 +34,7 @@ export const coachChoice: RawEvent[] = [
     cc('주전을 그대로 기용한다', ['최상의 조합으로 승부를 걸었다.', 'standing+1 stress+2'], { chk: '55 management*0.2', bad: ['과로한 주전이 쓰러졌다. 부상자가 늘었다.', 'standing-3 stress+4'] })
   ], { cond: [M], cd: 60, max: 3, xg: 'tactics', tier: 'minor' }),
   ch('co_c_youth_debut', C, 3, ['유스 출신 신예가 훈련에서 두각을 나타냈다. 1군 데뷔시킬까?', '코칭스태프가 "이제 기회를 줄 때"라며 유망주를 추천했다.'], [
-    cc('데뷔시킨다', ['{star}이(가) 감독의 믿음에 보답했다. 팬들이 환호했다.', 'development+0.2 coachFame+0.15 rel.fans+3'], { chk: '48 development*0.35 management*0.1', great: ['대단한 활약이었다. 팀이 새로운 스타를 얻었다.', 'development+0.4 coachFame+0.4 standing+4'], bad: ['경험 부족이 드러났다. 선수도 큰 상처를 입었다.', 'standing-3 development-0.1'] }),
+    cc('데뷔시킨다', ['{star:이} 감독의 믿음에 보답했다. 팬들이 환호했다.', 'development+0.2 coachFame+0.15 rel.fans+3'], { chk: '48 development*0.35 management*0.1', great: ['대단한 활약이었다. 팀이 새로운 스타를 얻었다.', 'development+0.4 coachFame+0.4 standing+4'], bad: ['경험 부족이 드러났다. 선수도 큰 상처를 입었다.', 'standing-3 development-0.1'] }),
     cc('조금 더 기다린다', ['"준비가 되었을 때 기회를 주겠다."', 'management+0.05 rel.fans-2 standing-1'])
   ], { cond: [J], cd: 60, max: 6, xg: 'coach_youth', tier: 'minor' }),
   ch('co_c_media_blast', C, 3, ['기자회견에서 기자가 날카롭게 감독의 퇴진 가능성을 물었다. 모든 카메라가 감독을 향한다.', '기자가 "경질설에 대한 입장은?"이라고 물었다.'], [
@@ -55,9 +55,9 @@ export const coachChoice: RawEvent[] = [
     cc('감독의 권한으로 결정한다', ['"결정은 내가 한다." 단호했지만 분위기는 싸늘해졌다.', 'leadership+0.1 management-0.05 stress+2']),
     cc('두 안을 모두 시험해 본다', ['훈련에서 두 전술을 시험했다. 선수들의 반응이 갈렸다.', 'tactics+0.1 data+0.1 stress+3 standing-1'])
   ], { cond: [M], cd: 80, max: 3, xg: 'staff', tier: 'minor', again: '코치진과 갈등했던 지난번에는 "{prev}" 쪽을 택했다.' }),
-  ch('co_c_injured_star', C, 3, ['핵심 선수 {star}이(가) 중요한 경기를 앞두고 부상 회복 단계에 있다. 의무팀은 신중을 권한다.', '리그 우승 경쟁이 한창이다. 핵심 선수의 복귀 시점을 놓고 고민이 길어진다.'], [
+  ch('co_c_injured_star', C, 3, ['핵심 선수 {star:이} 중요한 경기를 앞두고 부상 회복 단계에 있다. 의무팀은 신중을 권한다.', '리그 우승 경쟁이 한창이다. 핵심 선수의 복귀 시점을 놓고 고민이 길어진다.'], [
     cc('완전히 회복할 때까지 쉬게 한다', ['"장기적으로 보자." 선수는 고개를 끄덕였다.', 'management+0.1 standing-1'], { pv: '재발 위험↓' }),
-    cc('기용을 강행한다', ['큰 경기에 핵심 선수를 투입했다.', 'standing+2 stress+3'], { chk: '45 management*0.2 data*0.1', bad: ['{star}이(가) 경기 중 다시 쓰러졌다. 시즌 아웃 판정이 내려졌다.', 'standing-6 management-0.1 stress+6'] })
+    cc('기용을 강행한다', ['큰 경기에 핵심 선수를 투입했다.', 'standing+2 stress+3'], { chk: '45 management*0.2 data*0.1', bad: ['{star:이} 경기 중 다시 쓰러졌다. 시즌 아웃 판정이 내려졌다.', 'standing-6 management-0.1 stress+6'] })
   ], { cond: [M], cd: 60, max: 4, xg: 'coach_health', note: 'inj_early', tier: 'minor' }),
   ch('co_c_discipline', C, 3, ['선수 한 명이 새벽까지 이어진 술자리로 문제를 일으켰다. 팀 규율을 어떻게 다룰지 결정해야 한다.', '핵심 선수가 훈련에 지각하고 구단 규율을 어겼다.'], [
     cc('엄격한 징계를 내린다', ['출전 정지와 벌금을 결정했다. 팀 규율이 한층 단단해졌다.', 'leadership+0.2 standing+1 stress+2'], { pv: '규율↑' }),
@@ -134,7 +134,7 @@ export const coachChoice: RawEvent[] = [
     cc('붙잡기 위해 대우를 높인다', ['구단과 협의해 대우를 개선했다. 수석코치가 남기로 했다.', 'management+0.1 rel.director-1'], { chk: '45 rel.director*0.2 management*0.2', bad: ['구단이 반대해 수석코치가 떠났다.', 'tactics-0.1 standing-2'] }),
     cc('웃으며 보내 준다', ['"더 큰 기회를 잡아라." 코치는 감사하며 떠났다.', 'leadership+0.1 management+0.05 stress+2'])
   ], { cond: [M, 'coachFame>=20'], cd: 120, max: 2, xg: 'coach_market', tier: 'minor' }),
-  ch('co_c_player_leave', C, 3, ['{star}이(가) 이적을 요청했다. 구단은 매각에 열려 있다. 팀 전력에 손실이 크다.', '핵심 선수 {star}이(가) 더 큰 무대를 원한다고 밝혔다.'], [
+  ch('co_c_player_leave', C, 3, ['{star:이} 이적을 요청했다. 구단은 매각에 열려 있다. 팀 전력에 손실이 크다.', '핵심 선수 {star:이} 더 큰 무대를 원한다고 밝혔다.'], [
     cc('이적을 허용한다', ['"행운을 빈다." 선수는 고개를 숙였다. 구단이 두둑한 이적료를 챙겼다.', 'management+0.1 rel.director+3 standing-2'], { pv: '구단 관계↑ 전력↓' }),
     cc('설득해 잔류시킨다', ['긴 대화 끝에 선수가 남기로 했다. 대신 역할과 대우를 약속했다.', 'leadership+0.15 rel.captain+2'], { chk: '48 leadership*0.3 management*0.2', bad: ['선수의 마음은 이미 떠난 뒤였다. 불편한 분위기가 이어졌다.', 'standing-3 rel.captain-3'] })
   ], { cond: [M, 'window'], cd: 80, max: 4, xg: 'dressing_room', tier: 'minor' }),
@@ -155,7 +155,7 @@ export const coachChoice: RawEvent[] = [
     cc('찾아가 조언을 구한다', ['선배의 경험담이 가슴에 새겨졌다. 노트 한 권이 가득 찼다.', 'tactics+0.2 leadership+0.15 coachFame+0.1'], { chk: '55 coachFame*0.1 tactics*0.1', pv: '성장↑', bad: ['은사의 조언이 현재 팀 상황과 맞지 않았다.', 'stress+3 tactics-0.05'] }),
     cc('일정을 이유로 미룬다', ['시즌이 끝나고 보자고 했다. 아쉬움이 남았다.', 'stress+1'])
   ], { cond: [J], cd: 100, max: 2, xg: 'staff', tier: 'minor' }),
-  ch('co_c_nat_hint', C, 3, ['협회 관계자가 대표팀 감독 후보로 {name}의 이름을 언급했다. 소문이 번지고 있다.', '언론이 "차기 국가대표 감독 후보"로 {name}을(를) 거론했다.'], [
+  ch('co_c_nat_hint', C, 3, ['협회 관계자가 대표팀 감독 후보로 {name}의 이름을 언급했다. 소문이 번지고 있다.', '언론이 "차기 국가대표 감독 후보"로 {name:을} 거론했다.'], [
     cc('관심을 숨기지 않는다', ['"기회가 온다면 영광일 것"이라고 말했다.', 'coachFame+0.4 rel.owner-3 fx:coachOffers=more'], { chk: '48 coachFame*0.3 media*0.1', pv: '제안↑ 구단 관계↓', bad: ['관심 표명이 소속팀 반발을 샀다.', 'rel.owner-5 rel.fans-4 standing-3'] }),
     cc('현재 팀에 집중하겠다고 선을 긋는다', ['"저는 이 팀 감독입니다."', 'rel.owner+3 rel.fans+2 coachFame-0.5'])
   ], { cond: ['license>=4', 'coachFame>=55'], cd: 150, max: 2, xg: 'coach_market', tier: 'minor' }),

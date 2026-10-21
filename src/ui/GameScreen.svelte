@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { dialog, dialogCount } from './dialog';
   import { onMount } from 'svelte';
   import { store } from './store.svelte';
   import TopBar from './TopBar.svelte';
@@ -11,12 +12,15 @@
   import SeasonReview from './SeasonReview.svelte';
   import BallonCeremony from './BallonCeremony.svelte';
   import TableModal from './TableModal.svelte';
+  import ResultModal from './ResultModal.svelte';
+  import Toasts from './Toasts.svelte';
   import { focusList } from '../engine/lifestyle';
 
   const g = $derived(store.game!);
 
   function onKey(e: KeyboardEvent) {
     const t = e.target as HTMLElement;
+    if (dialogCount() > 0) return;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
     if (e.code === 'Space') {
       e.preventDefault();
@@ -40,7 +44,7 @@
 <div class="game">
   <TopBar />
   {#if store.banner}<div class="banner">{store.banner} {#if store.bannerExport}<button class="btn sm primary" onclick={() => store.exportNow()}>지금 내보내기</button>{/if} <button class="btn sm" onclick={() => { store.banner = ''; store.bannerExport = false; }}>닫기</button></div>{/if}
-  <div class="cols">
+  <div class="cols" class:decide={!!g.decision}>
     <aside class="l"><LeftPanel /></aside>
     <main class="c"><CenterPanel /></main>
     <aside class="r"><RightPanel /></aside>
@@ -49,7 +53,7 @@
 
 {#if store.panel === 'log'}
   <div class="modal-bg" role="presentation" onclick={() => (store.panel = '')}>
-    <div class="modal" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
+    <div class="modal" role="dialog" aria-label="인생 기록 전체 보기" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}} use:dialog={{ close: () => (store.panel = '') }}>
       <div class="modal-h">인생 기록 전체 보기<span class="spacer"></span><button class="btn sm" onclick={() => (store.panel = '')}>닫기 (Esc)</button></div>
       <div class="modal-b"><LifeLog limit={1500} full={true} /></div>
     </div>
@@ -57,13 +61,17 @@
 {/if}
 {#if store.panel === 'saves'}<SaveModal />{/if}
 {#if store.reviewOpen}<SeasonReview />{/if}
-{#if store.ceremonyOpen && !store.reviewOpen}<BallonCeremony />{/if}
+{#if store.ceremonyOpen}<BallonCeremony />{/if}
+<ResultModal />
+<Toasts />
 {#if store.tableOpen}<TableModal />{/if}
 
 <style>
   .game { height: 100%; display: flex; flex-direction: column; }
-  .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 400px; gap: 12px; padding: 12px; }
+  .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 400px; gap: var(--s3); padding: var(--s3); }
   .l, .c, .r { min-height: 0; min-width: 0; }
-  .banner { background: color-mix(in srgb, var(--amber) 18%, var(--panel)); padding: 6px 16px; font-size: 13px; border-bottom: 1px solid var(--line); }
-  :global(.app.compact) .cols { grid-template-columns: 320px minmax(0, 1fr) 340px; gap: 8px; padding: 8px; }
+  .l, .r { transition: opacity 0.2s; }
+  .cols.decide .l, .cols.decide .r { opacity: 0.55; }
+  .banner { background: color-mix(in srgb, var(--amber) 18%, var(--panel)); padding: var(--s2) var(--s4); font-size: 13px; border-bottom: 1px solid var(--line); }
+  :global(.app.compact) .cols { grid-template-columns: 320px minmax(0, 1fr) 340px; gap: var(--s2); padding: var(--s2); }
 </style>

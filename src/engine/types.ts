@@ -91,6 +91,7 @@ export interface LogEntry {
   need?: number;
   from?: number;
   quote?: string;
+  lines?: Line[];
   dream?: boolean;
   tier?: 'y' | 'r' | 'f';
 }
@@ -133,7 +134,7 @@ export interface Face {
   told: string;
 }
 
-export interface BallonRec { s: number; year: number; top: { name: string; club: string; country: string }[]; player: number; playerScore: number; winnerIsPlayer: boolean }
+export interface BallonRec { s: number; year: number; top: { name: string; club: string; country: string }[]; player: number; playerScore: number; winnerIsPlayer: boolean; runnerAward?: boolean; awarded?: boolean }
 
 export interface TournRec { s: number; year: number; id: string; ko: string; winner: string; runner: string; semis: string[]; player: string }
 
@@ -273,6 +274,18 @@ export interface Offer {
   yth?: 'youth' | 'scholar' | 'pro';
   note?: string;
   optionFee?: number;
+  renego?: boolean;
+  cinfo?: CoachOfferInfo;
+}
+
+export interface CoachOfferInfo {
+  country: string;
+  leagueName: string;
+  level: number;
+  target: number;
+  budget: string;
+  director: string;
+  reason: string;
 }
 
 export type OfferMode = 'transfer' | 'renew' | 'loan' | 'free' | 'pre';
@@ -633,7 +646,13 @@ export interface PostState {
   legendEvents: number;
 }
 
-export interface Src { w: number; q: string; log: number; ref: string }
+export interface PersonRef { k: string; n: string }
+
+export interface Line { who: string; name: string; rel: string; icon: string; text: string }
+
+export type Bind = Record<string, PersonRef>;
+
+export interface Src { w: number; q: string; log: number; ref: string; bind?: Bind }
 
 export interface Budget {
   s: number;
@@ -651,8 +670,11 @@ export interface EvState {
   count: Record<string, number>;
   recent: string[];
   flags: Record<string, number>;
-  sched: { id: string; at: number; exp: number; src?: Src }[];
+  sched: { id: string; at: number; exp: number; src?: Src; bind?: Bind }[];
   pendSrc: Record<string, Src>;
+  pendBind: Record<string, Bind>;
+  varUsed: Record<string, number[]>;
+  varN: number;
   last: Record<string, { w: number; label: string; grade: string }>;
   bud: Budget;
   actCd: Record<string, number>;
@@ -682,7 +704,9 @@ export interface Decision {
   ctx: string;
   offers: Offer[];
   quote?: string;
+  lines?: Line[];
   from?: number;
+  bind?: Bind;
 }
 
 export interface ResultPanel {
@@ -694,6 +718,7 @@ export interface ResultPanel {
   changes: Chip[];
   later: boolean;
   w: number;
+  lines?: Line[];
 }
 
 export interface Snap { ovr: number; val: number; wage: number; fame: number; standing: number }

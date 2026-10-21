@@ -8,9 +8,10 @@ import { canStudy, startStudy, resignCoach } from './coach';
 import { setPath, type PathId } from './postcareer';
 import { getClub, getCountry } from './data';
 import { makePerson, randomPos } from './relations';
-import { ROLE_VAL } from './transfer';
+import { ROLE_UP } from './transfer';
 import { applyTransferRequest, withdrawTransferRequest } from './market';
-import type { GameState, Role } from './types';
+import type { GameState } from './types';
+import { josa } from './josa';
 
 function pay(s: GameState, amount: number): void {
   const fromCash = Math.min(s.fin.cash, amount);
@@ -107,8 +108,7 @@ registerAction('roleUp', (s, _c, _a, grade) => {
   const c = s.career.contract;
   if (!c) return;
   if (grade === 'great' || grade === 'ok') {
-    const roles: Role[] = ['backup', 'prospect', 'rotation', 'starter'];
-    c.role = roles[Math.min(3, ROLE_VAL[c.role] + 1)];
+    c.role = ROLE_UP[c.role] ?? c.role;
     if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel + 3, -100, 100);
   }
 });
@@ -140,7 +140,7 @@ registerAction('posChange', (s, _c, _a, grade) => {
   s.ab.sec[old] = 70;
   delete s.ab.sec[best as import('./types').Pos];
   s.ab.pos = best as import('./types').Pos;
-  addLog(s, 'milestone', '포지션 변경', `주 포지션이 ${old}에서 ${best}(으)로 바뀌었다.`, []);
+  addLog(s, 'milestone', '포지션 변경', `주 포지션이 ${old}에서 ${josa(best, '으로')} 바뀌었다.`, []);
 });
 registerAction('declineNat', (s) => { s.ev.flags.nat_ignore = s.week; });
 registerAction('coachLicense', (s) => {

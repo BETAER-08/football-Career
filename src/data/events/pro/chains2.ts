@@ -7,12 +7,12 @@ const K = 'chain-step' as const;
 
 export const chains2: RawEvent[] = [
   pa('nc_1', P, 2, ['대표팀 명단 발표 후 {name}의 발탁을 둘러싼 논란이 일었다. "자격이 있는가"를 두고 커뮤니티가 갈렸다.', '대표팀 발탁 소식이 전해지자 일부 언론은 "시기상조"라고 지적했다. 소란이 만만치 않다.'], 'rel.media-3 stress+5 fu:nc_2@1-3', { kind: K, chain: 'nat_controversy', cond: ['caps<=2', 'fameD>=8', 'age>=18', 'lvl>=2', 'ovr>=45'], cd: 400, max: 1, note: 'nat_call' }),
-  ch('nc_2', P, 1, ['소집 전 기자회견장. 기자들이 발탁 논란에 대한 입장을 물었다. 모든 카메라가 {name}을(를) 향하고 있다.', '대표팀 합류를 앞두고 언론이 발탁 이유를 캐묻는다.'], [
+  ch('nc_2', P, 1, ['소집 전 기자회견장. 기자들이 발탁 논란에 대한 입장을 물었다. 모든 카메라가 {name:을} 향하고 있다.', '대표팀 합류를 앞두고 언론이 발탁 이유를 캐묻는다.'], [
     cc('실력으로 증명하겠다고 답한다', ['"결과로 말씀드리겠습니다." 침착한 답변이 인상적이었다.', 'rel.media+3 rel.fans+2 stress+2 fu:nc_3@4-8'], { chk: '50 attr.composure*1 hid.bigGame*0.2', bad: ['긴장한 탓에 답이 어색했다. 인터뷰가 자꾸 회자됐다.', 'rel.media-3 stress+4 fu:nc_3b@4-8'] }),
     cc('논란에 정면으로 반박한다', ['단호한 어조로 반박했다. 일부는 박수를, 일부는 비판을 보냈다.', 'rel.fans+3 rel.media-4 stress+4 fu:nc_3@4-8'], { chk: '42 hid.controversy*-0.3', bad: ['반박이 과열되면서 대표팀 코칭스태프가 난처해했다.', 'rel.natcoach-6 rel.media-6 fu:nc_3b@4-8'] }),
     cc('말을 아낀다', ['"감독님의 선택을 존중합니다."', 'stress+1 fu:nc_3@4-8'])
   ], { kind: K, chain: 'nat_controversy', sched: true, max: 1 }),
-  pa('nc_3', P, 1, ['대표팀 경기에서 {name}이(가) 제 몫을 해냈다. 논란은 박수 소리에 묻혔다. 기사 제목이 바뀌었다.', '데뷔전에서 안정적인 활약을 펼치며 의심을 일부 지웠다.'], 'fameD+1.5 rel.natcoach+5 rel.media+4 morale+6', { kind: K, chain: 'nat_controversy', sched: true, max: 1, cond: ['form>=6.4'] }),
+  pa('nc_3', P, 1, ['대표팀 경기에서 {name:이} 제 몫을 해냈다. 논란은 박수 소리에 묻혔다. 기사 제목이 바뀌었다.', '데뷔전에서 안정적인 활약을 펼치며 의심을 일부 지웠다.'], 'fameD+1.5 rel.natcoach+5 rel.media+4 morale+6', { kind: K, chain: 'nat_controversy', sched: true, max: 1, cond: ['form>=6.4'] }),
   pa('nc_3b', P, 1, ['대표팀 경기에서 {name}의 활약은 아쉬웠다. 논란은 다시 불붙었다. 자신을 증명할 기회는 다음으로 미뤄졌다.', '소집 기간 내내 부진하며 비판이 이어졌다. 마음이 가라앉았다.'], 'rel.media-4 morale-5 stress+5', { kind: K, chain: 'nat_controversy', sched: true, max: 1, cond: ['form<6.4'] }),
 
   ch('ga_1', P, 2, ['원정 호텔에서 동료들이 카지노로 간다며 함께 가자고 했다. 가볍게 구경만 하자고 한다.', '동료의 지인이 운영하는 도박 모임이 있다고 한다. 가볍게 즐기는 정도라고 했다.'], [
@@ -31,7 +31,7 @@ export const chains2: RawEvent[] = [
     cc('즉시 삭제하고 사과한다', ['글을 지우고 진심 어린 사과문을 올렸다. 여론이 일부 누그러졌다.', 'rel.fans-1 rel.media+1 stress+4 fu:sns_2@2-5'], { chk: '50 hid.controversy*-0.2 hid.pro*0.1', pv: '피해 최소화', bad: ['사과문이 오히려 논란을 키웠다.', 'rel.fans-4 rel.media-4 stress+6 fu:sns_2@2-5'] }),
     cc('그대로 둔다', ['"내 생각을 말한 것뿐이다." 논란이 점점 커졌다.', 'rel.fans-6 rel.media-6 followers+60 stress+6 fu:sns_2@1-3'])
   ], { cond: ['followers>=100', 'hid.controversy>=45', 'age>=15'], cd: 300, max: 1, note: 'media', kind: K, chain: 'sns_scandal', tier: 'major' }),
-  ch('sns_2', YP, 1, ['구단이 {name}을(를) 불러 SNS 사용 문제를 짚었다. 징계 수위를 논의한다는 이야기도 나왔다.', '{coach} 감독이 면담을 요청했다. 표정이 평소보다 굳어 있다.'], [
+  ch('sns_2', YP, 1, ['구단이 {name:을} 불러 SNS 사용 문제를 짚었다. 징계 수위를 논의한다는 이야기도 나왔다.', '{coach} 감독이 면담을 요청했다. 표정이 평소보다 굳어 있다.'], [
     cc('책임을 인정하고 징계를 받아들인다', ['태도를 바로 잡겠다고 약속했다. 징계는 경고 수준에서 마무리됐다.', 'rel.coach+2 hid.pro+2 hid.controversy-3 cash-30'], { pv: '프로의식↑' }),
     cc('억울함을 호소한다', ['구단은 냉랭하게 반응했다. 벌금이 부과됐다.', 'rel.coach-5 cash-80 stress+4'], { chk: '40 hid.controversy*-0.3 rel.coach*0.2', bad: ['항변이 구단의 신뢰를 더 떨어뜨렸다.', 'rel.coach-8 stress+6 cash-150'] })
   ], { kind: K, chain: 'sns_scandal', sched: true, max: 1 }),
@@ -87,5 +87,5 @@ export const chains2: RawEvent[] = [
     cc('담담하게 인사한다', ['"그동안 감사했습니다." 짧은 인사였지만 진심이었다.', 'rel.captain+3 happy-2'])
   ], { kind: K, chain: 'mentor', sched: true, max: 1 }),
 
-  pa('child_birth', YP, 1, ['{partner}이(가) 건강한 아이를 낳았다. 병원 복도에서 처음 아이를 안았을 때, 세상 모든 소리가 사라졌다.', '아이가 태어났다. 작고 따뜻한 손이 손가락을 쥐었다. 그 순간부터 모든 것이 달라졌다.'], 'fx:child hid.family+3 happy+8', { sched: true, max: 4, cond: ['married'] })
+  pa('child_birth', YP, 1, ['{partner:이} 건강한 아이를 낳았다. 병원 복도에서 처음 아이를 안았을 때, 세상 모든 소리가 사라졌다.', '아이가 태어났다. 작고 따뜻한 손이 손가락을 쥐었다. 그 순간부터 모든 것이 달라졌다.'], 'fx:child hid.family+3 happy+8', { sched: true, max: 4, cond: ['married'] })
 ];

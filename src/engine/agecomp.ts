@@ -10,6 +10,7 @@ import { awardPrize, awardTrophy, trigMoment } from './season';
 import { natSelect, ensureNatCoach } from './natsel';
 import { yearOf } from './time';
 import type { Fixture, GameState } from './types';
+import { josa } from './josa';
 
 const GROUP_WEEKS = 3;
 const ADJ: Record<string, number> = { u17: -12, u20: -7, u23: -4 };
@@ -72,7 +73,7 @@ function recordEnd(s: GameState, t: AgeTournament, year: number, result: string,
   }
   const inSquad = s.ev.flags[`${key}:squad`] === 1;
   if (inSquad) s.nat.ageRecs.push({ year, id: t.id, name: t.ko, result, apps, goals, assists, awards });
-  addLog(s, inSquad ? 'milestone' : 'world', t.ko, `${getCountry(s.p.country).natTeam}은(는) ${year} ${t.ko}에서 ${result}${inSquad ? ` (${s.p.name} ${apps}경기 ${goals}골 ${assists}도움)` : ''}.`, [], { star: inSquad });
+  addLog(s, inSquad ? 'milestone' : 'world', t.ko, `${josa(getCountry(s.p.country).natTeam, '은')} ${year} ${t.ko}에서 ${result}${inSquad ? ` (${s.p.name} ${apps}경기 ${goals}골 ${assists}도움)` : ''}.`, [], { star: inSquad });
   if (inSquad) toast(s, `${t.ko} ${result}`);
   medalCheck(s, rng, t, result, inSquad && apps > 0);
 }
@@ -119,7 +120,7 @@ export function ageTournamentWeek(s: GameState, rng: Rng, sw: number): void {
       }
       f[`${key}:squad`] = roll ? 1 : 0;
       if (f[`${key}:q`]) {
-        addLog(s, 'world', t.ko, `${year} ${t.ko}이(가) 개막했다. ${c.natTeam}이(가) 출전한다.`, []);
+        addLog(s, 'world', t.ko, `${year} ${josa(t.ko, '이')} 개막했다. ${josa(c.natTeam, '이')} 출전한다.`, []);
         if (roll) {
           s.nat.status = s.nat.status === 'senior' ? 'senior' : 'youth';
           s.nat.youthCaps += 1;
@@ -130,7 +131,7 @@ export function ageTournamentWeek(s: GameState, rng: Rng, sw: number): void {
             fireEvent(s, rng, getEvent('nat_youth_refuse'));
           } else addLog(s, 'milestone', t.ko, `${year} ${t.ko} 대표팀 명단에 이름을 올렸다.${wild ? ' 와일드카드 선발이다.' : ''}`, [], { star: true });
         }
-      } else addLog(s, 'world', t.ko, `${c.natTeam}은(는) ${year} ${t.ko} 본선 진출에 실패했다.`, []);
+      } else addLog(s, 'world', t.ko, `${josa(c.natTeam, '은')} ${year} ${t.ko} 본선 진출에 실패했다.`, []);
     }
     if (f[`${key}:alive`] !== 1) continue;
     const grp = idx < GROUP_WEEKS;

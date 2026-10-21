@@ -13,6 +13,7 @@ import { ensureCountry } from './world';
 import { emptyRec } from './records';
 import { setupClubSeason } from './transfer';
 import { marketValue } from './finance';
+import { josa } from './josa';
 
 const PRO_HEIGHT_BONUS = 2;
 
@@ -116,7 +117,7 @@ function storyLines(rng: Rng, s: GameState, origin: RouletteResult, famExp: stri
   rng.shuffle(cand);
   const n = rng.int(3, 4);
   for (let i = 0; i < n && i < cand.length; i++) lines.push(cand[i]);
-  if (lines.length < 3) lines.push(`${name}은(는) 어느 날 지역 스카우트의 눈에 띄어 유스 테스트를 받게 되었다.`);
+  if (lines.length < 3) lines.push(`${josa(name, '은')} 어느 날 지역 스카우트의 눈에 띄어 유스 테스트를 받게 되었다.`);
   return lines.slice(0, 4);
 }
 
@@ -266,7 +267,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     },
     post: { path: 'none', adminRole: '', skill: 0, rep: 0, income: 0, enteredW: 0, legendEvents: 0, ms: {}, msWeek: {}, lastAsk: -1, askCount: 0, endedBy: '', epiWeeks: 0 },
     people,
-    ev: { cd: {}, count: {}, recent: [], flags: {}, sched: [], pendSrc: {}, last: {}, bud: { s: -1, choiceT: 0, choiceN: 0, majorN: 0, minorN: 0, passT: 0, passN: 0, lastChoiceW: -99 }, actCd: {}, actUse: {}, nextId: st0.nextId, logSeq: 1, lastRollW: 0 },
+    ev: { cd: {}, count: {}, recent: [], flags: {}, sched: [], pendSrc: {}, pendBind: {}, varUsed: {}, varN: 0, last: {}, bud: { s: -1, choiceT: 0, choiceN: 0, majorN: 0, minorN: 0, passT: 0, passN: 0, lastChoiceW: -99 }, actCd: {}, actUse: {}, nextId: st0.nextId, logSeq: 1, lastRollW: 0 },
     world: { countries: {}, leagues: {}, cupSeed: hashString(cfg.seed) },
     decision: null,
     decQueue: [],

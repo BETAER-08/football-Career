@@ -13,6 +13,7 @@ import { changeYouthClub } from './yleague';
 import { isSchoolStage } from './stages';
 import { clubLvl } from './world';
 import type { GameState, Offer } from './types';
+import { josa } from './josa';
 
 export function hasSchoolPath(country: string, kind: SchoolKind): boolean {
   return country === 'US' ? kind === 'UNI' : country === 'KR' || country === 'JP' ? true : false;
@@ -154,5 +155,5 @@ export function dualRegister(s: GameState, rng: Rng): void {
     s.ev.flags.pro_debut = s.week;
   }
   s.fame.dom = clamp(s.fame.dom + 1.2, 0, 100);
-  addLog(s, 'milestone', '2종 등록 J리그 출전', `${s.p.name}이(가) ${club.name} 1군 경기에 2종 등록 선수로 나섰다. 1군 데뷔로 기록된다.`, [], { star: true });
+  addLog(s, 'milestone', '2종 등록 J리그 출전', `${josa(s.p.name, '이')} ${club.name} 1군 경기에 2종 등록 선수로 나섰다. 1군 데뷔로 기록된다.`, [], { star: true });
 }

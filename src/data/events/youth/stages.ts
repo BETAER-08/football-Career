@@ -80,7 +80,7 @@ export const youthStages: RawEvent[] = [
   ], { cond: ['lvl>=5', 'pot<=70'], cd: 150, max: 1, xg: 'academy_move', tier: 'major' }),
   ch('ys_youth_cup_call', Y, 3, [
     '지역 유스 선발 대회 소집 명단에 이름이 올랐다. 소속 구단은 같은 주에 중요한 대회를 앞두고 있다.',
-    '연령별 선발팀 코치가 {name}을(를) 추천했다는 소식이 들렸다. 구단 일정과 겹치는 소집이다.'
+    '연령별 선발팀 코치가 {name:을} 추천했다는 소식이 들렸다. 구단 일정과 겹치는 소집이다.'
   ], [
     cc('선발팀 소집에 응한다', ['낯선 유니폼을 입고 낯선 동료들과 뛰었다. 속도가 달랐다.', 'fx:youthCap fameD+0.6 morale+5 fatigue+6'], {
       chk: '55 ovr*0.3 hid.bigGame*0.15 fatigue*-0.2', pv: '명성↑ 피로↑ 부상 위험',

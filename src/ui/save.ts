@@ -43,15 +43,16 @@ export function isCurrent(e: AnyEntry): e is ArchiveEntry {
   return (e as ArchiveEntry).version === ARCHIVE_VERSION && !!(e as ArchiveEntry).data;
 }
 
-export interface Prefs { theme: 'dark' | 'light'; music: boolean; speed: number; lengthMin: 30 | 60 | 90; autoDecide: boolean }
+export interface Prefs { tutorialSeen: boolean; music: boolean; speed: number; lengthMin: 30 | 60 | 90; autoDecide: boolean }
 
-export const defaultPrefs: Prefs = { theme: 'dark', music: false, speed: 1, lengthMin: 60, autoDecide: false };
+export const defaultPrefs: Prefs = { tutorialSeen: false, music: false, speed: 1, lengthMin: 60, autoDecide: false };
 
 export function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(PREF);
     if (!raw) return { ...defaultPrefs };
-    return { ...defaultPrefs, ...(JSON.parse(raw) as Partial<Prefs>) };
+    const { theme: _theme, ...rest } = JSON.parse(raw) as Partial<Prefs> & { theme?: unknown };
+    return { ...defaultPrefs, ...rest };
   } catch {
     return { ...defaultPrefs };
   }
@@ -115,6 +116,19 @@ export function loadGame(): LoadResult {
     return parseSave(raw);
   } catch {
     return { kind: 'none' };
+  }
+}
+
+export function peekSave(): { state: GameState; savedAt: number } | null {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return null;
+    const r = parseSave(raw);
+    if (r.kind !== 'ok') return null;
+    const meta = JSON.parse(raw) as { savedAt?: number };
+    return { state: r.state, savedAt: typeof meta.savedAt === 'number' ? meta.savedAt : 0 };
+  } catch {
+    return null;
   }
 }
 

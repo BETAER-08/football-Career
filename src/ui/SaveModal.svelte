@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { dialog } from './dialog';
   import { store } from './store.svelte';
 
   let text = $state('');
@@ -24,8 +25,8 @@
   }
 </script>
 
-<div class="modal-bg" role="presentation" onclick={() => (store.panel = '')}>
-  <div class="modal" style="max-width:600px" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
+<div class="modal-bg" role="presentation">
+  <div class="modal" style="max-width:600px" role="dialog" aria-label="저장 · 나가기" tabindex="-1" use:dialog={{ close: () => (store.panel = '') }}>
     <div class="modal-h">저장 · 나가기</div>
     <div class="modal-b col" style="gap:10px">
       <div class="muted">자동 저장은 매주 이뤄져요. 나가도 이어하기로 돌아올 수 있어요.</div>
@@ -33,6 +34,7 @@
         <button class="btn" onclick={() => { store.saveNow(); msg = '저장했어요.'; }}>지금 저장</button>
         <button class="btn" onclick={download}>JSON 내보내기</button>
         <button class="btn" onclick={copy}>텍스트 복사</button>
+        <button class="btn" onclick={() => { store.panel = ''; store.openTutorial(); }}>첫 플레이 안내 다시 보기</button>
       </div>
       <input type="file" accept=".json,application/json" onchange={onFile} />
       <textarea rows="5" placeholder="가져올 저장 JSON" bind:value={text}></textarea>

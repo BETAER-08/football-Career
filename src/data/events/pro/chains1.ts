@@ -5,7 +5,7 @@ const P: ('pro')[] = ['pro'];
 const K = 'chain-step' as const;
 
 export const chains1: RawEvent[] = [
-  ch('af_1', P, 3, ['에이전트 {agent}이(가) 재정 관리까지 맡아 주겠다고 제안했다. "선수는 운동만 하면 되잖아요." 위임장 한 장이면 된다.', '{agent}이(가) 세금과 투자까지 한 번에 관리해 주겠다고 했다. 믿음직하지만 서류가 많다.'], [
+  ch('af_1', P, 3, ['에이전트 {agent:이} 재정 관리까지 맡아 주겠다고 제안했다. "선수는 운동만 하면 되잖아요." 위임장 한 장이면 된다.', '{agent:이} 세금과 투자까지 한 번에 관리해 주겠다고 했다. 믿음직하지만 서류가 많다.'], [
     cc('전부 맡긴다', ['서류에 서명했다. 신경 쓸 일이 확 줄었다.', 'rel.agent+4 stress-3 flag:af_trust fu:af_2@14-34'], { chk: '40 hid.thrift*0.3 attr.vision*0.3 agent*0.2', pv: '편의↑ 위험 숨어 있음', bad: ['서류에 적힌 권한 범위가 지나치게 넓었다는 걸 뒤늦게 알았다.', 'rel.agent+4 stress+3 flag:af_trust fu:af_2@6-14'] }),
     cc('일부만 맡긴다', ['세금 업무만 맡기고 나머지는 직접 챙기기로 했다.', 'rel.agent+1 hid.thrift+1 stress+2']),
     cc('직접 관리한다', ['"돈은 제가 챙길게요." 에이전트는 어깨를 으쓱했다.', 'hid.thrift+2 rel.agent-1'])
@@ -19,17 +19,17 @@ export const chains1: RawEvent[] = [
   pa('af_3b', P, 1, ['감사 결과 몇몇 이체가 부적절했음이 확인됐다. 피해는 일부에 그쳤고 에이전트와의 계약은 해지됐다.', '조사로 문제가 일찍 드러나 큰 손실은 막았다. 에이전트는 관계를 정리하겠다고 했다.'], 'fx:agentGone cashy-0.05 stress+4 fu:af_4@4-12', { kind: K, chain: 'agent_fraud', sched: true, max: 1 }),
   pa('af_4', P, 1, ['에이전트 사건이 언론에 보도됐다. 동료와 지인들이 위로를 건넸다. 이제는 돈을 다루는 일에 더 신중해졌다.', '한 차례 큰 일을 겪은 뒤 재정 관리 방식을 완전히 바꿨다. 이제 모든 서류를 직접 확인한다.'], 'hid.thrift+4 hid.pro+1 rel.media-2', { kind: K, chain: 'agent_fraud', sched: true, max: 1, note: 'broke' }),
 
-  ch('rf_1', P, 3, ['{rival}이(가) 인터뷰에서 {name}을(를) 은근히 저격했다. 기사 제목이 신경을 건드린다.', '{rival}의 발언이 화제다. "누가 더 필요한 선수인지는 팬들이 안다"는 말이었다.'], [
+  ch('rf_1', P, 3, ['{rival:이} 인터뷰에서 {name:을} 은근히 저격했다. 기사 제목이 신경을 건드린다.', '{rival}의 발언이 화제다. "누가 더 필요한 선수인지는 팬들이 안다"는 말이었다.'], [
     cc('같은 방식으로 맞받는다', ['언론을 통해 반박했다. 팬들이 편을 갈랐다.', 'rel.rival-8 rel.media+3 rel.fans+2 stress+4 fu:rf_2@6-14'], { pv: '긴장↑' }),
     cc('무시한다', ['흔들리지 않기로 했다. 하지만 마음 한구석이 불편했다.', 'stress+2 fu:rf_2@10-20']),
     cc('직접 만나 이야기한다', ['어색한 만남이었지만 서로의 입장을 들었다.', 'rel.rival+8 stress-2'], { chk: '40 hid.social*0.25 hid.temper*-0.2 rel.rival*0.1', bad: ['대화는 평행선이었다. 오히려 감정이 상했다.', 'rel.rival-4 stress+3 fu:rf_2@6-14'] })
   ], { cond: ['rel.rival<=-4', 'fameD>=6'], cd: 300, max: 1, kind: K, chain: 'rival_feud', tier: 'major' }),
-  ch('rf_2', P, 1, ['경기 중 {rival}과(와) 정면으로 맞부딪혔다. 두 선수 사이로 심판이 급히 들어왔다. 관중석이 술렁인다.', '{rival}과(와)의 신경전이 그라운드에서 폭발했다. 주변 선수들이 말리기 시작했다.'], [
-    cc('먼저 손을 내민다', ['"그만하자." 짧은 한마디와 함께 악수를 청했다. {rival}은(는) 잠시 머뭇거렸다.', 'rel.rival+6 stress-3 fu:rf_3a@2-6'], { chk: '45 hid.temper*-0.25 attr.composure*1', bad: ['손을 뿌리쳤다. 분위기가 더 나빠졌다.', 'rel.rival-6 fu:rf_3b@2-6'] }),
+  ch('rf_2', P, 1, ['경기 중 {rival:과} 정면으로 맞부딪혔다. 두 선수 사이로 심판이 급히 들어왔다. 관중석이 술렁인다.', '{rival:과}의 신경전이 그라운드에서 폭발했다. 주변 선수들이 말리기 시작했다.'], [
+    cc('먼저 손을 내민다', ['"그만하자." 짧은 한마디와 함께 악수를 청했다. {rival:은} 잠시 머뭇거렸다.', 'rel.rival+6 stress-3 fu:rf_3a@2-6'], { chk: '45 hid.temper*-0.25 attr.composure*1', bad: ['손을 뿌리쳤다. 분위기가 더 나빠졌다.', 'rel.rival-6 fu:rf_3b@2-6'] }),
     cc('끝까지 맞선다', ['한 걸음도 물러서지 않았다. 카드가 오갔다.', 'rel.rival-8 stress+4 fx:banned=3 fu:rf_3b@2-6'])
   ], { kind: K, chain: 'rival_feud', sched: true, max: 1 }),
-  pa('rf_3a', P, 1, ['경기 후 {rival}이(가) 먼저 말을 걸었다. 서로에게 쌓였던 감정이 풀리는 데 오래 걸리지 않았다. 둘은 오랜 라이벌이자 서로를 인정하는 사이가 됐다.', '악연은 끝났다. {rival}과(와) 나눈 맥주 한 잔이 모든 앙금을 씻어 주었다.'], 'rel.rival+25 happy+5 fameD+0.4 hid.social+1', { kind: K, chain: 'rival_feud', sched: true, max: 1 }),
-  pa('rf_3b', P, 1, ['{rival}과(와)의 갈등은 징계와 벌금으로 이어졌다. 팬들은 두 사람의 대결을 보며 열광했지만 구단은 곤혹스러워했다.', '충돌이 확대되면서 구단은 두 선수를 따로 불러 경고했다. 앙금은 쉽게 풀리지 않을 것 같다.'], 'rel.rival-20 rel.coach-4 stress+5 rel.fans+1 cash-40 fx:rivalNew', { kind: K, chain: 'rival_feud', sched: true, max: 1 }),
+  pa('rf_3a', P, 1, ['경기 후 {rival:이} 먼저 말을 걸었다. 서로에게 쌓였던 감정이 풀리는 데 오래 걸리지 않았다. 둘은 오랜 라이벌이자 서로를 인정하는 사이가 됐다.', '악연은 끝났다. {rival:과} 나눈 맥주 한 잔이 모든 앙금을 씻어 주었다.'], 'rel.rival+25 happy+5 fameD+0.4 hid.social+1', { kind: K, chain: 'rival_feud', sched: true, max: 1 }),
+  pa('rf_3b', P, 1, ['{rival:과}의 갈등은 징계와 벌금으로 이어졌다. 팬들은 두 사람의 대결을 보며 열광했지만 구단은 곤혹스러워했다.', '충돌이 확대되면서 구단은 두 선수를 따로 불러 경고했다. 앙금은 쉽게 풀리지 않을 것 같다.'], 'rel.rival-20 rel.coach-4 stress+5 rel.fans+1 cash-40 fx:rivalNew', { kind: K, chain: 'rival_feud', sched: true, max: 1 }),
 
   ch('mf_1', P, 2, ['낯선 사내가 접근해 다음 경기 결과에 "협조"하면 큰돈을 주겠다고 속삭였다. 몇 번이고 거절해도 그의 눈은 포기하지 않는 듯했다.', '경기를 앞두고 휴대폰에 알 수 없는 번호로 메시지가 왔다. 승부조작을 암시하는 제안이었다.'], [
     cc('단호히 거절한다', ['"그런 일은 하지 않습니다." 사내는 말없이 사라졌다. 심장이 빠르게 뛰었다.', 'hid.pro+3 stress+4 fu:mf_2a@4-10'], { pv: '프로의식↑' }),
@@ -44,7 +44,7 @@ export const chains1: RawEvent[] = [
     cc('계속 협조한다', ['선을 넘었다. 이제는 돌아갈 곳이 없다.', 'cashw+15 hid.pro-6 stress+10 fu:mf_3b@6-16'], { chk: '30 hid.pro*-0.2 hid.bigGame*0.1', pv: '위험 수위↑↑↑', bad: ['협조가 이어지던 중 구단 조사에 꼬리를 밟혔다.', 'cashw+15 hid.pro-6 stress+12 fu:mf_3b@2-5'] }),
     cc('그만두고 자수를 고민한다', ['구단에 사실을 알리고 조사에 협조하기로 했다. 처벌은 피하기 어렵겠지만 더는 숨기지 않기로 했다.', 'stress+8 hid.pro+2 fu:mf_3b@4-10'])
   ], { kind: K, chain: 'match_fixing', sched: true, max: 1, heavy: true, help: '불법 행위에 연루되었다면 변호사와 상담하고 수사에 협조하는 것이 가장 안전합니다.' }),
-  pa('mf_3b', P, 1, ['수사기관이 승부조작 정황을 포착했다. 구단은 즉각 {name}을(를) 분리 조치했다. 오랜 시간 쌓은 모든 것이 한순간에 무너졌다.', '조사 결과 승부조작 연루 사실이 확인됐다. 협회는 장기 출전 정지를 결정했다.'], 'fx:banned=40 fx:release val-60 fameD-15 rel.fans-30 rel.media-25 rel.coach-20 happy-20 stress+20 hid.controversy+5', { kind: K, chain: 'match_fixing', sched: true, max: 1, heavy: true, help: '큰 잘못을 저지른 뒤에도 책임을 지고 도움을 구하는 길은 있습니다. 가족과 전문가에게 이야기하세요.' }),
+  pa('mf_3b', P, 1, ['수사기관이 승부조작 정황을 포착했다. 구단은 즉각 {name:을} 분리 조치했다. 오랜 시간 쌓은 모든 것이 한순간에 무너졌다.', '조사 결과 승부조작 연루 사실이 확인됐다. 협회는 장기 출전 정지를 결정했다.'], 'fx:banned=40 fx:release val-60 fameD-15 rel.fans-30 rel.media-25 rel.coach-20 happy-20 stress+20 hid.controversy+5', { kind: K, chain: 'match_fixing', sched: true, max: 1, heavy: true, help: '큰 잘못을 저지른 뒤에도 책임을 지고 도움을 구하는 길은 있습니다. 가족과 전문가에게 이야기하세요.' }),
   pa('mf_3c', P, 1, ['당신의 신고 덕분에 승부조작 조직이 적발됐다. 리그와 구단은 감사를 표했고 팬들은 박수를 보냈다. 지키기 어려웠던 원칙이 빛났다.', '수사 결과 승부조작 조직이 검거됐다. 용기 있는 신고가 리그 전체를 지켰다는 평가가 나왔다.'], 'rel.fans+10 rel.media+8 fameD+2 hid.pro+4 happy+6', { kind: K, chain: 'match_fixing', sched: true, max: 1 }),
 
   ch('il_1', P, 3, ['같은 부위를 또 다쳤다. 이번에는 정말 수술이 필요할지도 모른다는 이야기가 나온다.', '재활을 끝낸 지 얼마 되지 않았는데 같은 자리에서 통증이 다시 올라왔다. 의무팀의 표정이 굳어 있다.'], [
@@ -70,19 +70,19 @@ export const chains1: RawEvent[] = [
   pa('cb_3b', P, 1, ['구단이 끝내 해체 절차를 밟았다. 선수들은 계약 해지를 통보받았다. 체불 임금은 법적 절차로 넘어갔다.', '구단이 파산을 신청했다. 라커룸 짐을 챙겨 나오는 동안 아무도 말이 없었다.'], 'fx:clubRecover fx:release morale-8 stress+8 rel.fans-2', { kind: K, chain: 'club_bankrupt', sched: true, max: 1 }),
 
   pa('cc_1', P, 3, ['구단이 {coach} 감독을 경질했다. 지난 연패를 이유로 한 결정이었다. 곧 새 감독이 부임한다.', '성적 부진 끝에 {coach} 감독이 물러났다. 선수단 분위기가 어수선하다.'], 'fx:newCoach stress+2 fu:cc_2@1-3', { kind: K, chain: 'coach_change', cond: ['hasClub', 'form<=6.4', 'lvl>=2'], cd: 100, max: 4, note: 'coach_fired' }),
-  ch('cc_2', P, 1, ['새 감독 {coach}이(가) 첫 면담에서 {name}에게 "네 역할을 다시 정해 보자"고 말했다. 이 자리에서의 인상이 중요하다.', '신임 {coach} 감독과의 첫 개별 면담. 서로 아직 서먹하다.'], [
+  ch('cc_2', P, 1, ['새 감독 {coach:이} 첫 면담에서 {name}에게 "네 역할을 다시 정해 보자"고 말했다. 이 자리에서의 인상이 중요하다.', '신임 {coach} 감독과의 첫 개별 면담. 서로 아직 서먹하다.'], [
     cc('적극적으로 자신을 어필한다', ['열정적으로 이야기했다. 감독의 눈이 반짝였다.', 'rel.coach+4 stress+2 fu:cc_3a@2-5'], { chk: '45 hid.ambition*0.2 ovr*0.4 hid.social*0.1', bad: ['지나친 어필이 오히려 거슬렸다. 감독이 고개를 갸웃했다.', 'rel.coach-3 fu:cc_3b@2-5'] }),
-    cc('조용히 훈련으로 보여 주겠다고 한다', ['말수는 적었지만 훈련에서 최선을 다했다.', 'rel.coach+1 hid.pro+1 fu:cc_3a@3-8'], { chk: '45 ovr*0.4 hid.pro*0.2', bad: ['감독은 {name}을(를) 잘 파악하지 못한 듯했다. 기회가 줄어들었다.', 'fu:cc_3b@3-8'] }),
+    cc('조용히 훈련으로 보여 주겠다고 한다', ['말수는 적었지만 훈련에서 최선을 다했다.', 'rel.coach+1 hid.pro+1 fu:cc_3a@3-8'], { chk: '45 ovr*0.4 hid.pro*0.2', bad: ['감독은 {name:을} 잘 파악하지 못한 듯했다. 기회가 줄어들었다.', 'fu:cc_3b@3-8'] }),
     cc('에이전트를 통해 의사를 전한다', ['에이전트가 구단과 감독에게 입장을 전달했다.', 'rel.agent+1 rel.coach-1 fu:cc_3b@3-8'])
   ], { kind: K, chain: 'coach_change', sched: true, max: 4 }),
   pa('cc_3a', P, 1, ['새 감독의 전술에서 {name}의 자리가 확실해졌다. 훈련장에서도 신뢰가 느껴진다.', '신임 감독은 {name}에게 핵심 역할을 맡겼다. 새 시즌이 기대된다.'], 'fx:role=starter morale+6 rel.coach+4', { kind: K, chain: 'coach_change', sched: true, max: 4 }),
   pa('cc_3b', P, 1, ['새 감독의 구상에서 {name}의 자리가 줄어들었다. 벤치에서 보내는 시간이 늘었다. 쉽지 않은 시간이 될 것이다.', '새로운 전술에서 {name}의 장점이 살아나지 않았다. 감독의 신뢰를 다시 얻어야 한다.'], 'fx:role=backup morale-6 stress+4 rel.coach-3', { kind: K, chain: 'coach_change', sched: true, max: 4 }),
 
-  ch('mar_1', P, 2, ['결혼 후 첫 시즌이 시작됐다. 원정과 훈련 일정이 잦아 {partner}과(와) 보내는 시간이 줄었다. 서로 서운함이 스며들기 시작했다.', '신혼의 달콤함이 일정표 앞에서 흔들린다. {partner}이(가) 말없이 현관에 앉아 있었다.'], [
+  ch('mar_1', P, 2, ['결혼 후 첫 시즌이 시작됐다. 원정과 훈련 일정이 잦아 {partner:과} 보내는 시간이 줄었다. 서로 서운함이 스며들기 시작했다.', '신혼의 달콤함이 일정표 앞에서 흔들린다. {partner:이} 말없이 현관에 앉아 있었다.'], [
     cc('집과 가족에 더 신경 쓴다', ['훈련 후 곧장 집으로 돌아갔다. 서로의 이야기를 들어 주는 시간이 늘었다.', 'rel.partner+8 happy+4 sharp-1 fu:mar_2@20-40'], { chk: '55 rel.partner*0.15 hid.family*0.15', pv: '연인 관계↑', bad: ['시간을 쏟아도 서로의 기대가 어긋났다.', 'rel.partner-3 stress+4 fu:mar_2@12-30'] }),
     cc('커리어에 더 집중한다', ['"이번 시즌만 지나면 괜찮아질 거야." 말은 그렇게 했지만 마음은 무거웠다.', 'rel.partner-6 stress+4 fu:mar_2@12-30'])
   ], { cond: ['married'], cd: 500, max: 1, note: 'divorce', kind: K, chain: 'marriage', tier: 'major' }),
-  ch('mar_2', P, 1, ['부부 사이의 갈등이 깊어졌다. 같은 이야기를 반복하다 침묵으로 끝나는 날이 늘었다.', '{partner}은(는) 말수가 줄고 {name}도 말을 아낀다. 서로를 위한 결정이 필요하다.'], [
+  ch('mar_2', P, 1, ['부부 사이의 갈등이 깊어졌다. 같은 이야기를 반복하다 침묵으로 끝나는 날이 늘었다.', '{partner:은} 말수가 줄고 {name}도 말을 아낀다. 서로를 위한 결정이 필요하다.'], [
     cc('부부 상담을 받아 본다', ['전문가 앞에서 처음으로 서로의 이야기를 들어 보았다.', 'rel.partner+6 stress-2 cashw-1 fu:mar_3a@8-20'], { chk: '52 rel.partner*0.3 hid.family*0.15', bad: ['상담은 서로의 상처를 더 선명하게 했다.', 'rel.partner-4 fu:mar_3b@6-16'] }),
     cc('일단 거리를 둔다', ['잠시 떨어져 시간을 갖기로 했다. 집이 낯설게 느껴졌다.', 'rel.partner-6 stress+5 fu:mar_3b@6-16']),
     cc('{partner}의 이야기를 끝까지 들어 준다', ['말을 자르지 않고 끝까지 들었다. 눈물이 오갔다.', 'rel.partner+8 happy+2 stress-2 fu:mar_3a@6-16'], { chk: '48 attr.composure*1 hid.family*0.15', bad: ['끝까지 듣다가 감정이 폭발했다.', 'rel.partner-6 stress+6 fu:mar_3b@6-16'] })

@@ -22,7 +22,7 @@ export const youthLeague: RawEvent[] = [
   ], { cond: ['!pos:GK', '!school'], cd: 40, max: 4 }),
   mo('ys_youth_derby', 'yderby', Y, [
     '유스 지역 더비. 같은 도시의 라이벌 구단 U팀이 상대다. 관중석의 가족들까지 목소리를 높인다. 균형이 깨지지 않은 채 후반이 흘러간다.',
-    '유스 더비가 열렸다. 평소보다 태클이 거칠고 서로의 눈빛이 날카롭다. 중반 이후 {name}이(가) 공을 잡을 때마다 상대 선수가 달려든다.'
+    '유스 더비가 열렸다. 평소보다 태클이 거칠고 서로의 눈빛이 날카롭다. 중반 이후 {name:이} 공을 잡을 때마다 상대 선수가 달려든다.'
   ], [
     cc('도발에 응하지 않고 침착하게 플레이한다', ['심판 쪽만 보고 공에 집중했다.', 'rating+0.3 hid.pro+1'], {
       chk: '60 attr.composure*2 hid.temper*-0.2',
@@ -86,7 +86,7 @@ export const youthLeague: RawEvent[] = [
   ], { sched: true, cd: 0, max: 4, xg: 'jump', tier: 'major' }),
   ch('ys_jump_double', Y, 1, [
     '구단 유스 디렉터가 직접 찾아왔다. 이례적인 제안이다. 두 연령대를 건너뛰어 U19 팀에 합류하라는 것이다. 또래 수준을 한참 넘어섰다는 평가다.',
-    '스카우트와 코칭스태프 회의 끝에 결론이 났다. {name}은(는) 또래와 뛰기에는 너무 앞서 있다는 것이다. 두 단계 월반이라는 파격적인 제안이 도착했다.'
+    '스카우트와 코칭스태프 회의 끝에 결론이 났다. {name:은} 또래와 뛰기에는 너무 앞서 있다는 것이다. 두 단계 월반이라는 파격적인 제안이 도착했다.'
   ], [
     cc('두 단계 월반을 받아들인다', ['형들 사이에서 가장 어린 선수가 됐다. 압박의 강도가 비교할 수 없다.', 'fx:jump=2 morale+2 stress+6 pot+0.6'], {
       pv: '성장↑↑↑ 사기↑ 스트레스↑',
@@ -149,7 +149,7 @@ export const youthLeague: RawEvent[] = [
   ], { sched: true, cd: 0, max: 99, xg: 'age_call', tier: 'major' }),
   ch('ys_top_scout', Y, 1, [
     '{upclub}의 유스 디렉터가 직접 찾아왔다. 또래 중에서는 비교 대상이 없다는 평가와 함께 아카데미 입단을 제안했다.',
-    '전국 스카우트들이 {name}의 경기를 보러 다닌다. {upclub}이(가) 이적을 서두르고 있다.'
+    '전국 스카우트들이 {name}의 경기를 보러 다닌다. {upclub:이} 이적을 서두르고 있다.'
   ], [
     cc('최상위 구단 아카데미로 옮긴다', ['짐을 꾸려 리그 최고의 아카데미에 들어갔다. 훈련 시설이 완전히 다르다.', 'fx:youthMove=top morale+6 fameD+0.5 stress+3 fu:fu_career@10-26'], { chk: '75 ovr*0.3 hid.adapt*0.15', pv: '성장↑↑ 사기↑ 스트레스↑', bad: ['적응이 쉽지 않다. 그래도 환경만큼은 최고였다.', 'fx:youthMove=top morale-2 stress+5 fu:fu_career@10-26'] }),
     cc('지금 팀에 남는다', ['이 팀에서 더 증명하기로 했다. 감독이 환히 웃었다.', 'rel.coach+4 hid.loyalty+2 hid.ambition-1'], { pv: '안정↑' })

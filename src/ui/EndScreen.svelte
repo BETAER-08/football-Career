@@ -2,6 +2,10 @@
   import { onMount } from 'svelte';
   import { store } from './store.svelte';
   import { summaryText, renderShareCard } from './share';
+  import CountryBadge from './CountryBadge.svelte';
+  import Icon from './Icon.svelte';
+  import { drawAvatar, lookForGame } from './pixel/avatar';
+  import { ageAt } from '../engine/time';
   import { getCountry } from '../engine/data';
   import { formatKRW, formatMarket } from '../engine/finance';
   import { START_YEAR } from '../engine/time';
@@ -10,6 +14,16 @@
   const d = $derived(store.end as EndData);
   let cv: HTMLCanvasElement | undefined = $state();
   let copied = $state('');
+  let avatar: HTMLCanvasElement | undefined = $state();
+  type ETab = 'player' | 'coach' | 'post' | 'intl';
+  let tab = $state<ETab>('player');
+  const hasCoach = $derived(!!d.coachGrade || d.coachRecs.length > 0 || d.coachTrophies.length > 0);
+  const hasIntl = $derived(!!(d.natMatches && d.natMatches.length) || !!(d.ageRecs && d.ageRecs.length));
+  const tabs = $derived<[ETab, string][]>([['player', '선수'], ...(hasCoach ? [['coach', '지도자'] as [ETab, string]] : []), ...(d.epilogue ? [['post', '은퇴 후'] as [ETab, string]] : []), ...(hasIntl ? [['intl', '국제대회'] as [ETab, string]] : [])]);
+  $effect(() => {
+    const g = store.game;
+    if (avatar && g) drawAvatar(avatar, lookForGame(g, ageAt(g.p.birth, g.week)), 4);
+  });
   const text = $derived(summaryText(d));
   const dist = $derived(store.baseline);
   const bins = $derived.by(() => {
@@ -48,14 +62,15 @@
 <div class="end scroll">
   <div class="wrap">
     <div class="head">
+      {#if store.game}<div class="ph"><canvas bind:this={avatar} class="pixel" width="128" height="128"></canvas></div>{/if}
       <div class="gr">{d.grade === '프로 데뷔 실패' ? '데뷔 실패' : d.grade}</div>
       <div class="col" style="gap:2px">
         <h1>{d.name}</h1>
-        <div class="muted">{getCountry(d.country).flag} {getCountry(d.country).ko} · {d.birthYear}년생 · {d.startClub}에서 시작</div>
+        <div class="muted"><CountryBadge code={d.country} name /> · {d.birthYear}년생 · {d.startClub}에서 시작</div>
         <div class="muted">{d.endReason}</div>
         {#if d.percentile}<div>같은 출발선 상위 <b>{Math.max(1, Math.round(100 - d.percentile))}%</b></div>{/if}
         {#if d.coachGrade}<div>지도자 등급 <b>{d.coachGrade}</b> · 최고 명성 {d.peakFame}</div>{/if}
-        {#if d.dream.id}<div>인생의 꿈 <b>{d.dream.label}</b> — <span class={d.dream.achieved ? 'up' : 'down'}>{d.dream.achieved ? '이뤘다 ✓' : '이루지 못했다 ✗'}</span></div>{/if}
+        {#if d.dream.id}<div>인생의 꿈 <b>{d.dream.label}</b> — <span class={d.dream.achieved ? 'up' : 'down'}><Icon name={d.dream.achieved ? 'check' : 'close'} size={14} /> {d.dream.achieved ? '이뤘다' : '이루지 못했다'}</span></div>{/if}
       </div>
     </div>
 
@@ -63,6 +78,10 @@
       <div class="fail">보관함에 저장하지 못했어요. 결과 카드 이미지와 텍스트 복사로 남겨 주세요. <button class="btn sm" onclick={() => store.exportNow()}>지금 내보내기</button></div>
     {/if}
 
+    <div class="seg etabs" role="tablist" aria-label="기록 구분">
+      {#each tabs as [k, label]}<button class="btn" role="tab" aria-selected={tab === k} class:on={tab === k} onclick={() => (tab = k)}>{label}</button>{/each}
+    </div>
+    {#if tab === 'player'}
     <div class="grid">
       <div class="panel"><div class="panel-h">통산 기록</div><div class="panel-b col" style="gap:4px">
         <div class="kv"><span>경기</span><span class="mono">{d.apps}</span></div>
@@ -77,12 +96,12 @@
         <div class="kv"><span>최고 이적료</span><span class="mono">{formatMarket(d.feeMax)}</span></div>
       </div></div>
       <div class="panel"><div class="panel-h">트로피 · 개인상</div><div class="panel-b col" style="gap:3px;max-height:220px;overflow:auto">
-        {#each d.trophies as t}<div>🏆 {t.year} {t.name} <span class="faint">· {t.club}</span></div>{/each}
-        {#each d.coachTrophies as t}<div>🏆 {t.year} {t.name} <span class="faint">· 감독 · {t.club}</span></div>{/each}
-        {#each d.awards as a}<div>🏅 {a.year} {a.name}</div>{/each}
+        {#each d.trophies as t}<div><Icon name="trophy" size={14} /> {t.year} {t.name} <span class="faint">· {t.club}</span></div>{/each}
+        {#each d.coachTrophies as t}<div><Icon name="trophy" size={14} /> {t.year} {t.name} <span class="faint">· 감독 · {t.club}</span></div>{/each}
+        {#each d.awards as a}<div><Icon name="star" size={14} /> {a.year} {a.name}</div>{/each}
         {#if d.youth}
-          {#each d.youth.trophies as t}<div>🥉 유스 트로피 {t.year} {t.name} <span class="faint">· {t.club}</span></div>{/each}
-          {#each d.youth.awards as a}<div>🥉 유스 개인상 {a.year} {a.name}</div>{/each}
+          {#each d.youth.trophies as t}<div><Icon name="trophy" size={14} /> 유스 트로피 {t.year} {t.name} <span class="faint">· {t.club}</span></div>{/each}
+          {#each d.youth.awards as a}<div><Icon name="star" size={14} /> 유스 개인상 {a.year} {a.name}</div>{/each}
         {/if}
         {#if !d.trophies.length && !d.awards.length && !d.coachTrophies.length && !(d.youth && (d.youth.trophies.length || d.youth.awards.length))}<div class="muted">기록된 트로피와 개인상이 없어요.</div>{/if}
       </div></div>
@@ -92,6 +111,27 @@
       </div></div>
     </div>
 
+    {:else if tab === 'coach'}
+    <div class="panel"><div class="panel-h">지도자 기록</div>
+      <div class="panel-b col" style="gap:var(--s2)">
+        {#if d.coachGrade}<div class="kv"><span>지도자 등급</span><span><b>{d.coachGrade}</b> · 최고 명성 {d.peakFame}</span></div>{/if}
+        {#each d.coachTrophies as t}<div><Icon name="trophy" size={14} /> {t.year} {t.name} <span class="faint">· 감독 · {t.club}</span></div>{/each}
+        {#each d.coachRecs.filter((r) => !r.clubId.startsWith('NAT')) as r}<div>{r.clubName} <span class="faint">· 지도자 {r.year} · {r.role}</span></div>{/each}
+        {#if !d.coachTrophies.length && !d.coachRecs.length}<div class="muted">지도자 기록이 없어요.</div>{/if}
+      </div>
+    </div>
+    {:else if tab === 'post'}
+    {#if d.epilogue}
+      <div class="panel"><div class="panel-h">은퇴 후의 삶</div>
+        <div class="panel-b col" style="gap:6px">
+          <div class="row" style="flex-wrap:wrap"><span class="tag">{{ pundit: '해설·방송', admin: '구단 행정', business: '사업' }[d.epilogue.path]}</span><span class="tag">{d.epilogue.years}년</span><span class="tag">이정표 {d.epilogue.ms}/4</span></div>
+          {#each d.epilogue.milestones as m, i}<div><Icon name="check" size={14} /> {i + 1}. {m}</div>{/each}
+          <div class="muted">{d.epilogue.text}</div>
+        </div>
+      </div>
+    {/if}
+
+    {:else}
     {#if d.natMatches && d.natMatches.length}
       <div class="panel"><div class="panel-h">A매치 기록 <span class="faint" style="font-weight:500">(최근 {d.natMatches.length}경기)</span></div>
         <div class="panel-b" style="max-height:260px;overflow:auto">
@@ -114,14 +154,6 @@
       </div>
     {/if}
 
-    {#if d.epilogue}
-      <div class="panel"><div class="panel-h">은퇴 후의 삶</div>
-        <div class="panel-b col" style="gap:6px">
-          <div class="row" style="flex-wrap:wrap"><span class="tag">{{ pundit: '해설·방송', admin: '구단 행정', business: '사업' }[d.epilogue.path]}</span><span class="tag">{d.epilogue.years}년</span><span class="tag">이정표 {d.epilogue.ms}/4</span></div>
-          {#each d.epilogue.milestones as m, i}<div>✔ {i + 1}. {m}</div>{/each}
-          <div class="muted">{d.epilogue.text}</div>
-        </div>
-      </div>
     {/if}
 
     <div class="panel"><div class="panel-h">같은 출발선 분포 <span class="faint" style="font-weight:500">({getCountry(d.country).ko} · 수준 {d.startLvl} · {d.pos} · 200회 시뮬레이션)</span></div>
@@ -162,21 +194,23 @@
 
 <style>
   .ag { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  .ag th { text-align: left; color: var(--faint); font-weight: 600; padding: 3px 6px; border-bottom: 1px solid var(--line); }
-  .ag td { padding: 3px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+  .ag th { text-align: left; color: var(--faint); font-weight: 600; padding: 3px var(--s2); border-bottom: 1px solid var(--line); }
+  .ag td { padding: 3px var(--s2); border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
   .end { height: 100%; }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px; display: flex; flex-direction: column; gap: 14px; }
-  .head { display: flex; gap: 24px; align-items: center; padding: 18px 22px; border-radius: 14px; border: 1px solid var(--line); background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 14%, var(--panel)), var(--panel)); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: var(--s5) var(--s5); display: flex; flex-direction: column; gap: var(--s4); }
+  .ph { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; flex: none; width: 128px; height: 128px; }
+  .etabs { align-self: flex-start; }
+  .head { display: flex; gap: var(--s5); align-items: center; padding: var(--s4) 22px; border-radius: var(--r-lg); border: 1px solid var(--line); background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 14%, var(--panel)), var(--panel)); }
   .gr { font-size: 64px; font-weight: 900; color: var(--amber); min-width: 150px; text-align: center; letter-spacing: -0.03em; }
   h1 { margin: 0; font-size: 32px; }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); }
   .hist { position: relative; height: 130px; display: flex; align-items: flex-end; gap: 3px; border-bottom: 1px solid var(--line); }
-  .bar { flex: 1; background: color-mix(in srgb, var(--info) 70%, var(--panel)); border-radius: 3px 3px 0 0; min-height: 2px; }
+  .bar { flex: 1; background: color-mix(in srgb, var(--info) 70%, var(--panel)); border-radius: var(--r-sm) 3px 0 0; min-height: 2px; }
   .me { position: absolute; bottom: 0; top: 0; width: 2px; background: var(--amber); }
   .me span { position: absolute; top: -2px; left: 4px; font-size: 12px; font-weight: 800; color: var(--amber); }
-  .fail { padding: 10px 14px; border: 1px solid var(--amber); border-radius: 10px; color: var(--amber); font-size: 13px; }
-  .share { width: 100%; max-width: 720px; border-radius: 12px; border: 1px solid var(--line); }
-  .sum { white-space: pre-wrap; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-family: var(--font); font-size: 13px; width: 100%; max-width: 720px; margin: 0; }
-  .code { background: var(--bg2); padding: 2px 10px; border-radius: 6px; }
-  .big { padding: 10px 20px; font-size: 14px; }
+  .fail { padding: var(--s3) var(--s4); border: 1px solid var(--amber); border-radius: var(--r-md); color: var(--amber); font-size: 13px; }
+  .share { width: 100%; max-width: 720px; border-radius: var(--r-lg); border: 1px solid var(--line); }
+  .sum { white-space: pre-wrap; background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s3) var(--s4); font-family: var(--font); font-size: 13px; width: 100%; max-width: 720px; margin: 0; }
+  .code { background: var(--bg2); padding: 2px var(--s3); border-radius: var(--r-sm); }
+  .big { padding: var(--s3) var(--s5); font-size: 14px; }
 </style>

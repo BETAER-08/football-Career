@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { dialog } from './dialog';
   import { store } from './store.svelte';
   import { getClub, getLeague } from '../engine/data';
   import { clubLeagueId, ranking } from '../engine/world';
@@ -21,7 +22,7 @@
 </script>
 
 <div class="modal-bg" role="presentation" onclick={() => (store.tableOpen = false)}>
-  <div class="modal" style="max-width:640px;width:94vw" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
+  <div class="modal" style="max-width:640px;width:94vw" role="dialog" aria-label="리그 순위" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}} use:dialog={{ close: () => (store.tableOpen = false) }}>
     <div class="modal-h">{useY && yt ? yt.name : lgId ? getLeague(lgId).ko : '리그'} 순위<span class="spacer"></span>
       {#if yt}
         <button class="btn sm" class:on={scope === 'y'} onclick={() => (scope = 'y')}>내 유스 리그</button>
@@ -72,7 +73,7 @@
 
 <style>
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  th { text-align: left; color: var(--faint); font-weight: 600; padding: 3px 6px; border-bottom: 1px solid var(--line); }
-  td { padding: 3px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+  th { text-align: left; color: var(--faint); font-weight: 600; padding: 3px var(--s2); border-bottom: 1px solid var(--line); }
+  td { padding: 3px var(--s2); border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
   tr.me td { background: color-mix(in srgb, var(--accent) 18%, transparent); font-weight: 800; }
 </style>
