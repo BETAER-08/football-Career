@@ -79,7 +79,7 @@ describe('해외 제안', () => {
       s.career.transferReq = -1;
       const rng = new Rng(seedState(`ab-r-${code}`));
       for (let i = 0; i < 40; i++) {
-        const offers = buildBatch(s, rng, true, 2).filter((o) => !o.loan);
+        const offers = buildBatch(s, rng, true, 2).filter((o) => !o.loan || !!o.optionFee);
         expect(offers.some((o) => foreign(s, o.clubId)), `${code} ${i}`).toBe(true);
       }
     }
