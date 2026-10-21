@@ -215,7 +215,7 @@
               <span class="date mono">{fmtDate(dateOf(e.w))}</span>
               {#if lk}<span class="dot" style="color:{hue(lk)}" title="이어지는 선택과 결과">●</span>{/if}
               {#if e.title && !isChoice(e)}<b class="ttl">{e.title}</b>{/if}
-              {#if e.dream}<span class="dreamstar" title="인생의 꿈과 관련된 일">✦</span>{/if}
+              {#if e.dream}<span class="dreamstar" title="인생의 꿈과 관련된 일"><Icon name="star" size={12} /></span>{/if}
               {#if follows.has(e.id)}<button class="link" onclick={() => jump(e)}>후속 보기</button>{/if}
               <span class="spacer"></span>
               <button class="star" class:on={e.star} onclick={() => star(e)} aria-label="즐겨찾기" aria-pressed={!!e.star}><Icon name="star" size={14} /></button>

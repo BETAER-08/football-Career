@@ -127,7 +127,7 @@
                 <div><b class="mono">{r.pos}위</b><span>{r.n}팀 중</span></div>
                 <div><b class="mono">{r.coach.target}위</b><span>목표</span></div>
                 <div><b class="mono">{r.coach.pts}</b><span>승점</span></div>
-                <div><b class="mono">{r.trophies.length ? '★' + r.trophies.length : '-'}</b><span>트로피</span></div>
+                <div><b class="mono">{r.trophies.length ? r.trophies.length : '-'}</b><span>트로피</span></div>
               </div>
               <div class="muted">목표 대비 {r.coach.target - r.pos >= 0 ? `${r.coach.target - r.pos}계단 위` : `${r.pos - r.coach.target}계단 아래`}에서 시즌을 마쳤다.</div>
             </div>

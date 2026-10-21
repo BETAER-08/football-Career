@@ -52,7 +52,7 @@ export function renderShareCard(d: EndData, cv: HTMLCanvasElement): void {
   if (d.dream.id) {
     g.fillStyle = d.dream.achieved ? '#3ddc84' : '#8d96ab';
     g.font = '600 24px Pretendard, sans-serif';
-    g.fillText(`꿈: ${d.dream.label} ${d.dream.achieved ? '✓' : '✗'}`, 56, 488);
+    g.fillText(`꿈: ${d.dream.label} ${d.dream.achieved ? '달성' : '미달'}`, 56, 488);
   }
   const stats: [string, number][] = [['경기', d.apps], ['골', d.goals], ['도움', d.assists], ['트로피', d.trophies.length + d.coachTrophies.length], ['개인상', d.awards.length], ['A매치', d.caps]];
   stats.forEach(([k, v], i) => {

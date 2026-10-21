@@ -84,7 +84,7 @@
   <div class="panel card" class:heavy={d.heavy} bind:this={root}>
     <div class="panel-h"><span>{d.title}</span><span class="spacer"></span>{#if g.auto}<span class="tag">자동 결정 중</span>{/if}</div>
     <div class="panel-b col" style="gap:10px">
-      {#if d.quote}<div class="quote">↻ {d.quote}</div>{/if}
+      {#if d.quote}<div class="quote">{d.quote}</div>{/if}
       <div class="txt">{d.text}</div>
       {#if d.ctx}<div class="mini-hint">{d.ctx}</div>{/if}
       {#if d.heavy && d.help}<div class="help">도움받을 곳 · {d.help}</div>{/if}
