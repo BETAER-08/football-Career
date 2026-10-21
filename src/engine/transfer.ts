@@ -1,20 +1,20 @@
 import { hunit } from './streams';
 import { LEVEL_STARTER_OVR, LEVEL_WAGE_MULT } from '../data/countries';
 import { Rng, clamp } from './rng';
-import { getCal, mFor } from './calibration';
+import { getCal, effM } from './calibration';
 import { allCountries, getClub, getCountry, getLeague, leaguesOf, type ClubStatic } from './data';
 import { curOvr } from './attributes';
 import { clubLvl, clubStd, clubSt, dyn, ensureCountry, startLeagueSeason, buildRounds, simScore, record, membersOf, clubLeagueId, roundRng } from './world';
 import { ageAt, seasonOf, swOf } from './time';
 import { genName, makePerson, randomPos } from './relations';
-import { marketValue, priceF } from './finance';
+import { marketValue, priceF, formatKRW } from './finance';
 import { addLog, toast } from './log';
 import { isCosmetic } from './flags';
 import { changeYouthClub, closeYouthCurrent, restageYouth } from './yleague';
-import type { Contract, GameState, Offer, Role } from './types';
+import type { Contract, GameState, Offer, OfferMode, Role } from './types';
 import { emptyRec } from './records';
 import { CONT_LP_WEEKS, CONT_COMPS } from '../data/competitions';
-import { leagueWeek, profileOf } from './calendar';
+import { leagueWeek, profileOf, windowIdx } from './calendar';
 
 export const ROLE_VAL: Record<Role, number> = { starter: 3, rotation: 2, prospect: 1, backup: 0 };
 
@@ -47,19 +47,19 @@ export function roleFor(marginRaw: number, age: number, pot: number, std: number
   return null;
 }
 
-function levelFit(gap: number): number {
+export function levelFit(gap: number): number {
   return 1 / (1 + Math.exp(-(gap + 6) / 3.6));
 }
 
 export interface OfferGen { kind: 'window' | 'free' | 'first' | 'renew' | 'trial'; n?: number }
 
-function countriesWithLevel(L: number): string[] {
+export function countriesWithLevel(L: number): string[] {
   const out: string[] = [];
   for (const c of allCountries()) if (c.top >= L) out.push(c.code);
   return out;
 }
 
-function pickClubIn(s: GameState, rng: Rng, code: string, L: number, ovr: number, excl: string, tight = false): ClubStatic | null {
+export function pickClubIn(s: GameState, rng: Rng, code: string, L: number, ovr: number, excl: string, tight = false): ClubStatic | null {
   ensureCountry(s, code);
   const cands: ClubStatic[] = [];
   const w: number[] = [];
@@ -80,8 +80,8 @@ function pickClubIn(s: GameState, rng: Rng, code: string, L: number, ovr: number
   return rng.weighted(cands, w);
 }
 
-export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string, opts: { loan?: boolean; trial?: boolean; first?: boolean; renew?: boolean } = {}): Offer | null {
-  const ovr = curOvr(s.ab);
+export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string, opts: { loan?: boolean; trial?: boolean; first?: boolean; renew?: boolean; shift?: number; wageMul?: number; mode?: OfferMode } = {}): Offer | null {
+  const ovr = curOvr(s.ab) - (opts.shift ?? 0);
   const age = ageAt(s.p.birth, s.week);
   const std = clubStd(s, clubId);
   const margin = ovr - std;
@@ -89,7 +89,7 @@ export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string
   if (opts.renew && role === null) role = 'backup';
   if (!role) return null;
   const promised = role;
-  const wage = wageFor(s, clubId, promised, ovr, age);
+  const wage = Math.max(300, Math.round((wageFor(s, clubId, promised, ovr, age) * (opts.wageMul ?? 1)) / 10) * 10);
   const years = age <= 21 ? rng.int(3, 5) : age <= 30 ? rng.int(2, 4) : rng.int(1, 2);
   const val = marketValue(s);
   const coachName = genName(rng, getClub(clubId).country);
@@ -110,20 +110,39 @@ export function makeOfferFor(s: GameState, rng: Rng, clubId: string, tag: string
     coachStyle: rng.pick(['공격 축구를 선호', '수비 안정을 중시', '점유율 축구', '빠른 역습', '강한 압박', '엄격한 규율', '선수와 소통하는 타입', '유망주를 믿고 쓰는 타입']),
     first: !!opts.first,
     fromAgent: !!(s.people.agent && !s.people.agent.gone && rng.chance(0.5)),
-    tag
+    tag,
+    mode: opts.mode ?? (opts.loan ? 'loan' : opts.renew ? 'renew' : 'transfer'),
+    fee: 0
   };
   return offer;
+}
+
+export function contractWeeksLeft(s: GameState): number {
+  const con = s.career.contract;
+  return con ? Math.max(0, con.endW - s.week) : 0;
+}
+
+export function transferFee(s: GameState, rng: Rng): number {
+  const val = marketValue(s);
+  const left = contractWeeksLeft(s) / 52;
+  const timeF = left >= 3 ? 1.05 : left >= 2 ? 0.95 : left >= 1 ? 0.8 : left >= 0.5 ? 0.55 : 0.3;
+  return Math.max(0, Math.round(val * timeF * rng.float(0.85, 1.25)));
+}
+
+export function freeTerms(o: Offer, rng: Rng): void {
+  o.fee = 0;
+  o.signing = Math.round(o.wage * rng.float(0.2, 0.6));
 }
 
 const RICH = ['SA', 'TR', 'CN'];
 
 const FREE_YOUTH = 0.2;
 
-export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count: number): Offer[] {
-  const ovr = curOvr(s.ab);
+export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count: number, adj: { shift?: number; wageMul?: number; noTrial?: boolean } = {}): Offer[] {
+  const ovr = curOvr(s.ab) - (adj.shift ?? 0);
   const age = ageAt(s.p.birth, s.week);
   const curLvl = s.career.clubId ? clubLvl(s, s.career.clubId) : 1;
-  const mf = mFor(s.p.country);
+  const mf = effM(s.p.country, ovr);
   const out: Offer[] = [];
   const used = new Set<string>();
   if (s.career.clubId) used.add(s.career.clubId);
@@ -170,6 +189,7 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
           if (ro) {
             ro.wage = Math.round((ro.wage * rng.float(3, 6)) / 10) * 10;
             ro.role = 'starter';
+            ro.fee = transferFee(s, rng);
             used.add(rich.id);
             out.push(ro);
             continue;
@@ -177,10 +197,15 @@ export function genOffers(s: GameState, rng: Rng, kind: OfferGen['kind'], count:
         }
       }
     }
-    const trial = kind === 'trial' || (kind === 'free' && code !== home.code && rng.chance(0.3));
-    const offer = makeOfferFor(s, rng, club.id, kind, { trial, first: kind === 'first' });
+    const trial = kind === 'trial' || (kind === 'free' && !adj.noTrial && code !== home.code && rng.chance(0.3));
+    const offer = makeOfferFor(s, rng, club.id, kind, { trial, first: kind === 'first', shift: adj.shift, wageMul: adj.wageMul });
     if (!offer) continue;
     if ((kind === 'window' || kind === 'free') && s.career.contract && !s.career.contract.youth && s.career.contract.wage > clubWageCap(s, club.id) * 0.9) continue;
+    if (kind === 'window' && s.career.clubId) offer.fee = transferFee(s, rng);
+    if (kind === 'free' && !s.career.clubId && s.career.signed) {
+      offer.mode = 'free';
+      freeTerms(offer, rng);
+    }
     used.add(club.id);
     out.push(offer);
   }
@@ -235,8 +260,9 @@ export function trialPass(s: GameState, rng: Rng, o: Offer): { ok: boolean; roll
   const gap = curOvr(s.ab) - std;
   const foreign = getClub(o.clubId).country !== s.p.country;
   let p = 0.55 + gap / 22 + (foreign ? (s.hid.adapt - 50) / 400 : 0) + s.fame.dom / 400;
-  if (L >= 5) p *= mFor(s.p.country);
-  else if (foreign && L >= 4) p *= Math.min(1, Math.pow(Math.max(mFor(s.p.country), 1e-6), 0.3));
+  const mf = effM(s.p.country, curOvr(s.ab));
+  if (L >= 5) p *= mf;
+  else if (foreign && L >= 4) p *= Math.min(1, Math.pow(Math.max(mf, 1e-6), 0.3));
   if (s.phase === 'youth') p *= TRIAL_YOUTH;
   p = clamp(p, 0.04, 0.92);
   const roll = rng.next();
@@ -393,6 +419,13 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   s.career.clubsHist.push({ clubId: o.clubId, fromS: seasonOf(s.week), toS: -1 });
   s.career.freeAgentW = -1;
   s.career.promisedRole = o.role;
+  s.career.pre = null;
+  if (!o.loan) {
+    s.career.transferReq = -1;
+    s.career.reqStance = '';
+  }
+  closeMarket(s);
+  dropQueuedOffers(s);
   s.career.cur = emptyRec(seasonOf(s.week), o.clubId, cs.name, '', '', 2, o.loan);
   s.career.seasonMinsAcc = 0;
   s.career.seasonAvailAcc = 0;
@@ -422,7 +455,7 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   const lvl = clubLvl(s, o.clubId);
   s.career.cur.lvl = lvl;
   s.career.maxLvl = Math.max(s.career.maxLvl, lvl);
-  s.career.bigClub = o.tag === 'renew' ? s.career.bigClub : lvl >= 5 && hunit(`${s.cfg.seed}|big`) < Math.min(1, Math.pow(Math.max(mFor(s.p.country), 1e-6), 0.5));
+  s.career.bigClub = o.tag === 'renew' ? s.career.bigClub : lvl >= 5 && hunit(`${s.cfg.seed}|big`) < Math.min(1, Math.pow(Math.max(effM(s.p.country, curOvr(s.ab)), 1e-6), 0.5));
   if (cs.country !== s.p.country) {
     s.ev.flags.abroad = s.week;
     s.fame.abroad = clamp(s.fame.abroad + 1.5 + lvl, 0, 100);
@@ -435,11 +468,41 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   if (firstPro) {
     addLog(s, 'milestone', '프로 계약', `${cs.name}와(과) ${Math.round(o.years)}년 프로 계약을 맺었다. 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
   } else {
-    addLog(s, 'milestone', o.loan ? '임대' : '이적', `${cs.name}${o.loan ? '로 임대 이적' : '로 이적'}했다 (${reason}). 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
+    addLog(s, 'milestone', o.loan ? '임대' : o.mode === 'free' ? '자유계약' : o.mode === 'pre' ? '사전 계약 합류' : '이적', `${cs.name}${o.loan ? '로 임대 이적' : o.mode === 'free' ? '와(과) 자유계약' : '로 이적'}했다 (${reason}${feeText(o)}). 약속된 역할은 ${roleLabel(o.role)}.`, [], { star: true });
   }
   toast(s, `${cs.name} 입단 · ${roleLabel(o.role)}`);
   if (isCosmetic()) s.cues.push('transfer');
   s.fame.value = marketValue(s);
+}
+
+export function feeNote(o: Offer): string {
+  if (o.loan) return '';
+  if (o.mode === 'free' || o.mode === 'pre') return '이적료 없음';
+  return o.fee ? `이적료 ${formatKRW(o.fee)}` : '';
+}
+
+export function feeText(o: Offer): string {
+  const n = feeNote(o);
+  return n ? ` · ${n}` : '';
+}
+
+export function marketKey(s: GameState): number {
+  const idx = windowIdx(s);
+  return idx < 0 ? -1 : seasonOf(s.week) * 2 + idx;
+}
+
+export function closeMarket(s: GameState): void {
+  const key = marketKey(s);
+  if (key < 0) {
+    s.career.mkt = null;
+    return;
+  }
+  const used = s.career.mkt && s.career.mkt.key === key ? s.career.mkt.used : [];
+  s.career.mkt = { key, batchW: s.week, sent: true, extras: [], used };
+}
+
+export function dropQueuedOffers(s: GameState): void {
+  s.decQueue = s.decQueue.filter((d) => !(d.kind === 'offer' && (d.ref === 'window' || d.ref === 'free')));
 }
 
 export function roleLabel(r: Role): string {
@@ -458,6 +521,7 @@ export function updateRole(s: GameState): void {
 }
 
 export function leaveToFree(s: GameState, reason: string): void {
+  const prevName = s.career.clubId ? getClub(s.career.clubId).name : '';
   if (s.career.clubId) {
     if (s.phase === 'youth') closeYouthCurrent(s);
     s.career.clubsHist[s.career.clubsHist.length - 1].toS = seasonOf(s.week);
@@ -469,8 +533,13 @@ export function leaveToFree(s: GameState, reason: string): void {
   s.yt = null;
   s.career.contract = null;
   s.career.freeAgentW = s.week;
+  s.career.faPressureW = -1;
+  s.career.pre = null;
   s.career.fixtures.length = 0;
-  addLog(s, 'system', '무적 신분', `소속 구단이 없어졌다 (${reason}). 새 팀을 찾아야 한다.`, []);
+  if (reason === '계약 만료') {
+    addLog(s, 'milestone', '계약 만료', `${prevName}과(와)의 계약이 만료됐다. 재계약은 이뤄지지 않았다.`, [], { star: true });
+    addLog(s, 'milestone', 'FA 전환', '계약 만료, 자유계약 선수가 됐다. 이적료 없이 새 팀을 찾을 수 있다.', [], { star: true });
+  } else addLog(s, 'system', '무적 신분', `소속 구단이 없어졌다 (${reason}). 새 팀을 찾아야 한다.`, []);
 }
 
 export function genYouthJudgement(s: GameState, rng: Rng): { pass: boolean; score: number; need: number; offers: Offer[] } {

@@ -267,6 +267,18 @@ export interface Offer {
   first: boolean;
   fromAgent: boolean;
   tag: string;
+  mode?: OfferMode;
+  fee?: number;
+}
+
+export type OfferMode = 'transfer' | 'renew' | 'loan' | 'free' | 'pre';
+
+export interface MarketPlan {
+  key: number;
+  batchW: number;
+  sent: boolean;
+  extras: number[];
+  used: string[];
 }
 
 export interface Fixture {
@@ -498,6 +510,11 @@ export interface CareerState {
   promisedRole: Role;
   loanOut: boolean;
   nextLoanClub: string;
+  transferReq: number;
+  reqStance: '' | 'accepted' | 'refused';
+  mkt: MarketPlan | null;
+  pre: Offer | null;
+  faPressureW: number;
 }
 
 export interface CoachRec {

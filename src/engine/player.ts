@@ -225,7 +225,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
       contStage: 0, contComp: '', contQualified: '', contPts: 0, contGames: 0, seasonMinsAcc: 0, seasonAvailAcc: 0, lastSeasonPos: 0, youthJudged: false, youthFailW: -1, youthStage: 'U15', stageSeasons: 0, scholar: 0,
       signed: false, track: 'pro', yCur: emptyRec(0, club.id, `${club.name} U15`, '', '', origin.level), ySeasons: [], yTrophies: [], yAwards: [],
       entry: { step: 0, trainW: -1, squadW: -1, squadN: 0, jumps: 0, jumpW: -1, boostEnd: -1, callups: 0, callupSeason: -1, doubleJump: false, midChecked: -1 },
-      promisedRole: 'prospect', loanOut: false, nextLoanClub: ''
+      promisedRole: 'prospect', loanOut: false, nextLoanClub: '', transferReq: -1, reqStance: '', mkt: null, pre: null, faPressureW: -1
     },
     coach: {
       entered: false, licenses: { C: 0, B: 0, A: 0, P: 0 }, studying: '', studyEnd: 0, coachSeasons: 0, role: 'none', clubId: '', natCountry: '', contract: null,

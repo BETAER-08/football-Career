@@ -81,5 +81,21 @@ export const engineEvents: RawEvent[] = [
         worst: { t: '시즌 도중 큰 부상을 입었다. 마지막 시즌은 병상에서 끝났다.', fx: 'fx:inj morale-8' }
       }
     ]
+  },
+  {
+    id: 'fa_pressure', kind: 'choice', phase: ['pro'], weight: 1, scheduledOnly: true, max: 6, cooldown: 26,
+    text: [
+      '무적 신분으로 반년이 흘렀다. 걸려 오던 전화는 뜸해졌고 에이전트의 목소리도 조심스러워졌다.',
+      '혼자 공을 차는 시간이 길어졌다. 가족 사이에서 "이제 다른 길도 생각해 보자"는 말이 나온다.'
+    ],
+    choices: [
+      { label: '현역 생활을 마무리한다', pv: '선수 생활 종료', ok: { t: '"여기까지 하겠습니다." 오래 기다린 끝에 내린 결론이었다.', fx: 'fx:retire=새_팀을_찾지_못하고_현역을_마무리하기로_했다.' } },
+      {
+        label: '눈높이를 낮춰 어디든 문을 두드린다', pv: '제안↑ 연봉↓', check: '58 hid.pro*0.15 agent*0.2',
+        ok: { t: '조건을 따지지 않고 연락을 돌렸다. 몇몇 구단이 응답했다.', fx: 'fx:offers=free stress+3' },
+        bad: { t: '눈높이를 낮췄지만 반응은 미지근했다.', fx: 'morale-4 stress+5' }
+      },
+      { label: '개인 훈련을 이어가며 기다린다', pv: '경기 감각↑ 스트레스↑', ok: { t: '혼자서 몸을 만들며 기회를 기다리기로 했다.', fx: 'sharp+6 stress+4' } }
+    ]
   }
 ];

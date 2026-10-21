@@ -5,7 +5,7 @@ import { emptyRec } from './records';
 import { openYouthRec, setupYouthSeason } from './yleague';
 import type { GameState } from './types';
 
-export const STATE_VERSION = 4;
+export const STATE_VERSION = 5;
 
 export type Migrated = { ok: true; state: GameState } | { ok: false; reason: string };
 
@@ -22,6 +22,15 @@ export function migrateState(raw: unknown): Migrated {
   if (c.scholar === undefined) c.scholar = 0;
   if (c.track === undefined) c.track = 'pro';
   if (c.signed === undefined) c.signed = !!c.debuted;
+  if (c.transferReq === undefined) {
+    const flag = (st.ev.flags as Record<string, number>).transfer_request;
+    c.transferReq = flag === undefined ? -1 : flag;
+    delete (st.ev.flags as Record<string, number>).transfer_request;
+  }
+  if (c.reqStance === undefined) c.reqStance = '';
+  if (c.mkt === undefined) c.mkt = null;
+  if (c.pre === undefined) c.pre = null;
+  if (c.faPressureW === undefined) c.faPressureW = -1;
   if (!c.entry) c.entry = { step: 0, trainW: -1, squadW: -1, squadN: 0, jumps: 0, jumpW: -1, boostEnd: -1, callups: 0, callupSeason: -1, doubleJump: false, midChecked: -1 };
   if (!c.ySeasons) c.ySeasons = [];
   if (!c.yTrophies) c.yTrophies = [];

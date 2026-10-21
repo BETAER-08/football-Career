@@ -78,6 +78,7 @@ export function selectionX(s: GameState, margin: number, role: Role, youth: bool
   const frm = s.st.form.length ? s.st.form.reduce((a, b) => a + b, 0) / s.st.form.length - 6.5 : 0;
   let x = margin / 3.4 + (youth ? 0.8 - jumpDrag(s) : ROLE_BONUS[role]) + coachRel / 70 + fit + frm * 0.5;
   if (s.st.fatigue > 60) x -= (s.st.fatigue - 60) / 40;
+  if (s.career.pre && !youth) x -= 0.3;
   x += (s.st.sharp - 60) / 80;
   return x;
 }

@@ -7,6 +7,7 @@ import { INJURY_BY_ID } from '../data/injuries';
 import { startInjury, injuryEndsCareer } from './health';
 import { retirePlayer, endGame } from './lifecycle';
 import { isCosmetic } from './flags';
+import { releaseToFree } from './market';
 import { leaveToFree, genOffers, joinClub, makeOfferFor, buildClubPeople, setupClubSeason, fallbackOffer } from './transfer';
 import { presentOffers, hasPendingOffer } from './offers';
 import { playIntl } from './season';
@@ -175,8 +176,8 @@ registerFx('natNo', (s) => {
   if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel + 3, -100, 100);
   s.fame.dom = clamp(s.fame.dom - 1, 0, 100);
 });
-registerFx('release', (s) => {
-  leaveToFree(s, '구단의 방출 통보');
+registerFx('release', (s, { rng }) => {
+  releaseToFree(s, rng, '구단의 방출 통보');
 });
 registerFx('retire', (s, { rng }, arg) => {
   retirePlayer(s, rng, arg ? arg.replace(/_/g, ' ') : '스스로 내린 결정이었다.');
@@ -192,7 +193,7 @@ registerFx('offers', (s, { rng }, arg) => {
   const curLvl = s.career.clubId ? clubLvl(s, s.career.clubId) : 1;
   if (arg === 'loan') {
     const list = genOffers(s, rng, 'window', 2).filter((o) => clubLvl(s, o.clubId) <= curLvl);
-    if (list.length) presentOffers(s, [{ ...list[0], loan: true, years: 1 }], 'window', '임대 제안', '임대로 출전 기회를 얻을 수 있다.', true);
+    if (list.length) presentOffers(s, [{ ...list[0], loan: true, years: 1, mode: 'loan', fee: 0 }], 'window', '임대 제안', '임대로 출전 기회를 얻을 수 있다.', true);
     return;
   }
   const n = arg === 'many' ? 3 : 2;
@@ -321,7 +322,7 @@ registerFx('contractMove', (s, { rng }) => {
 });
 registerFx('clubOpt', (s, { rng }, arg) => {
   const clubId = s.career.clubId;
-  if (!clubId) return;
+  if (!clubId || s.career.pre) return;
   const o = makeOfferFor(s, rng, clubId, 'renew', { renew: true });
   if (!o) return;
   if (arg === 'raise' && s.career.contract) {

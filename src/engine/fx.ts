@@ -462,6 +462,8 @@ const getters: Record<string, Getter> = {
   partnered: (s) => (s.life.romance === 'dating' || s.life.romance === 'married' ? 1 : 0),
   contractLeft: (s) => (s.career.contract ? Math.max(0, s.career.contract.endW - s.week) : 0),
   hasClub: (s) => (s.career.clubId ? 1 : 0),
+  hasReq: (s) => (s.career.transferReq >= 0 ? 1 : 0),
+  hasPre: (s) => (s.career.pre ? 1 : 0),
   coachFame: (s) => s.coach.fame,
   standing: (s) => s.coach.standing,
   license: (s) => (s.coach.licenses.P ? 4 : s.coach.licenses.A ? 3 : s.coach.licenses.B ? 2 : s.coach.licenses.C ? 1 : 0),
