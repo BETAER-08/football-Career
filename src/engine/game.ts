@@ -165,7 +165,6 @@ function playerWeek(s: GameState, rng: Rng): void {
     forceRetireCheck(s, rng, age + 0);
     if (!s.career.retired && s.career.clubId && s.career.contract) updateRole(s);
   }
-  s.ab.pot = Math.round(s.ab.pot);
 }
 
 function militaryWeek(s: GameState, rng: Rng): void {

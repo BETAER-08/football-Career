@@ -3,7 +3,7 @@ import { Rng, clamp } from './rng';
 import { getClub, getCountry } from './data';
 import { ageAt, dateOf, swOf, seasonOf } from './time';
 import { whyNow } from './why';
-import { shownOvr, youthCallMin } from './attributes';
+import { shownOvr, youthCallMin, rawForAnchored } from './attributes';
 
 function shownRawOf(s: GameState): number {
   return shownOvr(s.ab, ageAt(s.p.birth, s.week));
@@ -202,7 +202,8 @@ export function applyVar(s: GameState, t: string, sign: '+' | '-' | '=', v: numb
     case 'pot': {
       const k = signed;
       for (const a of ALL_ATTRS) s.ab.ceil[a] = clamp(s.ab.ceil[a] + k * 0.12, 1, 20);
-      s.ab.pot += k;
+      s.ab.cap = clamp(Math.round((s.ab.cap + k) * 10) / 10, 40, 99);
+      s.ab.pot = Math.round(rawForAnchored(s.ab.cap) * 10) / 10;
       addChip(chips, label, k);
       return;
     }
