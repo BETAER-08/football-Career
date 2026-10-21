@@ -40,7 +40,7 @@
 <div class="game">
   <TopBar />
   {#if store.banner}<div class="banner">{store.banner} {#if store.bannerExport}<button class="btn sm primary" onclick={() => store.exportNow()}>지금 내보내기</button>{/if} <button class="btn sm" onclick={() => { store.banner = ''; store.bannerExport = false; }}>닫기</button></div>{/if}
-  <div class="cols">
+  <div class="cols" class:decide={!!g.decision}>
     <aside class="l"><LeftPanel /></aside>
     <main class="c"><CenterPanel /></main>
     <aside class="r"><RightPanel /></aside>
@@ -64,6 +64,8 @@
   .game { height: 100%; display: flex; flex-direction: column; }
   .cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 400px; gap: var(--s3); padding: var(--s3); }
   .l, .c, .r { min-height: 0; min-width: 0; }
+  .l, .r { transition: opacity 0.2s; }
+  .cols.decide .l, .cols.decide .r { opacity: 0.55; }
   .banner { background: color-mix(in srgb, var(--amber) 18%, var(--panel)); padding: var(--s2) var(--s4); font-size: 13px; border-bottom: 1px solid var(--line); }
   :global(.app.compact) .cols { grid-template-columns: 320px minmax(0, 1fr) 340px; gap: var(--s2); padding: var(--s2); }
 </style>

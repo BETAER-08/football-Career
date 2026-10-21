@@ -7,23 +7,49 @@
   import { coachOfferLabel } from '../engine/coach';
   import { modeLabel } from '../engine/market';
   import Chips from './Chips.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
+  import Icon from './Icon.svelte';
+  import { isIrreversible, pctRange } from './decisionRules';
 
   const g = $derived(store.game!);
   const d = $derived(g.decision);
   let demands = $state<{ wage: boolean; role: boolean; buyout: boolean }>({ wage: false, role: false, buyout: false });
   let picked = $state(-1);
+  let armed = $state(-1);
+  let hover = $state(-1);
+  let root: HTMLElement | undefined = $state();
+  let armTimer = 0;
 
   $effect(() => {
     void d?.uid;
     demands = { wage: false, role: false, buyout: false };
     picked = -1;
+    armed = -1;
+    hover = -1;
+    void tick().then(() => root?.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }));
   });
+
+  function pick(i: number) {
+    if (!d) return;
+    const c = d.choices[i];
+    if (!c || c.disabled) return;
+    if (isIrreversible(d, c) && armed !== i) {
+      armed = i;
+      window.clearTimeout(armTimer);
+      armTimer = window.setTimeout(() => (armed = -1), 4500);
+      return;
+    }
+    window.clearTimeout(armTimer);
+    armed = -1;
+    store.choose(i);
+  }
 
   function onKey(e: KeyboardEvent) {
     if (!d || d.kind === 'offer') return;
+    const t = e.target as HTMLElement;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
     const n = Number(e.key);
-    if (n >= 1 && n <= d.choices.length) store.choose(n - 1);
+    if (n >= 1 && n <= d.choices.length) pick(n - 1);
   }
   onMount(() => {
     window.addEventListener('keydown', onKey);
@@ -46,7 +72,7 @@
 </script>
 
 {#if d}
-  <div class="panel card" class:heavy={d.heavy}>
+  <div class="panel card" class:heavy={d.heavy} bind:this={root}>
     <div class="panel-h"><span>{d.title}</span><span class="spacer"></span>{#if g.auto}<span class="tag">자동 결정 중</span>{/if}</div>
     <div class="panel-b col" style="gap:10px">
       {#if d.quote}<div class="quote">↻ {d.quote}</div>{/if}
@@ -91,9 +117,22 @@
       {:else}
         <div class="choices">
           {#each d.choices as c, i}
-            <button class="choice" onclick={() => store.choose(i)}>
+            {@const irr = isIrreversible(d, c)}
+            {@const rg = c.pct !== null ? pctRange(c.pct) : null}
+            <button class="choice" class:armed={armed === i} class:hov={hover === i} disabled={!!c.disabled} onclick={() => pick(i)} onmouseenter={() => (hover = i)} onmouseleave={() => (hover = -1)} onfocus={() => (hover = i)} onblur={() => (hover = -1)}>
               <span class="num mono">{i + 1}</span>
-              <span class="grow col" style="gap:4px;align-items:flex-start"><b>{c.label}</b><Chips chips={c.chips} preview /></span>
+              <span class="grow col" style="gap:var(--s1);align-items:flex-start">
+                <b>{c.label}</b>
+                <span class="pv"><Chips chips={c.chips} preview /></span>
+                {#if c.disabled}<span class="mini-hint">{c.disabled}</span>{/if}
+                {#if armed === i}<span class="warn"><Icon name="warn" size={14} /> 되돌릴 수 없어요. 한 번 더 눌러 확정하세요.</span>{:else if irr}<span class="mini-hint"><Icon name="lock" size={12} /> 되돌릴 수 없는 선택</span>{/if}
+              </span>
+              {#if rg && c.pct !== null}
+                <span class="odds" title="성공 확률 약 {rg[0]}~{rg[1]}%">
+                  <span class="ob"><i class="band" style="left:{rg[0]}%;width:{rg[1] - rg[0]}%"></i></span>
+                  <b class="mono">{rg[0]}~{rg[1]}%</b>
+                </span>
+              {/if}
             </button>
           {/each}
         </div>
@@ -103,12 +142,21 @@
 {/if}
 
 <style>
-  .card { border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); animation: pop 0.3s ease; }
+  .card { border: 2px solid var(--amber); box-shadow: 0 0 0 4px color-mix(in srgb, var(--amber) 16%, transparent), var(--shadow); animation: pop 0.3s ease; }
   .card.heavy { border-color: color-mix(in srgb, var(--info) 55%, var(--line)); }
   .quote { font-size: 12px; color: var(--g-none); border-left: 3px solid var(--g-none); padding: 2px var(--s2); background: color-mix(in srgb, var(--g-none) 8%, transparent); border-radius: 0 6px 6px 0; }
   .txt { font-size: 14.5px; line-height: 1.65; }
   .help { font-size: 12.5px; color: var(--info); background: color-mix(in srgb, var(--info) 8%, var(--panel)); border-radius: var(--r-sm); padding: var(--s2) var(--s3); }
   .choices { display: flex; flex-direction: column; gap: var(--s2); }
+  .choice:disabled { opacity: 0.5; cursor: not-allowed; }
+  .choice.armed { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, var(--panel2)); }
+  .warn { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--fs-sub); color: var(--danger); font-weight: 700; }
+  .pv { transition: transform 0.12s; transform-origin: left center; }
+  .choice.hov .pv { transform: scale(1.08); }
+  .choice.hov { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--panel2)); }
+  .odds { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s1); width: 96px; flex: none; font-size: var(--fs-panel); }
+  .ob { position: relative; width: 100%; height: 6px; border-radius: 3px; background: var(--bg2); overflow: hidden; }
+  .band { position: absolute; top: 0; bottom: 0; background: var(--amber); }
   .choice { display: flex; gap: var(--s3); align-items: center; text-align: left; padding: var(--s3) var(--s3); border-radius: var(--r-md); background: var(--panel2); border: 1px solid var(--line); cursor: pointer; transition: border-color 0.12s, transform 0.06s; }
   .choice:hover { border-color: var(--accent); }
   .choice:active { transform: translateY(1px); }
