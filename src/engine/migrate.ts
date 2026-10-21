@@ -31,6 +31,7 @@ export function migrateState(raw: unknown): Migrated {
   if (c.mkt === undefined) c.mkt = null;
   if (c.pre === undefined) c.pre = null;
   if (c.faPressureW === undefined) c.faPressureW = -1;
+  if (c.reqDir === undefined) c.reqDir = '';
   if (!c.resCur) c.resCur = emptyRec(0, st.career.clubId, '', '', '', 2);
   if (!c.resSeasons) c.resSeasons = [];
   const pp = st.p as unknown as Record<string, unknown>;

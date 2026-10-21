@@ -14,7 +14,7 @@
   import { schoolInfo } from '../engine/school';
   import { STAGE_LABEL } from '../engine/stages';
   import { DREAM_LABEL } from '../engine/goals';
-  import { nextWindowText } from '../engine/market';
+  import { nextWindowText, REQ_DIR_TEXT } from '../engine/market';
   import { STAGE_TEXT } from '../engine/natsel';
   import { nextWindowW, windowNow } from '../engine/calendar';
 
@@ -36,7 +36,7 @@
   const isFA = $derived(g.phase === 'pro' && !g.career.clubId && g.career.signed && !g.career.retired);
   const faWeeks = $derived(isFA && g.career.freeAgentW >= 0 ? g.week - g.career.freeAgentW : 0);
   const reqOn = $derived(g.career.transferReq >= 0);
-  const reqText = $derived(reqOn ? (windowNow(g) ? `이적 요청 중 · 이적시장 열림 (${g.career.reqStance === 'refused' ? '구단 거절' : '구단 수용'})` : `이적 요청 중 · 다음 이적시장 ${fmtDate(dateOf(nextWindowW(g)))} (${g.career.reqStance === 'refused' ? '구단 거절' : '구단 수용'})`) : '없음');
+  const reqText = $derived(reqOn ? (windowNow(g) ? `이적 요청 중 · 이적시장 열림 (${g.career.reqStance === 'refused' ? '구단 거절' : '구단 수용'}) · ${REQ_DIR_TEXT[g.career.reqDir]}` : `이적 요청 중 · 다음 이적시장 ${fmtDate(dateOf(nextWindowW(g)))} (${g.career.reqStance === 'refused' ? '구단 거절' : '구단 수용'}) · ${REQ_DIR_TEXT[g.career.reqDir]}`) : '없음');
   const preText = $derived(g.career.pre ? `${getClub(g.career.pre.clubId).name} (시즌 종료 후 합류)` : weeksLeft > 0 && weeksLeft <= 26 ? '가능 (잔여 6개월 이하)' : '불가 (잔여 6개월 이하부터)');
   const target = $derived(g.coach.tableTarget);
   const yt = $derived(g.phase === 'youth' ? g.yt : null);

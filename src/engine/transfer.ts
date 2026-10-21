@@ -5,7 +5,7 @@ import { getCal, effM } from './calibration';
 import { allCountries, getClub, getCountry, getLeague, leaguesOf, type ClubStatic } from './data';
 import { curOvr, shownOvr } from './attributes';
 import { clubLvl, clubStd, clubSt, dyn, ensureCountry, startLeagueSeason, buildRounds, simScore, record, membersOf, clubLeagueId, roundRng } from './world';
-import { ageAt, seasonOf, swOf } from './time';
+import { ageAt, seasonOf, swOf, yearOf } from './time';
 import { genName, makePerson, randomPos } from './relations';
 import { marketValue, priceF, formatKRW } from './finance';
 import { addLog, toast } from './log';
@@ -171,6 +171,7 @@ export interface PickOpts {
   used: Set<string>;
   gate: boolean;
   tight: boolean;
+  foreign?: 'only' | 'no';
   levels?: number[];
   waited?: number;
 }
@@ -182,6 +183,29 @@ function leagueClubCount(code: string, L: number): number {
 }
 
 export const pickStats = { calls: 0 };
+
+export function recentIntlStar(s: GameState): boolean {
+  const y = yearOf(s.week);
+  if (s.nat.ageRecs.some((r) => r.year >= y - 2 && r.awards.length > 0)) return true;
+  const ms = s.nat.matches.filter((m) => s.week - m.w <= 104 && m.mins > 0);
+  return ms.length >= 2 && ms.reduce((a, m) => a + m.rating, 0) / ms.length >= 7;
+}
+
+export function domesticP(s: GameState, L: number, ovr: number): number {
+  if (s.career.transferReq >= 0 && s.career.reqDir === 'abroad') return 0;
+  if (s.career.transferReq >= 0 && s.career.reqDir === 'dom') return 1;
+  const home = getCountry(s.p.country);
+  const base = L >= 5 ? 0.35 : 0.55;
+  let p = base;
+  if (ovr >= LEVEL_STARTER_OVR[home.top] + 2) p -= 0.2;
+  if (s.fame.abroad >= 30) p -= 0.1;
+  if (recentIntlStar(s)) p -= 0.1;
+  if (s.fin.agentSkill >= 70) p -= 0.05;
+  if (s.hid.adapt >= 70) p -= 0.05;
+  p = Math.max(0.15, p);
+  if (s.hid.family >= 70) p += 0.1;
+  return Math.min(1, p);
+}
 
 export function pickOne(s: GameState, rng: Rng, o: PickOpts): ClubStatic | null {
   pickStats.calls += 1;
@@ -212,17 +236,19 @@ export function pickOne(s: GameState, rng: Rng, o: PickOpts): ClubStatic | null 
     const list = countriesWithLevel(L).filter((c) => foreignAllowed(s, c, age));
     if (!list.length) continue;
     let code: string;
-    if (list.includes(home.code) && rng.chance(L >= 5 ? 0.45 : 0.8)) code = home.code;
+    const foreignList = list.filter((c) => c !== home.code);
+    const homeOk = list.includes(home.code) && o.foreign !== 'only';
+    if (!homeOk && !foreignList.length) continue;
+    if (homeOk && (o.foreign === 'no' || !foreignList.length || rng.chance(domesticP(s, L, view)))) code = home.code;
     else {
-      const cw = list.map((c) => {
+      const cw = foreignList.map((c) => {
         const cc = getCountry(c);
         let v = Math.sqrt(leagueClubCount(c, L)) * (0.6 + cc.econ) * Math.sqrt(cc.pros + 400) / 20;
         if (cc.confed === home.confed) v *= 1.6;
         if (cc.lang === home.lang) v *= 1.8;
-        if (c === home.code) v *= 1.4;
         return v;
       });
-      code = list[rng.weightedIndex(cw)];
+      code = foreignList[rng.weightedIndex(cw)];
     }
     if (o.gate && code !== home.code && L >= 4 && rng.next() > Math.min(1, Math.pow(Math.max(mf, 1e-6), 0.6))) continue;
     const club = pickClubIn(s, rng, code, L, o.ovr, s.career.clubId, o.tight && i < 8);
@@ -521,6 +547,7 @@ export function joinClub(s: GameState, rng: Rng, o: Offer, reason: string): void
   if (!o.loan) {
     s.career.transferReq = -1;
     s.career.reqStance = '';
+    s.career.reqDir = '';
   }
   closeMarket(s);
   dropQueuedOffers(s);

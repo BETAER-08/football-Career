@@ -113,7 +113,13 @@ registerAction('roleUp', (s, _c, _a, grade) => {
   }
 });
 registerAction('transferReq', (s, ctx, _a, grade) => {
-  applyTransferRequest(s, ctx.rng, grade === 'great' || grade === 'ok');
+  applyTransferRequest(s, ctx.rng, grade === 'great' || grade === 'ok', '');
+});
+registerAction('transferReqDom', (s, ctx, _a, grade) => {
+  applyTransferRequest(s, ctx.rng, grade === 'great' || grade === 'ok', 'dom');
+});
+registerAction('transferReqAbroad', (s, ctx, _a, grade) => {
+  applyTransferRequest(s, ctx.rng, grade === 'great' || grade === 'ok', 'abroad');
 });
 registerAction('transferWithdraw', (s) => {
   withdrawTransferRequest(s);
