@@ -10,7 +10,7 @@ export interface Pool {
 
 export function createPool(n = Math.max(1, Math.min(12, cpus().length - 1))): Pool {
   const workers: Worker[] = [];
-  for (let i = 0; i < n; i++) workers.push(new Worker(new URL('./headlessWorker.ts', import.meta.url), { execArgv: ['--import', 'tsx'] }));
+  for (let i = 0; i < n; i++) workers.push(new Worker(new URL('./headlessBoot.mjs', import.meta.url)));
   let seq = 0;
   return {
     async run(specs, cal) {

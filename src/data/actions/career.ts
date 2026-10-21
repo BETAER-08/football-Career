@@ -39,8 +39,20 @@ export const careerActions: RawAction[] = [
     bad: { t: '{coach} 감독은 "경쟁은 훈련장에서 하는 것"이라고 선을 그었다.', fx: 'rel.coach-6 morale-4' }
   },
   {
-    id: 'transfer_request', group: 'career', label: '이적 요청', desc: '새 팀을 찾겠다고 구단에 공식 요청한다. 시장이 닫혀 있으면 다음 이적시장에 반영된다. 팬과 감독의 시선이 차가워진다.', phase: PRO, cond: ['hasClub', 'contractLeft>12', '!hasReq', '!hasPre'], cooldown: 26, confirm: true, pv: '이적 제안↑↑ 감독 관계↓ 팬 관계↓',
+    id: 'transfer_request', group: 'career', label: '이적 요청 (방향 무관)', desc: '새 팀을 찾겠다고 구단에 공식 요청한다. 시장이 닫혀 있으면 다음 이적시장에 반영된다. 팬과 감독의 시선이 차가워진다.', phase: PRO, cond: ['hasClub', 'contractLeft>12', '!hasReq', '!hasPre'], cooldown: 26, confirm: true, pv: '이적 제안↑↑ 감독 관계↓ 팬 관계↓',
     check: '72 contractLeft*-0.14 roleRank*-8 rel.coach*0.1', handler: 'transferReq',
+    ok: { t: '구단이 이적 요청을 받아들였다. 적절한 제안이 오면 보내 주겠다는 입장이다. 에이전트와 다른 구단들이 분주해졌다.' },
+    bad: { t: '구단은 핵심 선수를 내줄 수 없다며 이적 요청을 거절했다. 다음 이적시장에서도 협상은 쉽지 않을 것이다.' }
+  },
+  {
+    id: 'transfer_request_dom', group: 'career', label: '이적 요청 (국내 희망)', desc: '국내 다른 팀을 찾겠다고 구단에 공식 요청한다. 시장이 닫혀 있으면 다음 이적시장에 반영된다. 팬과 감독의 시선이 차가워진다.', phase: PRO, cond: ['hasClub', 'contractLeft>12', '!hasReq', '!hasPre'], cooldown: 26, confirm: true, pv: '이적 제안↑↑ 감독 관계↓ 팬 관계↓',
+    check: '72 contractLeft*-0.14 roleRank*-8 rel.coach*0.1', handler: 'transferReqDom',
+    ok: { t: '구단이 이적 요청을 받아들였다. 적절한 제안이 오면 보내 주겠다는 입장이다. 에이전트와 다른 구단들이 분주해졌다.' },
+    bad: { t: '구단은 핵심 선수를 내줄 수 없다며 이적 요청을 거절했다. 다음 이적시장에서도 협상은 쉽지 않을 것이다.' }
+  },
+  {
+    id: 'transfer_request_abroad', group: 'career', label: '이적 요청 (해외 이적 희망)', desc: '해외 구단으로 떠나겠다고 구단에 공식 요청한다. 시장이 닫혀 있으면 다음 이적시장에 반영된다. 팬과 감독의 시선이 차가워진다.', phase: PRO, cond: ['hasClub', 'contractLeft>12', '!hasReq', '!hasPre'], cooldown: 26, confirm: true, pv: '이적 제안↑↑ 감독 관계↓ 팬 관계↓',
+    check: '72 contractLeft*-0.14 roleRank*-8 rel.coach*0.1', handler: 'transferReqAbroad',
     ok: { t: '구단이 이적 요청을 받아들였다. 적절한 제안이 오면 보내 주겠다는 입장이다. 에이전트와 다른 구단들이 분주해졌다.' },
     bad: { t: '구단은 핵심 선수를 내줄 수 없다며 이적 요청을 거절했다. 다음 이적시장에서도 협상은 쉽지 않을 것이다.' }
   },

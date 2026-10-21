@@ -1,6 +1,6 @@
 import { Rng, clamp } from './rng';
 import { LEVEL_STARTER_OVR } from '../data/countries';
-import { getClub } from './data';
+import { getClub, getCountry } from './data';
 import { curOvr } from './attributes';
 import { clubLvl, clubStd } from './world';
 import { ageAt, dateOf, fmtDate, seasonOf, swOf } from './time';
@@ -8,7 +8,6 @@ import { marketValue, formatKRW, priceF } from './finance';
 import { LEVEL_WAGE_MULT } from '../data/countries';
 import { effOvr, stageStd } from './match';
 import { STAGE_AGE, STAGE_REF, minProAge } from './stages';
-import { getCountry } from './data';
 import { addLog } from './log';
 import { hunit } from './streams';
 import { windowIdx, windowOpenW, windowCloseW, windowNow, nextWindowW } from './calendar';
@@ -59,10 +58,10 @@ function externalOffer(s: GameState, rng: Rng, clubId: string, mode: OfferMode, 
   return o;
 }
 
-function slotOffer(s: GameState, rng: Rng, used: Set<string>, lvls: number[] | undefined, tight: boolean, gate = false, first = false): Offer | null {
+function slotOffer(s: GameState, rng: Rng, used: Set<string>, lvls: number[] | undefined, tight: boolean, gate = false, first = false, foreign?: 'only' | 'no'): Offer | null {
   const ovr = curOvr(s.ab);
   for (let i = 0; i < 8; i++) {
-    const club = pickOne(s, rng, { kind: first ? 'first' : 'window', ovr, used, gate, tight, levels: lvls });
+    const club = pickOne(s, rng, { kind: first ? 'first' : 'window', ovr, used, gate, tight, levels: lvls, foreign });
     if (!club) continue;
     const o = externalOffer(s, rng, club.id, 'transfer', first);
     if (!o) {
@@ -92,6 +91,14 @@ function renewReason(s: GameState): '' | 'expiring' | 'form' {
   const last = s.career.seasons[s.career.seasons.length - 1];
   if (last && last.s === seasonOf(s.week) - 1 && last.clubId === s.career.clubId && last.ratingN > 0 && last.ratingSum / last.ratingN >= 7 && last.avail > 0 && last.apps / last.avail >= 0.6) return 'form';
   return '';
+}
+
+function abroadCondition(s: GameState): boolean {
+  const home = getCountry(s.p.country);
+  if (curOvr(s.ab) >= starterOvr(home.top) + 2) return true;
+  if (s.fame.abroad >= 40) return true;
+  const last = s.career.seasons.slice(-2);
+  return last.length === 2 && last[1].s === last[0].s + 1 && last.every((r) => r.ratingN > 0 && r.ratingSum / r.ratingN >= 7 && r.lvl >= home.top && r.clubId.split(':')[0] === home.code);
 }
 
 function lowUse(s: GameState): boolean {
@@ -179,19 +186,28 @@ export function buildBatch(s: GameState, rng: Rng, summer: boolean, n: number): 
   const out: Offer[] = [];
   const reason = renewReason(s);
   let renew: Offer | null = reason ? renewOffer(s, rng) : null;
+  const dir = s.career.transferReq >= 0 ? s.career.reqDir : '';
+  const fo = dir === 'abroad' ? 'only' : dir === 'dom' ? 'no' : undefined;
+  const isForeign = (o: Offer): boolean => getClub(o.clubId).country !== s.p.country;
   if (ovr > starterOvr(cur)) {
     const up = cur < 6 ? LEVELS.filter((L) => L > cur) : [6];
-    const o = slotOffer(s, rng, used, up, false);
+    const o = slotOffer(s, rng, used, up, false, false, false, fo) ?? (fo ? null : slotOffer(s, rng, used, up, false));
     if (o) out.push(o);
   }
   if (summer && ovr >= starterOvr(6) && !out.some((o) => clubLvl(s, o.clubId) === 6)) {
-    const o = slotOffer(s, rng, used, [6], false);
+    const o = slotOffer(s, rng, used, [6], false, false, false, fo);
+    if (o) out.push(o);
+  }
+  if (ageAt(s.p.birth, s.week) >= 18 && dir !== 'dom' && abroadCondition(s) && (summer || rng.chance(0.6)) && !out.some(isForeign)) {
+    let o: Offer | null = null;
+    if (ovr >= starterOvr(5) - 4) o = slotOffer(s, rng, used, [5, 6], false, false, false, 'only');
+    if (!o) o = slotOffer(s, rng, used, undefined, false, false, false, 'only');
     if (o) out.push(o);
   }
   let guard = 0;
   while (out.length + (renew ? 1 : 0) < n && guard++ < 24) {
-    const relax = guard > 10;
-    const batch = relax ? [slotOffer(s, rng, used, undefined, false)].filter((x): x is Offer => !!x) : genOffers(s, rng, 'window', 3);
+    const relax = guard > 10 || dir === 'abroad';
+    const batch = relax ? [slotOffer(s, rng, used, undefined, false, false, false, fo)].filter((x): x is Offer => !!x) : genOffers(s, rng, 'window', 3);
     for (const o of batch) {
       if (used.has(o.clubId) || out.length + (renew ? 1 : 0) >= n) continue;
       if (s.career.contract && s.career.contract.wage > clubWageCap(s, o.clubId) * 0.9 && !relax) continue;
@@ -200,7 +216,7 @@ export function buildBatch(s: GameState, rng: Rng, summer: boolean, n: number): 
       out.push(o);
     }
   }
-  while (out.length + (renew ? 1 : 0) < n) {
+  while (dir !== 'abroad' && out.length + (renew ? 1 : 0) < n) {
     const fb = fallbackDistinct(s, rng, used, 'transfer');
     if (!fb) break;
     out.push(fb);
@@ -218,7 +234,7 @@ export function buildBatch(s: GameState, rng: Rng, summer: boolean, n: number): 
       }
     }
   }
-  if (ageAt(s.p.birth, s.week) <= 21 && cur >= 3 && lowUse(s) && rng.chance(0.65)) {
+  if (dir !== 'abroad' && ageAt(s.p.birth, s.week) <= 21 && cur >= 3 && lowUse(s) && rng.chance(0.65)) {
     const lo = slotOffer(s, rng, used, [Math.max(2, cur - 1)], false);
     if (lo) out.push({ ...lo, loan: true, years: 1, mode: 'loan', fee: 0 });
   }
@@ -369,8 +385,9 @@ export function requestBatch(s: GameState, rng: Rng): void {
   deliverBatch(s, rng);
 }
 
-export function applyTransferRequest(s: GameState, rng: Rng, accepted: boolean): void {
+export function applyTransferRequest(s: GameState, rng: Rng, accepted: boolean, dir: '' | 'dom' | 'abroad' = ''): void {
   s.career.transferReq = s.week;
+  s.career.reqDir = dir;
   s.career.reqStance = accepted ? 'accepted' : 'refused';
   if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel - 10, -100, 100);
   if (s.people.fans) s.people.fans.rel = clamp(s.people.fans.rel - 6, -100, 100);
@@ -383,10 +400,13 @@ export function applyTransferRequest(s: GameState, rng: Rng, accepted: boolean):
 
 export function withdrawTransferRequest(s: GameState): void {
   s.career.transferReq = -1;
+  s.career.reqDir = '';
   s.career.reqStance = '';
   if (s.people.coach) s.people.coach.rel = clamp(s.people.coach.rel + 3, -100, 100);
   addLog(s, 'system', '이적 요청 철회', '이적 요청을 거두고 현 소속팀에 남기로 했다.', []);
 }
+
+export const REQ_DIR_TEXT: Record<'' | 'dom' | 'abroad', string> = { '': '방향 무관', dom: '국내 희망', abroad: '해외 이적 희망' };
 
 export function nextWindowText(s: GameState): string {
   const open = windowNow(s);

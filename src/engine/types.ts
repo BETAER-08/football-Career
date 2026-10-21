@@ -556,6 +556,7 @@ export interface CareerState {
   mkt: MarketPlan | null;
   pre: Offer | null;
   faPressureW: number;
+  reqDir: '' | 'dom' | 'abroad';
   resCur: SeasonRec;
   resSeasons: SeasonRec[];
 }
