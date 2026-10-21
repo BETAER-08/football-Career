@@ -1,13 +1,14 @@
 import { openYouthSeason } from './yleague';
 import { Rng, seedState, clamp, hashString } from './rng';
 import { ALL_ATTRS, ATTR_GROUP, HIDDEN_KEYS, type AttrKey, type GameConfig, type GameState, type HiddenKey, type Person, type Pos } from './types';
-import { ageProgress, curOvr, makeCeil, ovrOf, YOUTH_BONUS, START_MIN, rawForAnchored } from './attributes';
+import { ageProgress, curOvr, makeCeil, YOUTH_BONUS, START_MIN, rawForAnchored, scaleToOvr } from './attributes';
+export { scaleToOvr };
 import { initWorld } from './worldsim';
 import { STATE_VERSION } from './migrate';
 import { getClub, getCountry, citiesOf } from './data';
-import { rollOrigin, potentialMean, type RouletteResult } from './roulette';
+import { rollOrigin, type RouletteResult } from './roulette';
 import { FATHER_JOBS, MOTHER_JOBS, genName, makePerson, mediaPerson, randomPos } from './relations';
-import { START_AGE, START_BIRTH_YEAR, START_YEAR } from './time';
+import { START_AGE, START_BIRTH_YEAR, START_YEAR, ageAt } from './time';
 import { ensureCountry } from './world';
 import { emptyRec } from './records';
 import { setupClubSeason } from './transfer';
@@ -49,17 +50,33 @@ function hiddenInit(rng: Rng, incomeTier: number, supportive: number): Record<Hi
   return h;
 }
 
-function rumorText(pot: number, start: number, rng: Rng): string {
-  const p = pot + rng.normal(0, 3.5);
-  const lo = Math.round(Math.max(start + 4, pot - 5));
-  const hi = Math.round(Math.min(95, pot + 5));
-  const now = start >= 54 ? '지금도 또래 중 눈에 띄는 완성도이고' : start >= 47 ? '지금은 또래 평균 정도이고' : '지금은 아직 다듬을 곳이 많고';
-  const tail = `시작 오버롤 ${Math.round(start)}, 잠재력은 ${lo}~${hi}쯤으로 점쳐진다.`;
-  if (p >= 84) return `스카우트들 사이에서 "몇 년에 한 번 나올 재능"이라는 말이 돈다. ${now} ${tail}`;
-  if (p >= 77) return `또래 최상위권이라는 평가가 스카우트 사이에 퍼져 있다. ${now} ${tail}`;
-  if (p >= 70) return `꾸준히 크면 프로 무대까지는 닿을 수 있다는 소문이다. ${now} ${tail}`;
-  if (p >= 62) return `재능은 평범하지만 성실함이 장점이라는 평이다. ${now} ${tail}`;
-  return `재능보다 노력으로 승부를 봐야 한다는 이야기가 들린다. ${now} ${tail}`;
+export const SCOUT_LINES = [
+  '노력으로 승부를 봐야 하는 선수라는 이야기가 들린다.',
+  '재능은 평범하지만 성실함이 장점이라는 평이다.',
+  '꾸준히 크면 프로 무대까지는 닿을 수 있다는 소문이다.',
+  '또래 최상위권이라는 평가가 스카우트 사이에 퍼져 있다.',
+  '스카우트들 사이에서 "몇 년에 한 번 나올 재능"이라는 말이 돈다.'
+];
+
+export function scoutSigma(age: number): number {
+  return 5 - (clamp(age, 14, 21) - 14) * (3 / 7);
+}
+
+export function scoutTier(cap: number, noise: number): number {
+  const v = cap + noise;
+  return v >= 92 ? 4 : v >= 84 ? 3 : v >= 76 ? 2 : v >= 68 ? 1 : 0;
+}
+
+export function scoutLine(s: GameState): string {
+  const age = Math.floor(clamp(ageAt(s.p.birth, s.week), 14, 21));
+  const r = new Rng(seedState(`${s.cfg.seed}|scout|${age}`));
+  return SCOUT_LINES[scoutTier(s.ab.cap, r.normal(0, scoutSigma(age)))];
+}
+
+function rumorText(cap: number, start: number, rng: Rng): string {
+  const line = SCOUT_LINES[scoutTier(cap, rng.normal(0, scoutSigma(14)))];
+  const now = start >= 54 ? '지금도 또래 중 눈에 띄는 완성도이다.' : start >= 47 ? '지금은 또래 평균 정도의 완성도이다.' : '지금은 아직 다듬을 곳이 많다.';
+  return `${line} ${now}`;
 }
 
 function famExpPick(rng: Rng): string {
@@ -101,23 +118,6 @@ function storyLines(rng: Rng, s: GameState, origin: RouletteResult, famExp: stri
 
 export const START_MAX = 60;
 
-export function scaleToOvr(a: Record<AttrKey, number>, pos: Pos, target: number): void {
-  const base = {} as Record<AttrKey, number>;
-  for (const k of ALL_ATTRS) base[k] = a[k];
-  const want = rawForAnchored(target);
-  let lo = 0.2;
-  let hi = 6;
-  for (let i = 0; i < 40; i++) {
-    const m = (lo + hi) / 2;
-    const test = {} as Record<AttrKey, number>;
-    for (const k of ALL_ATTRS) test[k] = clamp(base[k] * m, 1, 20);
-    if (ovrOf(test, pos) < want) lo = m;
-    else hi = m;
-  }
-  const f = (lo + hi) / 2;
-  for (const k of ALL_ATTRS) a[k] = clamp(base[k] * f, 1, 20);
-}
-
 export interface Created { state: GameState; origin: RouletteResult }
 
 export function originFromSeed(cfg: GameConfig): RouletteResult {
@@ -155,14 +155,13 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   const build = bmi < 17.4 ? '마름' : bmi > 20.2 ? '건장' : '보통';
   const pos: Pos = cfg.pos === 'random' ? randomPos(rng) : cfg.pos;
   const startLo = START_MIN[origin.level] ?? 40;
-  const startOvr = Math.round(rng.float(startLo, START_MAX) * 10) / 10;
-  let pot = rng.normal(potentialMean(origin.level, country.infra), 8);
-  if (rng.chance(0.02)) pot += 8;
-  pot += (startOvr - startLo) * 0.5;
-  pot = Math.max(pot, (startOvr + 8.1) / 1.12);
-  pot = clamp(Math.round(pot * 10) / 10, 38, 93);
+  const tier = rng.weighted([0, 1, 2, 3], [15, 35, 35, 15]);
+  const cap = Math.round((60 + tier * 10 + rng.float(0, tier === 3 ? 9 : 9.9)) * 10) / 10;
+  const u = rng.next();
+  const startOvr = Math.round(Math.min(startLo + (START_MAX - startLo) * u * u, cap - 6) * 10) / 10;
   const nz = () => rng.normal(0, 1);
-  const ceil = makeCeil(pos, pot, nz);
+  const ceil = makeCeil(pos, rawForAnchored(cap), nz);
+  scaleToOvr(ceil, pos, cap);
   const a = {} as Record<AttrKey, number>;
   const prev = {} as Record<AttrKey, number>;
   for (const k of ALL_ATTRS) {
@@ -172,7 +171,6 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
     else a[k] = clamp(ceil[k] * ageProgress(g, START_AGE, growth) + rng.normal(0, 0.5), 1, 20);
     prev[k] = a[k];
   }
-  for (const k of ALL_ATTRS) ceil[k] = Math.min(20, ceil[k] * 1.14);
   scaleToOvr(a, pos, startOvr - YOUTH_BONUS);
   for (const k of ALL_ATTRS) if (ATTR_GROUP[k] !== 'gk' || pos === 'GK') ceil[k] = Math.max(ceil[k], a[k]);
   const hid = hiddenInit(rng, incomeTier, supportive);
@@ -194,6 +192,7 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   for (let i = 1; i <= nSib; i++) {
     people[`sibling${i}`] = makePerson(rng, st0, 'sibling', country.code, { age: clamp(START_AGE + rng.int(-6, 7), 3, 28), refYear, job: '학생', rel: rng.int(20, 65) });
   }
+  const pot = Math.round(rawForAnchored(cap));
   const mateKeys = ['mate1', 'mate2', 'mate3'];
   for (const k of mateKeys) {
     people[k] = makePerson(rng, st0, 'mate', country.code, {
@@ -209,10 +208,10 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   const lgStat = getClub(origin.clubId).lg0;
   const ab = {
     a, ceil, prev, height, weight, bodyFat: Math.round(clamp(rng.normal(14, 2.5), 8, 24) * 10) / 10, pos, sec: secondaryFor(rng, pos),
-    traits: [] as string[], pot: Math.min(95, Math.round(pot * 1.12 * 10) / 10), playShare: 0.6, growthMul: 1, dispAdj: 0, hFrac0: height / finalHeight, bmi0: weight / ((height / 100) * (height / 100))
+    traits: [] as string[], pot: Math.round(rawForAnchored(cap) * 10) / 10, cap, playShare: 0.6, growthMul: 1, dispAdj: 0, hFrac0: height / finalHeight, bmi0: weight / ((height / 100) * (height / 100))
   };
   ab.dispAdj = YOUTH_BONUS;
-  const rumor = rumorText(Math.min(95, pot * 1.12), startOvr, rng);
+  const rumor = rumorText(cap, startOvr, rng);
   const state: GameState = {
     v: STATE_VERSION,
     cfg,

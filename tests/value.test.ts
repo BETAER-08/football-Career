@@ -4,7 +4,7 @@ import { autoDecide } from '../src/engine/auto';
 import { Rng, seedState } from '../src/engine/rng';
 import { rngOf, clubLvl } from '../src/engine/world';
 import { ensureContent } from '../src/engine/content';
-import { anchored, curOvr } from '../src/engine/attributes';
+import { anchored, curOvr, rawForAnchored } from '../src/engine/attributes';
 import { ALL_ATTRS } from '../src/engine/types';
 import { forcedOrigin, originRng } from '../src/engine/headless';
 import { scaleToOvr } from '../src/engine/player';
@@ -82,12 +82,14 @@ describe('시장가치 모델', () => {
     for (const [age, f] of ages) {
       standard(s, 70);
       setAge(s, age);
-      s.ab.pot = 70;
+      s.ab.cap = 70;
+      s.ab.pot = rawForAnchored(70);
       expect(ratio(), `age ${age}`).toBeCloseTo(f, 2);
     }
     standard(s, 70);
     setAge(s, 21);
-    s.ab.pot = 85;
+    s.ab.cap = 85;
+    s.ab.pot = rawForAnchored(85);
     expect(ratio()).toBeCloseTo(1.3 * (1 + 15 / 30), 2);
     setAge(s, 25);
     expect(ratio()).toBeCloseTo(1, 2);

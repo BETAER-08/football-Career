@@ -1,10 +1,8 @@
 import { ALL_ATTRS, ATTR_GROUP, type GameState } from './types';
 import { Rng, clamp } from './rng';
-import { ageProgress, ovrOf } from './attributes';
+import { ageProgress, ovrOf, rawForAnchored } from './attributes';
 import { focusDef } from './lifestyle';
 import { getClub } from './data';
-import { stream } from './streams';
-import { addLog } from './log';
 
 function heightFrac(f0: number, age: number, growth: 'early' | 'normal' | 'late'): number {
   const end = growth === 'early' ? 17.5 : growth === 'late' ? 19.8 : 18.6;
@@ -30,8 +28,8 @@ export function growWeek(s: GameState, rng: Rng, age: number): void {
   const club = s.career.clubId ? getClub(s.career.clubId) : null;
   const share = clamp(ab.playShare, 0, 1);
   const playF = age < 22 ? 0.72 + 0.56 * clamp(share / 0.75, 0, 1) : 0.92 + 0.16 * clamp(share / 0.75, 0, 1);
-  const facil = club ? 0.92 + 0.16 * (club.facil / 100) : 0.93;
-  const acad = club && s.phase === 'youth' ? 0.9 + 0.2 * (club.acad / 100) : 1;
+  const facil = club ? 0.97 + 0.06 * (club.facil / 100) : 0.97;
+  const acad = club && s.phase === 'youth' ? 0.97 + 0.06 * (club.acad / 100) : 1;
   const life = 0.9 + 0.2 * ((s.st.sleep + s.st.diet) / 200);
   const staff = 1 + (s.fin.trainer > 0 ? 0.07 : 0) + (s.fin.nutritionist > 0 ? 0.02 : 0) + (s.fin.psychCoach > 0 ? 0.015 : 0);
   const pro = 0.9 + 0.2 * (s.hid.pro / 100);
@@ -62,22 +60,26 @@ export function growWeek(s: GameState, rng: Rng, age: number): void {
     const rate = d >= 0 ? r * gmul[grp] : r * 0.7;
     ab.a[k] = clamp(cur + d * rate, 1, 20);
   }
+  enforceCap(s);
 }
 
-function bloom(s: GameState, age: number): void {
-  if (age < 16 || age > 30) return;
-  const r = stream(s.cfg.seed, 'bloom', Math.floor(s.week / 52));
-  const p = 0.045 + (s.hid.pro - 50) / 1500 + (s.ab.playShare > 0.6 ? 0.015 : 0);
-  if (r.next() >= p) return;
-  const f = 1 + r.float(0.05, 0.14);
-  for (const k of ALL_ATTRS) s.ab.ceil[k] = Math.min(20, s.ab.ceil[k] * f);
-  s.ab.pot = Math.min(98, Math.round(s.ab.pot * f * 10) / 10);
-  if (age >= 19) addLog(s, 'milestone', '재능이 꽃피다', `${s.p.name}의 재능이 뒤늦게 만개하기 시작했다. 한계가 어디인지 아무도 모른다.`, [], { star: true });
+export function enforceCap(s: GameState): void {
+  const ab = s.ab;
+  const lim = rawForAnchored(ab.cap);
+  const o = ovrOf(ab.a, ab.pos);
+  if (o > lim) {
+    const f = lim / o;
+    for (const k of ALL_ATTRS) ab.a[k] = Math.max(1, ab.a[k] * f);
+  }
+  const c = ovrOf(ab.ceil, ab.pos);
+  if (c > lim) {
+    const f = lim / c;
+    for (const k of ALL_ATTRS) ab.ceil[k] = Math.max(1, ab.ceil[k] * f);
+  }
 }
 
 export function seasonEndGrowth(s: GameState, age: number): void {
   const ab = s.ab;
-  bloom(s, age);
   if (age < 20) {
     const gain = ovrOf(ab.a, ab.pos) - s.snap.ovr;
     if (gain < 2) {
@@ -92,5 +94,9 @@ export function seasonEndGrowth(s: GameState, age: number): void {
   if (age >= 21 && ab.playShare < 0.3) {
     const leak = 0.012 * ((0.3 - ab.playShare) / 0.3);
     for (const k of ALL_ATTRS) ab.ceil[k] = Math.max(1, ab.ceil[k] * (1 - leak));
+    const nc = Math.max(40, ab.cap * (1 - leak));
+    ab.cap = Math.round(nc * 10) / 10;
+    ab.pot = Math.round(rawForAnchored(ab.cap) * 10) / 10;
   }
+  enforceCap(s);
 }

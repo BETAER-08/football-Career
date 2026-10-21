@@ -5,7 +5,7 @@ import { Rng, seedState } from '../src/engine/rng';
 import { rngOf, clubLvl } from '../src/engine/world';
 import { ensureContent } from '../src/engine/content';
 import { ageAt, swOf, seasonOf } from '../src/engine/time';
-import { curOvr, shownOvr, anchored } from '../src/engine/attributes';
+import { curOvr, shownOvr, anchored, rawForAnchored } from '../src/engine/attributes';
 import { scaleToOvr } from '../src/engine/player';
 import { ALL_ATTRS } from '../src/engine/types';
 import { windowIdx, windowNow, nextWindowW, windowCloseW } from '../src/engine/calendar';
@@ -41,6 +41,8 @@ function at(s: GameState, w: number): GameState {
 }
 
 function lock(s: GameState): void {
+  s.ab.cap = 99;
+  s.ab.pot = rawForAnchored(99);
   scaleToOvr(s.ab.a, s.ab.pos, anchored(79.5));
 }
 
@@ -78,6 +80,10 @@ function step(s: GameState, tap: Tap = {}): void {
 
 function reachAdultPro(s: GameState, power = 0, maxWeeks = 52 * 8): boolean {
   s.auto = true;
+  if (power) {
+    s.ab.cap = 99;
+    s.ab.pot = rawForAnchored(99);
+  }
   for (let i = 0; i < maxWeeks && !s.ended && !s.career.retired; i++) {
     if (s.phase === 'pro' && marketEligible(s) && s.career.clubId) return true;
     if (power) boost(s, power);

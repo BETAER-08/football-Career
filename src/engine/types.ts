@@ -345,6 +345,7 @@ export interface Abilities {
   sec: Partial<Record<Pos, number>>;
   traits: string[];
   pot: number;
+  cap: number;
   playShare: number;
   growthMul: number;
   dispAdj: number;
