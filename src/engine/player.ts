@@ -161,8 +161,8 @@ export function createState(cfg: GameConfig, originIn?: RouletteResult): Created
   const height = Math.round(finalHeight * frac);
   const weight = Math.round(bmi * (height / 100) * (height / 100));
   const startLo = START_MIN[origin.level] ?? 40;
-  const tier = rng.weighted([0, 1, 2, 3], [25, 40, 25, 10]);
-  const cap = Math.round((60 + tier * 10 + rng.float(0, tier === 3 ? 9 : 9.9)) * 10) / 10;
+  const capTier = rng.weighted([0, 1, 2, 3, 4], [10, 25, 25, 20, 10]);
+  const cap = Math.max(Math.round((50 + capTier * 10 + rng.float(0, capTier === 4 ? 9 : 9.9)) * 10) / 10, startLo + 6);
   const u = rng.next();
   const startOvr = Math.round(Math.min(startLo + (START_MAX - startLo) * u * u, cap - 6) * 10) / 10;
   const nz = () => rng.normal(0, 1);

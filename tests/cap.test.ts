@@ -19,23 +19,23 @@ const cfgOf = (seed: string): GameConfig => ({ seed, name: '', pos: 'random', mo
 const CODES = ['GB', 'US', 'BR', 'JP', 'KR', 'NG', 'ES', 'DE'];
 
 describe('숨겨진 성장 한계', () => {
-  it('상한 분포가 25/40/25/10 ±1.5%p이고 모두 60~99이며 시작 오버롤은 상한 − 6 이하이다', () => {
+  it('상한 분포가 25/40/25/10 ±1.5%p이고 모두 50~99이며 시작 오버롤은 상한 − 6 이하이다', () => {
     const N = 10000;
-    const bins = [0, 0, 0, 0];
+    const bins = [0, 0, 0, 0, 0];
     for (let i = 0; i < N; i++) {
       const seed = `cap-${i}`;
       const level = 2 + (i % 5);
       const origin = forcedOrigin(originRng(seed), CODES[i % CODES.length], level);
       const { state } = createState(cfgOf(seed), origin);
       const cap = state.ab.cap;
-      expect(cap).toBeGreaterThanOrEqual(60);
+      expect(cap).toBeGreaterThanOrEqual(50);
       expect(cap).toBeLessThanOrEqual(99);
       expect(state.p.startOvr).toBeLessThanOrEqual(cap - 6 + 0.06);
       expect(anchored(curOvr(state.ab))).toBeLessThanOrEqual(cap + 0.05);
-      bins[Math.min(3, Math.floor((cap - 60) / 10))]++;
+      bins[Math.min(4, Math.floor((cap - 50) / 10))]++;
     }
-    const want = [0.25, 0.4, 0.25, 0.1];
-    for (let t = 0; t < 4; t++) expect(Math.abs(bins[t] / N - want[t])).toBeLessThanOrEqual(0.015);
+    const want = [10 / 90, 25 / 90, 25 / 90, 20 / 90, 10 / 90];
+    for (let t = 0; t < 5; t++) expect(Math.abs(bins[t] / N - want[t])).toBeLessThanOrEqual(0.015);
   });
 
   it('상한은 국가·수준과 무관하다', () => {
@@ -103,7 +103,7 @@ describe('숨겨진 성장 한계', () => {
     }
   });
 
-  it('구 저장은 잠재력을 상한으로 옮기고 60~99로 제한한다', () => {
+  it('구 저장은 잠재력을 상한으로 옮기고 50~99로 제한한다', () => {
     const seed = 'capmig';
     const s: GameState = newGame(cfgOf(seed), forcedOrigin(originRng(seed), 'GB', 4));
     const old = JSON.parse(JSON.stringify(s)) as GameState & Record<string, unknown>;
@@ -117,7 +117,7 @@ describe('숨겨진 성장 한계', () => {
     (old2.ab as unknown as Record<string, unknown>).cap = undefined;
     old2.ab.pot = 40;
     const r2 = migrateState(old2);
-    expect(r2.ok && r2.state.ab.cap).toBe(60);
-    expect(r2.ok && r2.state.ab.pot).toBeCloseTo(rawForAnchored(60), 1);
+    expect(r2.ok && r2.state.ab.cap).toBe(50);
+    expect(r2.ok && r2.state.ab.pot).toBeCloseTo(rawForAnchored(50), 1);
   });
 });

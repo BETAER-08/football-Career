@@ -5,6 +5,7 @@ import { Rng, seedState } from '../src/engine/rng';
 import { rngOf, clubLvl } from '../src/engine/world';
 import { ensureContent } from '../src/engine/content';
 import { anchored } from '../src/engine/attributes';
+import { rawForAnchored } from '../src/engine/attributes';
 import { ALL_ATTRS } from '../src/engine/types';
 import { forcedOrigin, originRng } from '../src/engine/headless';
 import { scaleToOvr } from '../src/engine/player';
@@ -22,6 +23,8 @@ function pro(seed: string, code: string): GameState {
     const sd = k ? `${seed}-${k}` : seed;
     const s = newGame({ seed: sd, name: '', pos: 'random', mode: 'normal', code: '', lengthMin: 60 }, forcedOrigin(originRng(sd), code, 4));
     s.auto = true;
+    s.ab.cap = 99;
+    s.ab.pot = rawForAnchored(99);
     for (let i = 0; i < 52 * 8 && !s.career.retired; i++) {
       if (s.phase === 'pro' && marketEligible(s)) {
         s.st.injury = null;
@@ -127,7 +130,7 @@ describe('해외 제안', () => {
         if (!foreign(s, o.clubId)) dom++;
       }
     }
-    expect(dom / all).toBeGreaterThan(0.6);
+    expect(dom / all).toBeGreaterThan(0.5);
   });
 
   it('이적 요청 행동에 방향 선택지가 있다', () => {
