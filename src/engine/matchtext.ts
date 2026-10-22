@@ -63,7 +63,7 @@ export function reportLine(s: GameState, fx: Fixture, out: MatchOut): string {
   }
   if (out.rc) bits.push('퇴장');
   const old = oldMateNote(s, fx);
-  return `${bits.join(' · ')} · 평점 ${out.rating.toFixed(1)}${old}`;
+  return `${bits.join(' · ')} · 평점 ${out.rating.toFixed(2)}${old}`;
 }
 
 function oldMateNote(s: GameState, fx: Fixture): string {

@@ -47,7 +47,7 @@
   const yt = $derived(g.phase === 'youth' ? g.yt : null);
   const yRank = $derived(yt ? youthRank(g) : 0);
   const yc = $derived(g.career.yCur);
-  const yAvg = $derived(yc.ratingN ? (yc.ratingSum / yc.ratingN).toFixed(1) : '-');
+  const yAvg = $derived(yc.ratingN ? (yc.ratingSum / yc.ratingN).toFixed(2) : '-');
   const entry = $derived(g.career.entry);
   const entryText = $derived(g.career.debuted ? '1군 데뷔 완료' : entry.step >= 2 ? `1군 명단 ${entry.squadN}회${g.career.signed ? '' : ' (프로 계약 필요)'}` : entry.step === 1 ? '1군 훈련 합류' : '아직 1군 접점 없음');
   const sch = $derived(g.career.track === 'school' && g.career.clubId ? schoolInfo(g.career.clubId) : null);
@@ -116,7 +116,7 @@
     <section class="card">
       <div class="h">상태</div>
       {#each [['건강', g.st.health, false, 'health'], ['피로', g.st.fatigue, true, 'fatigue'], ['폼', Math.min(100, Math.max(0, (form - 4) * 25)), false, ''], ['경기 감각', g.st.sharp, false, 'sharp'], ['사기', g.st.morale, false, 'morale'], ['행복', g.st.happy, false, 'happy'], ['스트레스', g.st.stress, true, 'stress']] as [label, v, inv, key]}
-        <div class="gr" title={key ? whyText(g, `st.${key}`) || '최근 큰 변화가 없어요' : '최근 5경기 평균 평점'}><span>{#if label === '경기 감각'}<Term id="sharp" />{:else}{label}{/if}</span><div class="gauge {tone(v as number, inv as boolean)}"><i style="width:{v}%"></i></div><b class="mono">{label === '폼' ? (form ? form.toFixed(1) : '-') : Math.round(v as number)}</b></div>
+        <div class="gr" title={key ? whyText(g, `st.${key}`) || '최근 큰 변화가 없어요' : '최근 5경기 평균 평점'}><span>{#if label === '경기 감각'}<Term id="sharp" />{:else}{label}{/if}</span><div class="gauge {tone(v as number, inv as boolean)}"><i style="width:{v}%"></i></div><b class="mono">{label === '폼' ? (form ? form.toFixed(2) : '-') : Math.round(v as number)}</b></div>
       {/each}
       <div class="mini-hint">건강 {healthLabel(g.st.health)}{g.st.burnout > 50 ? ' · 번아웃 위험' : ''}</div>
     </section>
@@ -166,7 +166,7 @@
           {@const v = goalValue(g, gd)}
           {@const ratio = Math.min(100, (v / gd.target) * 100)}
           <div class="goal" title="시즌 결산에서 달성 여부와 보상을 처리해요">
-            <div class="gt"><span>{lab}</span><b class="mono">{gd.metric === 'rating' || gd.metric === 'resrating' ? v.toFixed(1) : Math.round(v)}/{gd.target}</b></div>
+            <div class="gt"><span>{lab}</span><b class="mono">{gd.metric === 'rating' || gd.metric === 'resrating' ? v.toFixed(2) : Math.round(v)}/{gd.target}</b></div>
             <div class="gauge"><i style="width:{ratio}%"></i></div>
             <div class="mini-hint">{gd.label}</div>
           </div>

@@ -118,7 +118,7 @@
         <thead><tr><th>시즌</th><th>{tab === 'y' ? '팀' : '구단'}</th><th>리그</th><th>경기</th><th>골</th><th>도움</th><th>평점</th></tr></thead>
         <tbody>
           {#each rows as r}
-            <tr class:clk={hasReview(r.s, 'player')} tabindex={hasReview(r.s, 'player') ? 0 : -1} onclick={() => openReview(r.s, 'player')} onkeydown={(e) => e.key === 'Enter' && openReview(r.s, 'player')} title={hasReview(r.s, 'player') ? '눌러서 시즌 결산 다시 보기' : ''}><td class="mono">{r.year % 100}/{(r.year + 1) % 100}</td><td class="cl" title={r.clubName}>{r.clubName}</td><td class="lg">{r.leagueName}</td><td class="mono">{r.apps}</td><td class="mono">{r.goals}</td><td class="mono">{r.assists}</td><td class="mono">{r.ratingN ? (r.ratingSum / r.ratingN).toFixed(1) : '-'}</td></tr>
+            <tr class:clk={hasReview(r.s, 'player')} tabindex={hasReview(r.s, 'player') ? 0 : -1} onclick={() => openReview(r.s, 'player')} onkeydown={(e) => e.key === 'Enter' && openReview(r.s, 'player')} title={hasReview(r.s, 'player') ? '눌러서 시즌 결산 다시 보기' : ''}><td class="mono">{r.year % 100}/{(r.year + 1) % 100}</td><td class="cl" title={r.clubName}>{r.clubName}</td><td class="lg">{r.leagueName}</td><td class="mono">{r.apps}</td><td class="mono">{r.goals}</td><td class="mono">{r.assists}</td><td class="mono">{r.ratingN ? (r.ratingSum / r.ratingN).toFixed(2) : '-'}</td></tr>
           {:else}
             <tr><td colspan="7" class="muted">{tab === 'f' ? '아직 1군 공식 경기 기록이 없어요.' : '아직 시즌 기록이 없어요.'}</td></tr>
           {/each}
@@ -126,7 +126,7 @@
       </table>
       {#if ratingPts.length >= 2}
         <LineChart points={ratingPts} format={(v) => v.toFixed(2)} />
-        <div class="mini-hint">시즌 평균 평점 추이 ({ratings[0].v.toFixed(1)} → {ratings[ratings.length - 1].v.toFixed(1)}) · 마우스를 올려 값을 확인해요</div>
+        <div class="mini-hint">시즌 평균 평점 추이 ({ratings[0].v.toFixed(2)} → {ratings[ratings.length - 1].v.toFixed(2)}) · 마우스를 올려 값을 확인해요</div>
       {/if}
       {#if g.coach.recs.length}
         <b style="font-size:var(--fs-sub);color:var(--muted)">지도 시즌 성적</b>

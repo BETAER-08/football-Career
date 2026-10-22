@@ -87,7 +87,7 @@
         <div class="kv"><span>경기</span><span class="mono">{d.apps}</span></div>
         <div class="kv"><span>골 · 도움</span><span class="mono">{d.goals} · {d.assists}</span></div>
         <div class="kv"><span>평균 평점</span><span class="mono">{d.avg ? d.avg.toFixed(2) : '-'}</span></div>
-        {#if d.youth && d.youth.apps > 0}<div class="kv"><span>유스·리저브</span><span class="mono">{d.youth.apps}경기 {d.youth.goals}골 {d.youth.assists}도움{d.youth.avg ? ` · 평점 ${d.youth.avg.toFixed(1)}` : ''}</span></div>{/if}
+        {#if d.youth && d.youth.apps > 0}<div class="kv"><span>유스·리저브</span><span class="mono">{d.youth.apps}경기 {d.youth.goals}골 {d.youth.assists}도움{d.youth.avg ? ` · 평점 ${d.youth.avg.toFixed(2)}` : ''}</span></div>{/if}
         {#if d.ballons || d.podiums}<div class="kv"><span>발롱도르</span><span class="mono">수상 {d.ballons}회 · 포디움 {d.podiums ?? d.ballons}회</span></div>{/if}
         <div class="kv"><span>A매치</span><span class="mono">{d.caps}경기 {d.natGoals}골</span></div>
         <div class="kv"><span>최종 순자산</span><span class="mono up">{formatKRW(d.netWorth)}</span></div>
@@ -137,7 +137,7 @@
         <div class="panel-b" style="max-height:260px;overflow:auto">
           <table class="ag">
             <thead><tr><th>대회</th><th>상대</th><th>결과</th><th>선발</th><th>출전</th><th>골</th><th>도움</th><th>평점</th></tr></thead>
-            <tbody>{#each [...d.natMatches].reverse() as m}<tr><td>{m.comp}</td><td>{m.opp}</td><td>{m.result === 'W' ? '승' : m.result === 'D' ? '무' : '패'}</td><td>{m.mins ? (m.started ? '선발' : '교체') : '미출전'}</td><td class="mono">{m.mins}'</td><td class="mono">{m.goals}</td><td class="mono">{m.assists}</td><td class="mono">{m.mins ? m.rating.toFixed(1) : '-'}</td></tr>{/each}</tbody>
+            <tbody>{#each [...d.natMatches].reverse() as m}<tr><td>{m.comp}</td><td>{m.opp}</td><td>{m.result === 'W' ? '승' : m.result === 'D' ? '무' : '패'}</td><td>{m.mins ? (m.started ? '선발' : '교체') : '미출전'}</td><td class="mono">{m.mins}'</td><td class="mono">{m.goals}</td><td class="mono">{m.assists}</td><td class="mono">{m.mins ? m.rating.toFixed(2) : '-'}</td></tr>{/each}</tbody>
           </table>
         </div>
       </div>

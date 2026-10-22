@@ -12,7 +12,6 @@
   import SeasonReview from './SeasonReview.svelte';
   import BallonCeremony from './BallonCeremony.svelte';
   import TableModal from './TableModal.svelte';
-  import ResultModal from './ResultModal.svelte';
   import Toasts from './Toasts.svelte';
   import { focusList } from '../engine/lifestyle';
 
@@ -62,7 +61,6 @@
 {#if store.panel === 'saves'}<SaveModal />{/if}
 {#if store.reviewOpen}<SeasonReview />{/if}
 {#if store.ceremonyOpen}<BallonCeremony />{/if}
-<ResultModal />
 <Toasts />
 {#if store.tableOpen}<TableModal />{/if}
 

@@ -213,7 +213,7 @@ function bestParagraphOf(b: BestMatch | undefined): string {
   if (b.goals) bits.push(`${b.goals}골`);
   if (b.assists) bits.push(`${b.assists}도움`);
   const contrib = bits.length ? `${josa(bits.join(' '), '을')} 기록하며 ` : '';
-  return `${b.comp}에서 ${b.line}. ${b.mins}분을 뛰며 ${contrib}평점 ${b.rating.toFixed(1)}으로 시즌 최고의 경기를 만들었다.`;
+  return `${b.comp}에서 ${b.line}. ${b.mins}분을 뛰며 ${contrib}평점 ${b.rating.toFixed(2)}으로 시즌 최고의 경기를 만들었다.`;
 }
 
 export function buildCoachReview(s: GameState): void {

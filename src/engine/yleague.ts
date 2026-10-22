@@ -351,7 +351,7 @@ function playYouthMatch(s: GameState, rng: Rng, fx: Fixture, listed: boolean): v
       else if (out.goals === 1 && cur.goals === 1) bits.push('시즌 첫 골');
       if (out.rc > 0) bits.push('퇴장');
       if (fx.final) bits.push(fx.stage);
-      if (out.rating >= 9) bits.push(`평점 ${out.rating.toFixed(1)}`);
+      if (out.rating >= 9) bits.push(`평점 ${out.rating.toFixed(2)}`);
       addLog(s, 'match', `${out.fx.comp} ${fx.stage}`, `${out.line}. ${bits.join(' · ')}. ${out.mins}분 출전, ${out.goals}골 ${out.assists}도움.`, [], { tier: stage === 'RES' ? 'r' : 'y' });
     }
   }

@@ -3,7 +3,7 @@ import { ensureContent } from '../engine/content';
 import { secPerYear, swOf } from '../engine/time';
 import { defaultFocus } from '../engine/lifestyle';
 import { playerGrade, coachGrade, percentileOf } from '../engine/scoring';
-import type { AgeRec, Decision, GameConfig, GameState, NatStage, ResultPanel, Toast } from '../engine/types';
+import type { Decision, GameConfig, GameState, ResultPanel, Toast } from '../engine/types';
 import type { RouletteResult } from '../engine/roulette';
 import { clearSave, exportSave, hasSave, importSave, loadGame, loadPrefs, pushArchive, saveGame, savePrefs, exportEntry, type Prefs, type ArchiveEntry } from './save';
 import { setMusic, chime, click, sfx } from './audio';
@@ -17,9 +17,7 @@ import BaselineWorker from './baseline.worker?worker';
 
 export type ModalItem =
   | { key: string; kind: 'review'; idx: number; engine: boolean }
-  | { key: string; kind: 'ceremony' }
-  | { key: string; kind: 'age'; rec: AgeRec }
-  | { key: string; kind: 'squad'; stage: NatStage };
+  | { key: string; kind: 'ceremony' };
 
 export type Screen = 'menu' | 'setup' | 'roulette' | 'card' | 'game' | 'end' | 'vault';
 
@@ -39,8 +37,6 @@ class Store {
   batchTotal = $state(0);
   batchIndex = $state(1);
   private modalTimer: number | null = null;
-  private seenAge = 0;
-  private seenStage: NatStage = 'none';
   tableOpen = $state(false);
   private epiSpeedFor = '';
   result = $state.raw<ResultPanel | null>(null);
@@ -147,7 +143,6 @@ class Store {
     this.archiveFail = false;
     this.end = null;
     this.clearModals();
-    this.syncSeen(state);
     this.epiSpeedFor = '';
     cancelSkip(this.ps);
     this.ps.resume = null;
@@ -260,11 +255,6 @@ class Store {
     this.batchIndex = 1;
   }
 
-  syncSeen(g: GameState): void {
-    this.seenAge = g.nat.ageRecs.length;
-    this.seenStage = g.nat.stage;
-  }
-
   pushModal(item: ModalItem): void {
     if (this.modalQueue.some((m) => m.key === item.key)) return;
     this.modalQueue = [...this.modalQueue, item];
@@ -310,17 +300,6 @@ class Store {
       this.pushModal({ key: `review:${idx}:engine`, kind: 'review', idx, engine: true });
     }
     if (g.wld.ceremonyDue) this.pushModal({ key: `ceremony:${g.wld.ceremony?.s ?? 0}`, kind: 'ceremony' });
-    if (g.nat.ageRecs.length > this.seenAge) {
-      if (g.pendingReview >= 0) {
-        for (let i = this.seenAge; i < g.nat.ageRecs.length; i++) this.pushModal({ key: `age:${i}`, kind: 'age', rec: g.nat.ageRecs[i] });
-        this.seenAge = g.nat.ageRecs.length;
-      }
-    } else if (g.nat.ageRecs.length < this.seenAge) this.seenAge = g.nat.ageRecs.length;
-    if (g.nat.stage !== this.seenStage) {
-      const rank = { none: 0, prelim: 1, called: 2, starter: 3 };
-      if (rank[g.nat.stage] > rank[this.seenStage] && g.nat.stage !== 'none') this.pushModal({ key: `squad:${g.week}:${g.nat.stage}`, kind: 'squad', stage: g.nat.stage });
-      this.seenStage = g.nat.stage;
-    }
   }
 
   openReviewAt(i: number): void {
