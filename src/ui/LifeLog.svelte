@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { store } from './store.svelte';
-  import { dateOf, fmtDate, seasonLabel, seasonOf } from '../engine/time';
+  import { dateOf, fmtDate, seasonOf } from '../engine/time';
   import Chips from './Chips.svelte';
   import DecisionCard from './DecisionCard.svelte';
   import Icon from './Icon.svelte';
@@ -48,23 +48,11 @@
     return out;
   });
 
-  function seasonTitle(sn: number): string {
-    const rec = [...g.career.seasons, ...g.career.ySeasons, g.career.cur, g.career.yCur].find((r) => r && r.s === sn && r.clubName);
-    if (!rec) return seasonLabel(sn);
-    const pos = rec.pos > 0 ? ` · 리그 ${rec.pos}위` : '';
-    return `${seasonLabel(sn)} · ${rec.clubName}${pos}`;
-  }
-
-  type Row = { key: string; head?: string; season: number; e?: LogEntry };
+  type Row = { key: string; season: number; e?: LogEntry };
   const rows = $derived.by(() => {
     const out: Row[] = [];
-    let cur = -1;
     for (const e of list) {
       const sn = seasonOf(e.w);
-      if (sn !== cur) {
-        cur = sn;
-        out.push({ key: `h-${sn}`, head: seasonTitle(sn), season: sn });
-      }
       out.push({ key: `e-${e.id}`, season: sn, e });
     }
     return out;
@@ -101,7 +89,6 @@
   const slice = $derived(rows.slice(range.a, range.b));
   const topPad = $derived(offsets[range.a] ?? 0);
   const botPad = $derived(Math.max(0, (offsets[rows.length] ?? 0) - (offsets[range.b] ?? 0)));
-  const pinned = $derived(rows[first] ? seasonTitle(rows[first].season) : '');
 
   function measure(node: HTMLElement, key: string) {
     const ro = new ResizeObserver(() => {
@@ -196,7 +183,6 @@
       <button class="btn sm" class:on={filter === k} aria-pressed={filter === k} onclick={() => (filter = k)}>{label}</button>
     {/each}
   </div>
-  {#if rows.length}<div class="pin" aria-hidden="true">{pinned}</div>{/if}
   {#if !full}
     {#if store.game?.decision}
       <div class="slot"><DecisionCard /></div>
@@ -205,16 +191,14 @@
   <div class="logs scroll" bind:this={scroller} onscroll={onScroll}>
     <div style="height:{topPad}px"></div>
     {#each slice as r (r.key)}
-      {#if r.head}
-        <div class="head" class:dup={r.key === rows[0]?.key} use:measure={r.key}>{r.head}</div>
-      {:else if r.e}
+      {#if r.e}
         {@const e = r.e}
         {@const lk = linkId(e)}
         <div class="entry" use:measure={r.key} id="log-{e.id}" class:mine={isChoice(e)} class:fu={!!e.from} class:flash={flash === e.id} data-g={e.grade ?? ''} style="--kc:{kindColor[e.kind]};--band:{bandOf(e)}">
           <div class="rail"></div>
           <div class="grow col" style="gap:var(--s1)">
             <div class="row" style="gap:var(--s2)">
-              {#if e.star}<span class="starred" title="즐겨찾기"><Icon name="star" size={14} /></span>{/if}
+              {#if e.star && !isChoice(e)}<span class="starred" title="즐겨찾기"><Icon name="star" size={14} /></span>{/if}
               {#if isChoice(e)}<span class="badge">내 선택</span>{/if}
               <span class="kind">{kindLabel[e.kind]}</span>
               {#if e.tier}<span class="tier" class:y={e.tier !== 'f'}>{e.tier === 'f' ? '1군' : e.tier === 'r' ? '리저브' : '유스'}</span>{/if}
@@ -224,7 +208,7 @@
               {#if e.dream}<span class="dreamstar" title="인생의 꿈과 관련된 일"><Icon name="star" size={12} /></span>{/if}
               {#if follows.has(e.id)}<button class="link" onclick={() => jump(e)}>후속 보기</button>{/if}
               <span class="spacer"></span>
-              <button class="star" class:on={e.star} onclick={() => star(e)} aria-label="즐겨찾기" aria-pressed={!!e.star}><Icon name="star" size={14} /></button>
+              {#if !isChoice(e)}<button class="star" class:on={e.star} onclick={() => star(e)} aria-label="즐겨찾기" aria-pressed={!!e.star}><Icon name="star" size={14} /></button>{/if}
             </div>
             {#if e.quote}<div class="quote">{e.quote}</div>{/if}
             {#if isChoice(e)}
@@ -283,9 +267,6 @@
   .logs { height: 520px; position: relative; }
   .panel:not(.fullp) .logs { flex: 1; height: auto; min-height: 320px; }
   .fullp .logs { height: calc(70vh / var(--z, 1)); }
-  .head.dup { display: none; }
-  .pin { flex: none; padding: var(--s1) var(--s3); background: color-mix(in srgb, var(--accent) 18%, var(--panel2)); border-bottom: 1px solid var(--line); font-size: var(--fs-panel); font-weight: 800; letter-spacing: 0.04em; }
-  .head { padding: var(--s2) var(--s3); background: var(--panel2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: var(--fs-panel); font-weight: 800; color: var(--muted); letter-spacing: 0.04em; }
   .srch { display: inline-flex; align-items: center; gap: var(--s1); color: var(--muted); }
   .srch input { width: 120px; padding: var(--s1) var(--s2); font-size: var(--fs-panel); }
   .btn.icon { display: inline-flex; align-items: center; }

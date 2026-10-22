@@ -311,8 +311,10 @@ class Store {
     }
     if (g.wld.ceremonyDue) this.pushModal({ key: `ceremony:${g.wld.ceremony?.s ?? 0}`, kind: 'ceremony' });
     if (g.nat.ageRecs.length > this.seenAge) {
-      for (let i = this.seenAge; i < g.nat.ageRecs.length; i++) this.pushModal({ key: `age:${i}`, kind: 'age', rec: g.nat.ageRecs[i] });
-      this.seenAge = g.nat.ageRecs.length;
+      if (g.pendingReview >= 0) {
+        for (let i = this.seenAge; i < g.nat.ageRecs.length; i++) this.pushModal({ key: `age:${i}`, kind: 'age', rec: g.nat.ageRecs[i] });
+        this.seenAge = g.nat.ageRecs.length;
+      }
     } else if (g.nat.ageRecs.length < this.seenAge) this.seenAge = g.nat.ageRecs.length;
     if (g.nat.stage !== this.seenStage) {
       const rank = { none: 0, prelim: 1, called: 2, starter: 3 };
