@@ -11,6 +11,10 @@ export const STAGE_TAG: Record<YouthStage, string> = { U15: 'U15', U17: 'U17', U
 
 export const ROLE_BONUS: Record<Role, number> = { starter: 1.4, rotation: 0.2, prospect: -0.9, backup: -2 };
 
+function softCap(x: number, k: number): number {
+  return k * (1 - Math.exp(-x / k));
+}
+
 const POS_GOAL: Record<Pos, number> = { ST: 0.3, LW: 0.14, RW: 0.14, AM: 0.12, CM: 0.07, DM: 0.03, LB: 0.025, RB: 0.025, CB: 0.04, GK: 0 };
 const POS_ASSIST: Record<Pos, number> = { ST: 0.1, LW: 0.17, RW: 0.17, AM: 0.2, CM: 0.12, DM: 0.04, LB: 0.1, RB: 0.1, CB: 0.02, GK: 0.005 };
 
@@ -178,8 +182,13 @@ export function playPlayerMatch(s: GameState, rng: Rng, fx: Fixture, youth: bool
   const at = s.ab.a;
   const passQ = clamp(((at.passing + at.vision + at.crossing) / 3) / 11, 0.55, 1.7) * (0.88 + at.teamwork * 0.012 + at.creativity * 0.012 + at.longPassing * 0.006);
   const form = Math.exp(clamp(margin, -25, youth ? 30 : 20) / (youth ? 15 : 22));
-  const gShare = clamp(POS_GOAL[pos] * form * shootQ * mf * (s.ab.traits.includes('clutch') ? 1.05 : 1) * (0.94 + at.penalties * 0.006 + (pos === 'LW' || pos === 'RW' ? (at.accel - 10) * 0.01 : 0)), 0, 0.7);
-  const aShare = clamp(POS_ASSIST[pos] * form * passQ * mf, 0, 0.6);
+  const gRaw = clamp(POS_GOAL[pos] * form * shootQ * mf * (s.ab.traits.includes('clutch') ? 1.05 : 1) * (0.94 + at.penalties * 0.006 + (pos === 'LW' || pos === 'RW' ? (at.accel - 10) * 0.01 : 0)), 0, 2);
+  const aRaw = clamp(POS_ASSIST[pos] * form * passQ * mf, 0, 2);
+  const seasonRec = opts.reserve ? s.career.resCur : youth ? s.career.yCur : s.career.cur;
+  const gFatigue = 1 / (1 + Math.max(0, seasonRec.goals - 22) / 12);
+  const aFatigue = 1 / (1 + Math.max(0, seasonRec.assists - 13) / 8);
+  const gShare = Math.min(0.31, softCap(gRaw, 0.7)) * gFatigue;
+  const aShare = Math.min(0.15, softCap(aRaw, 0.2)) * aFatigue;
   let goals = 0;
   let assists = 0;
   for (let i = 0; i < myG; i++) {

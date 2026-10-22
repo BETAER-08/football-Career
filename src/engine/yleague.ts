@@ -427,7 +427,10 @@ export function youthLeaders(s: GameState): YouthLeaders | null {
       const cn = getClub(id);
       shares.forEach((sh) => rows.push({ name: genName(r, cn.country).name, club: `${cn.name} ${STAGE_TAG[yt.stage]}`, v: Math.max(0, Math.round(total * sh)), me: false }));
     }
-    rows.push({ name: s.p.name, club: `${getClub(own).name} ${STAGE_TAG[yt.stage]}`, v: kind === 'g' ? cur.goals : cur.assists, me: true });
+    const mine = kind === 'g' ? cur.goals : cur.assists;
+    const won = cur.awards.some((a) => a.includes(kind === 'g' ? '득점왕' : '도움왕'));
+    if (won) for (const x of rows) x.v = Math.min(x.v, Math.max(0, mine - 1));
+    rows.push({ name: s.p.name, club: `${getClub(own).name} ${STAGE_TAG[yt.stage]}`, v: mine, me: true });
     rows.sort((a, b) => b.v - a.v || (a.me ? -1 : 1));
     return rows.slice(0, 10);
   };

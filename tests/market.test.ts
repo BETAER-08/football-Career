@@ -256,6 +256,7 @@ describe('계약 만료와 자유계약', () => {
   it('재계약 없이 계약 종료 주차가 되면 FA가 되고 시장이 닫혀 있어도 계약할 수 있다', () => {
     setFast(false);
     const s = proState('mkt-fa-1');
+    s.auto = false;
     const con = s.career.contract!;
     con.endW = (seasonOf(s.week) + 1) * 52;
     s.life.mil = 'none';
