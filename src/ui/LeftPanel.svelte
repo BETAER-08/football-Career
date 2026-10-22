@@ -4,7 +4,7 @@
   import { ageAt, yearOf } from '../engine/time';
   import { getClub } from '../engine/data';
   import { POS_LABEL, ATTR_LABEL, TECH_KEYS, GK_KEYS, PHYS_KEYS, MENTAL_KEYS, HIDDEN_KEYS, type AttrKey } from '../engine/types';
-  import { anchored, shownOvr } from '../engine/attributes';
+  import { anchored, displayOvr, displayRaw, toNewScale } from '../engine/attributes';
   import { TRAIT_LABEL, scoutLine } from '../engine/player';
   import { mrz, whyText } from './format';
   import Icon from './Icon.svelte';
@@ -40,9 +40,9 @@
   function tier(v: number): string {
     return v <= 7 ? 'ab-low' : v <= 11 ? 'ab-mid' : v <= 15 ? 'ab-good' : v <= 18 ? 'ab-high' : 'ab-great';
   }
-  const ovr = $derived(shownOvr(g.ab, age));
-  const trend = $derived([...g.hist.slice(-6).map((h) => h.ovr), Math.round(ovr * 10) / 10]);
-  const ovrDelta = $derived(Math.round((ovr - g.snap.ovr) * 10) / 10);
+  const ovr = $derived(displayOvr(g.ab, age));
+  const trend = $derived([...g.hist.slice(-6).map((h) => toNewScale(anchored(h.ovr))), Math.round(ovr * 10) / 10]);
+  const ovrDelta = $derived(Math.round((ovr - displayRaw(g.snap.ovr, g.ab.dispAdj ?? 0, age)) * 10) / 10);
   const valDelta = $derived(g.snap.val > 0 ? Math.round(((g.fame.value - g.snap.val) / g.snap.val) * 100) : 0);
 
   const look = $derived(lookForGame(g, age));

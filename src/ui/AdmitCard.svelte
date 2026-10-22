@@ -10,6 +10,7 @@
   import { mrz, seed32, ageOf } from './format';
   import { DREAM_LABEL } from '../engine/goals';
   import type { DreamId } from '../engine/types';
+  import { toNewScale } from '../engine/attributes';
 
   const DREAMS: [DreamId, string][] = [['legend', '고향 팀의 레전드가 되고 싶다'], ['bigstarter', '빅리그의 주전이 되고 싶다'], ['national', '국가대표 유니폼을 입고 싶다'], ['ballon', '발롱도르를 들어 올리고 싶다'], ['rich', '돈 걱정 없이 살고 싶다']];
 
@@ -63,7 +64,7 @@
       <div class="sect reveal" style="--d:0ms">
         <b>구단 · {club.name} U15</b>
         <div class="kv"><span>연고 · 아카데미 등급 · 시설</span><span>{club.city} · {academyGrade(club.acad)}등급 · {club.facil}점</span></div>
-        <div class="kv"><span>시작 오버롤</span><span class="mono">{Math.round(s.p.startOvr)}</span></div>
+        <div class="kv"><span>시작 오버롤</span><span class="mono">{Math.round(toNewScale(s.p.startOvr))}</span></div>
         <div class="kv"><span>유스 감독</span><span title={s.people.coach.en}>{s.people.coach.name} · {s.people.coach.style}</span></div>
         <div class="kv"><span>동기</span><span>{kids.map((k) => `${s.people[k].name} (${s.people[k].pos})`).join(' · ')}</span></div>
       </div>

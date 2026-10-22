@@ -1,5 +1,5 @@
 import { CONT_SLOTS } from '../data/competitions';
-import { curOvr, shownRaw } from './attributes';
+import { curOvr, displayRaw } from './attributes';
 import { getClub, getLeague } from './data';
 import { isCosmetic } from './flags';
 import { currentWage } from './finance';
@@ -157,7 +157,7 @@ export function buildPlayerReview(s: GameState): void {
 
 function ovrDelta(s: GameState): number {
   const age = yearOf(s.week) - s.p.birth.y;
-  return shownRaw(curOvr(s.ab), s.ab.dispAdj ?? 0, age) - shownRaw(s.snap.ovr, s.ab.dispAdj ?? 0, age - 1);
+  return displayRaw(curOvr(s.ab), s.ab.dispAdj ?? 0, age) - displayRaw(s.snap.ovr, s.ab.dispAdj ?? 0, age - 1);
 }
 
 export function buildYouthReview(s: GameState): void {

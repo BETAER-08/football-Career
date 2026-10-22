@@ -3,6 +3,7 @@
   import { store } from './store.svelte';
   import { getClub, getLeague, getCountry } from '../engine/data';
   import { START_YEAR, ageAt, seasonOf, yearOf } from '../engine/time';
+  import { anchored, toNewScale } from '../engine/attributes';
   import { formatKRW, formatMarket } from '../engine/finance';
   import { REL_LABEL } from '../engine/fx';
   import type { Person, SeasonRec } from '../engine/types';
@@ -79,7 +80,7 @@
     return out;
   });
   const hist = $derived(g.hist);
-  const ovrPts = $derived(hist.map((h) => ({ label: `${h.age}세`, value: h.ovr })));
+  const ovrPts = $derived(hist.map((h) => ({ label: `${h.age}세`, value: toNewScale(anchored(h.ovr)) })));
   const valPts = $derived(hist.map((h) => ({ label: `${h.age}세`, value: h.val })));
 </script>
 

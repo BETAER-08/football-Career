@@ -85,6 +85,30 @@ export function rawForAnchored(d: number): number {
   return (lo + hi) / 2;
 }
 
+const SCALE_POINTS: [number, number][] = [[10, 0], [40, 30], [50, 40], [60, 50], [70, 60], [80, 70], [85, 80], [90, 90], [95, 100]];
+
+export function toNewScale(v: number): number {
+  const P = SCALE_POINTS;
+  if (v <= P[0][0]) return 0;
+  if (v >= P[P.length - 1][0]) return 100;
+  for (let i = 1; i < P.length; i++) {
+    if (v <= P[i][0]) {
+      const [x0, y0] = P[i - 1];
+      const [x1, y1] = P[i];
+      return y0 + ((v - x0) / (x1 - x0)) * (y1 - y0);
+    }
+  }
+  return 100;
+}
+
+export function displayOvr(ab: Abilities, age: number): number {
+  return toNewScale(shownOvr(ab, age));
+}
+
+export function displayRaw(raw: number, adj: number, age: number): number {
+  return toNewScale(shownRaw(raw, adj, age));
+}
+
 export const START_MIN: Record<number, number> = { 6: 50, 5: 47, 4: 44, 3: 42, 2: 40 };
 
 export function shownRaw(raw: number, adj: number, age: number): number {
