@@ -139,8 +139,10 @@ export function applyVar(s: GameState, t: string, sign: '+' | '-' | '=', v: numb
   if (t.startsWith('attr.')) {
     const k = t.slice(5) as AttrKey;
     const before = s.ab.a[k];
-    s.ab.a[k] = clamp(set ? v : before + signed, 1, 20);
-    s.ab.ceil[k] = clamp(Math.max(s.ab.ceil[k] + (set ? 0 : signed * 0.6), s.ab.a[k] * 0.9), 1, 20);
+    const delta = !set && signed < 0 && s.phase === 'youth' ? signed * 1.5 : signed;
+    s.ab.a[k] = clamp(set ? v : before + delta, 1, 20);
+    const ceilStep = set ? 0 : delta < 0 ? delta * 0.8 : delta * 0.6;
+    s.ab.ceil[k] = clamp(Math.max(s.ab.ceil[k] + ceilStep, delta < 0 ? s.ab.a[k] : s.ab.a[k] * 0.9), 1, 20);
     addChip(chips, ATTR_LABEL[k], s.ab.a[k] - before);
     whyNow(s, t, s.ab.a[k] - before);
     return;
