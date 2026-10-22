@@ -117,7 +117,23 @@ export function shownRaw(raw: number, adj: number, age: number): number {
 }
 
 export function shownOvr(ab: Abilities, age: number): number {
-  return shownRaw(ovrOf(ab.a, ab.pos), ab.dispAdj ?? 0, age);
+  const v = shownRaw(ovrOf(ab.a, ab.pos), ab.dispAdj ?? 0, age);
+  return ab.cap > 0 ? Math.min(v, ab.cap) : v;
+}
+
+export function enforceCap(ab: Abilities): void {
+  if (!(ab.cap > 0)) return;
+  const lim = rawForAnchored(ab.cap);
+  const o = ovrOf(ab.a, ab.pos);
+  if (o > lim) {
+    const f = lim / o;
+    for (const k of ALL_ATTRS) ab.a[k] = Math.max(1, ab.a[k] * f);
+  }
+  const c = ovrOf(ab.ceil, ab.pos);
+  if (c > lim) {
+    const f = lim / c;
+    for (const k of ALL_ATTRS) ab.ceil[k] = Math.max(1, ab.ceil[k] * f);
+  }
 }
 
 export function curOvr(ab: Abilities): number {

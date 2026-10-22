@@ -3,7 +3,7 @@ import { Rng, clamp } from './rng';
 import { getClub, getCountry } from './data';
 import { ageAt, dateOf, swOf, seasonOf } from './time';
 import { whyNow } from './why';
-import { shownOvr, youthCallMin, rawForAnchored } from './attributes';
+import { shownOvr, youthCallMin, enforceCap } from './attributes';
 
 function shownRawOf(s: GameState): number {
   return shownOvr(s.ab, ageAt(s.p.birth, s.week));
@@ -143,6 +143,7 @@ export function applyVar(s: GameState, t: string, sign: '+' | '-' | '=', v: numb
     s.ab.a[k] = clamp(set ? v : before + delta, 1, 20);
     const ceilStep = set ? 0 : delta < 0 ? delta * 0.8 : delta * 0.6;
     s.ab.ceil[k] = clamp(Math.max(s.ab.ceil[k] + ceilStep, delta < 0 ? s.ab.a[k] : s.ab.a[k] * 0.9), 1, 20);
+    enforceCap(s.ab);
     addChip(chips, ATTR_LABEL[k], s.ab.a[k] - before);
     whyNow(s, t, s.ab.a[k] - before);
     return;
@@ -204,8 +205,6 @@ export function applyVar(s: GameState, t: string, sign: '+' | '-' | '=', v: numb
     case 'pot': {
       const k = signed;
       for (const a of ALL_ATTRS) s.ab.ceil[a] = clamp(s.ab.ceil[a] + k * 0.12, 1, 20);
-      s.ab.cap = clamp(Math.round((s.ab.cap + k) * 10) / 10, 40, 99);
-      s.ab.pot = Math.round(rawForAnchored(s.ab.cap) * 10) / 10;
       addChip(chips, label, k);
       return;
     }
@@ -261,6 +260,7 @@ export function applyFx(s: GameState, ctx: FxCtx, src: string | undefined, chips
       }
     }
   }
+  enforceCap(s.ab);
   return chips;
 }
 

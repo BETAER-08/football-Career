@@ -1,6 +1,6 @@
 import { ALL_ATTRS, ATTR_GROUP, type GameState } from './types';
 import { Rng, clamp } from './rng';
-import { ageProgress, ovrOf, rawForAnchored } from './attributes';
+import { ageProgress, enforceCap, ovrOf } from './attributes';
 import { focusDef } from './lifestyle';
 import { getClub } from './data';
 
@@ -60,22 +60,7 @@ export function growWeek(s: GameState, rng: Rng, age: number): void {
     const rate = d >= 0 ? r * gmul[grp] : r * 0.7;
     ab.a[k] = clamp(cur + d * rate, 1, 20);
   }
-  enforceCap(s);
-}
-
-export function enforceCap(s: GameState): void {
-  const ab = s.ab;
-  const lim = rawForAnchored(ab.cap);
-  const o = ovrOf(ab.a, ab.pos);
-  if (o > lim) {
-    const f = lim / o;
-    for (const k of ALL_ATTRS) ab.a[k] = Math.max(1, ab.a[k] * f);
-  }
-  const c = ovrOf(ab.ceil, ab.pos);
-  if (c > lim) {
-    const f = lim / c;
-    for (const k of ALL_ATTRS) ab.ceil[k] = Math.max(1, ab.ceil[k] * f);
-  }
+  enforceCap(s.ab);
 }
 
 export function seasonEndGrowth(s: GameState, age: number): void {
@@ -94,9 +79,6 @@ export function seasonEndGrowth(s: GameState, age: number): void {
   if (age >= 21 && ab.playShare < 0.3) {
     const leak = 0.012 * ((0.3 - ab.playShare) / 0.3);
     for (const k of ALL_ATTRS) ab.ceil[k] = Math.max(1, ab.ceil[k] * (1 - leak));
-    const nc = Math.max(40, ab.cap * (1 - leak));
-    ab.cap = Math.round(nc * 10) / 10;
-    ab.pot = Math.round(rawForAnchored(ab.cap) * 10) / 10;
   }
-  enforceCap(s);
+  enforceCap(s.ab);
 }

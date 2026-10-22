@@ -5,8 +5,9 @@ import { setFast } from '../src/engine/log';
 import { setCosmetic } from '../src/engine/flags';
 import { forcedOrigin, originRng } from '../src/engine/headless';
 import { createState, scoutLine } from '../src/engine/player';
-import { anchored, curOvr, rawForAnchored } from '../src/engine/attributes';
+import { anchored, curOvr, rawForAnchored, shownOvr } from '../src/engine/attributes';
 import { migrateState } from '../src/engine/migrate';
+import { applyFx } from '../src/engine/fx';
 import { growWeek } from '../src/engine/growth';
 import { rngOf } from '../src/engine/world';
 import { ALL_ATTRS } from '../src/engine/types';
@@ -18,7 +19,7 @@ const cfgOf = (seed: string): GameConfig => ({ seed, name: '', pos: 'random', mo
 const CODES = ['GB', 'US', 'BR', 'JP', 'KR', 'NG', 'ES', 'DE'];
 
 describe('숨겨진 성장 한계', () => {
-  it('상한 분포가 15/35/35/15 ±1.5%p이고 모두 60~99이며 시작 오버롤은 상한 − 6 이하이다', () => {
+  it('상한 분포가 25/40/25/10 ±1.5%p이고 모두 60~99이며 시작 오버롤은 상한 − 6 이하이다', () => {
     const N = 10000;
     const bins = [0, 0, 0, 0];
     for (let i = 0; i < N; i++) {
@@ -33,7 +34,7 @@ describe('숨겨진 성장 한계', () => {
       expect(anchored(curOvr(state.ab))).toBeLessThanOrEqual(cap + 0.05);
       bins[Math.min(3, Math.floor((cap - 60) / 10))]++;
     }
-    const want = [0.15, 0.35, 0.35, 0.15];
+    const want = [0.25, 0.4, 0.25, 0.1];
     for (let t = 0; t < 4; t++) expect(Math.abs(bins[t] / N - want[t])).toBeLessThanOrEqual(0.015);
   });
 
@@ -58,6 +59,19 @@ describe('숨겨진 성장 한계', () => {
       for (const k of ALL_ATTRS) s.ab.a[k] = 20;
       growWeek(s, rngOf(s), 18);
       expect(anchored(curOvr(s.ab))).toBeLessThanOrEqual(s.ab.cap + 0.05);
+    }
+  });
+
+  it('이벤트 효과와 표시 오버롤도 배정된 상한을 넘지 않고 상한은 바뀌지 않는다', () => {
+    for (let i = 0; i < 20; i++) {
+      const seed = `capfx-${i}`;
+      const s = newGame(cfgOf(seed), forcedOrigin(originRng(seed), CODES[i % CODES.length], 4));
+      const cap0 = s.ab.cap;
+      const rng = rngOf(s);
+      applyFx(s, { rng }, 'skill+15 pot+30 attr.passing+8 attr.tackling+8 attr.dribbling+8');
+      expect(anchored(curOvr(s.ab))).toBeLessThanOrEqual(cap0 + 0.05);
+      expect(shownOvr(s.ab, 14)).toBeLessThanOrEqual(cap0 + 0.0001);
+      expect(s.ab.cap).toBe(cap0);
     }
   });
 
