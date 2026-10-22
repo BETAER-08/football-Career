@@ -11,6 +11,7 @@
   const g = $derived(store.game!);
   type Filter = 'all' | 'mine' | 'match' | 'deal' | 'world';
   let filter = $state<Filter>('all');
+  let onlyStar = $state(false);
   let query = $state('');
   let scroller: HTMLDivElement | undefined = $state();
   let scrollTop = $state(0);
@@ -39,6 +40,7 @@
       else if (filter === 'match') l = l.filter((e) => e.kind === 'match');
       else if (filter === 'deal') l = l.filter((e) => DEAL.test(e.title) || DEAL.test(e.text));
     }
+    if (onlyStar) l = l.filter((e) => e.star);
     const q = query.trim().toLowerCase();
     if (q) l = l.filter((e) => `${e.title} ${e.text} ${e.pick ?? ''} ${e.result ?? ''}`.toLowerCase().includes(q));
     const out: LogEntry[] = [];
@@ -119,6 +121,7 @@
 
   export function jumpTo(id: number) {
     filter = 'all';
+    onlyStar = false;
     query = '';
     void Promise.resolve().then(() => {
       const idx = rows.findIndex((r) => r.e && r.e.id === id);
@@ -173,6 +176,10 @@
     const i = e.text.indexOf('\n→');
     return i > 0 ? e.text.slice(0, i) : '';
   }
+  function star(e: LogEntry) {
+    e.star = !e.star;
+    store.notify();
+  }
   const filters: [Filter, string][] = [['all', '전체'], ['mine', '내 선택'], ['match', '경기'], ['deal', '이적·계약'], ['world', '세계']];
 </script>
 
@@ -181,6 +188,7 @@
     <span>인생 기록</span>
     <span class="spacer"></span>
     <label class="srch"><Icon name="search" size={14} /><input type="text" placeholder="검색" bind:value={query} aria-label="기록 검색" /></label>
+    <button class="btn sm icon" class:on={onlyStar} onclick={() => (onlyStar = !onlyStar)} title="즐겨찾기만 보기" aria-pressed={onlyStar}><Icon name="star" size={14} /></button>
     {#if !full}<button class="btn sm" onclick={() => (store.panel = 'log')} title="L">전체 보기</button>{/if}
   </div>
   <div class="sub seg" role="group" aria-label="기록 필터">
@@ -206,6 +214,7 @@
           <div class="rail"></div>
           <div class="grow col" style="gap:var(--s1)">
             <div class="row" style="gap:var(--s2)">
+              {#if e.star}<span class="starred" title="즐겨찾기"><Icon name="star" size={14} /></span>{/if}
               {#if isChoice(e)}<span class="badge">내 선택</span>{/if}
               <span class="kind">{kindLabel[e.kind]}</span>
               {#if e.tier}<span class="tier" class:y={e.tier !== 'f'}>{e.tier === 'f' ? '1군' : e.tier === 'r' ? '리저브' : '유스'}</span>{/if}
@@ -214,6 +223,8 @@
               {#if e.title && !isChoice(e)}<b class="ttl">{e.title}</b>{/if}
               {#if e.dream}<span class="dreamstar" title="인생의 꿈과 관련된 일"><Icon name="star" size={12} /></span>{/if}
               {#if follows.has(e.id)}<button class="link" onclick={() => jump(e)}>후속 보기</button>{/if}
+              <span class="spacer"></span>
+              <button class="star" class:on={e.star} onclick={() => star(e)} aria-label="즐겨찾기" aria-pressed={!!e.star}><Icon name="star" size={14} /></button>
             </div>
             {#if e.quote}<div class="quote">{e.quote}</div>{/if}
             {#if isChoice(e)}
@@ -266,6 +277,8 @@
   .entry.mine .sum b { font-weight: 800; }
   .entry[data-g='worst'] .sum b { font-weight: 900; }
   .entry[data-g='worst'] .badge { font-weight: 900; }
+  .star { background: none; border: none; cursor: pointer; color: var(--faint); padding: 0 2px; display: inline-flex; }
+  .star.on { color: var(--amber); }
   .panel:not(.fullp) { display: flex; flex-direction: column; }
   .logs { height: 520px; position: relative; }
   .panel:not(.fullp) .logs { flex: 1; height: auto; min-height: 320px; }
@@ -275,6 +288,8 @@
   .head { padding: var(--s2) var(--s3); background: var(--panel2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: var(--fs-panel); font-weight: 800; color: var(--muted); letter-spacing: 0.04em; }
   .srch { display: inline-flex; align-items: center; gap: var(--s1); color: var(--muted); }
   .srch input { width: 120px; padding: var(--s1) var(--s2); font-size: var(--fs-panel); }
+  .btn.icon { display: inline-flex; align-items: center; }
+  .starred { color: var(--amber); display: inline-flex; }
   .entry.flash { animation: flashbg 1.6s ease; }
   @keyframes flashbg { 0%, 60% { background: color-mix(in srgb, var(--amber) 28%, transparent); } 100% { background: transparent; } }
 </style>
